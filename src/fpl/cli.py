@@ -20,11 +20,19 @@ def _bootstrap(args: argparse.Namespace) -> int:
 
 
 def main(argv: list[str] | None = None) -> int:
-    parser = argparse.ArgumentParser(prog="fpl", description=__doc__)
-    parser.add_argument("-v", "--verbose", action="store_true")
+    # Shared flags live on a parent parser so they work either side of the
+    # subcommand: both "fpl -v bootstrap" and "fpl bootstrap -v" are accepted.
+    common = argparse.ArgumentParser(add_help=False)
+    common.add_argument("-v", "--verbose", action="store_true", help="log progress")
+
+    parser = argparse.ArgumentParser(prog="fpl", description=__doc__, parents=[common])
     sub = parser.add_subparsers(dest="command", required=True)
 
-    boot = sub.add_parser("bootstrap", help="download historical seasons into bronze")
+    boot = sub.add_parser(
+        "bootstrap",
+        parents=[common],
+        help="download historical seasons into bronze",
+    )
     boot.add_argument("--seasons", nargs="*", help=f"default: {' '.join(TRAIN_SEASONS)}")
     boot.add_argument("--refresh", action="store_true", help="ignore the local cache")
     boot.set_defaults(func=_bootstrap)
