@@ -1,0 +1,29 @@
+# data is regenerated, never committed
+data/bronze/
+data/silver/
+data/gold/
+*.parquet
+*.csv
+!src/fpl/entity/mappings/*.csv
+!tests/fixtures/*.csv
+
+# secrets
+.env
+.env.*
+
+# python
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+*.egg-info/
+.pytest_cache/
+.ruff_cache/
+.coverage
+htmlcov/
+.ipynb_checkpoints/
+
+# os / editor
+.DS_Store
+.vscode/
+.idea/
