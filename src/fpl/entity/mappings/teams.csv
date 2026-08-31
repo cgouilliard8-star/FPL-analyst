@@ -1,0 +1,46 @@
+alias,fpl_name,source
+Arsenal,Arsenal,fpl
+Arsenal FC,Arsenal,understat
+Aston Villa,Aston Villa,fpl
+Bournemouth,Bournemouth,fpl
+AFC Bournemouth,Bournemouth,understat
+Brentford,Brentford,fpl
+Brighton,Brighton,fpl
+Brighton & Hove Albion,Brighton,understat
+Burnley,Burnley,fpl
+Chelsea,Chelsea,fpl
+Crystal Palace,Crystal Palace,fpl
+Everton,Everton,fpl
+Fulham,Fulham,fpl
+Ipswich,Ipswich,fpl
+Ipswich Town,Ipswich,understat
+Leeds,Leeds,fpl
+Leeds United,Leeds,understat
+Leicester,Leicester,fpl
+Leicester City,Leicester,understat
+Liverpool,Liverpool,fpl
+Luton,Luton,fpl
+Luton Town,Luton,understat
+Man City,Man City,fpl
+Manchester City,Man City,understat
+Man Utd,Man Utd,fpl
+Man United,Man Utd,football-data
+Manchester United,Man Utd,understat
+Newcastle,Newcastle,fpl
+Newcastle United,Newcastle,understat
+Norwich,Norwich,fpl
+Norwich City,Norwich,understat
+Nott'm Forest,Nott'm Forest,fpl
+Nottingham Forest,Nott'm Forest,understat
+Sheffield Utd,Sheffield Utd,fpl
+Sheffield United,Sheffield Utd,football-data
+Southampton,Southampton,fpl
+Spurs,Spurs,fpl
+Tottenham,Spurs,football-data
+Tottenham Hotspur,Spurs,understat
+Sunderland,Sunderland,fpl
+Watford,Watford,fpl
+West Ham,West Ham,fpl
+West Ham United,West Ham,understat
+Wolves,Wolves,fpl
+Wolverhampton Wanderers,Wolves,understat

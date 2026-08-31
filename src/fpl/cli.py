@@ -1,4 +1,5 @@
 """Command line entry point: ``fpl <command>``."""
+
 from __future__ import annotations
 
 import argparse
@@ -14,8 +15,22 @@ def _bootstrap(args: argparse.Namespace) -> int:
     seasons = tuple(args.seasons) if args.seasons else TRAIN_SEASONS
     frame = load_seasons(seasons, refresh=args.refresh)
     print(f"{len(frame):,} player-gameweek rows across {len(seasons)} seasons")
-    print(f"gameweeks {frame['GW'].min()}-{frame['GW'].max()}, "
-          f"{frame['name'].nunique():,} distinct players")
+    print(
+        f"gameweeks {frame['GW'].min()}-{frame['GW'].max()}, "
+        f"{frame['name'].nunique():,} distinct players"
+    )
+    return 0
+
+
+def _silver(args: argparse.Namespace) -> int:
+    from fpl.data.silver import build_silver
+
+    seasons = tuple(args.seasons) if args.seasons else TRAIN_SEASONS
+    frame = build_silver(seasons)
+    print(
+        f"{len(frame):,} rows | {frame['code'].nunique():,} players | "
+        f"{frame['team'].nunique()} clubs | seasons {frame['season'].min()}-{frame['season'].max()}"
+    )
     return 0
 
 
@@ -36,6 +51,14 @@ def main(argv: list[str] | None = None) -> int:
     boot.add_argument("--seasons", nargs="*", help=f"default: {' '.join(TRAIN_SEASONS)}")
     boot.add_argument("--refresh", action="store_true", help="ignore the local cache")
     boot.set_defaults(func=_bootstrap)
+
+    silver = sub.add_parser(
+        "silver",
+        parents=[common],
+        help="resolve identity and build the canonical table",
+    )
+    silver.add_argument("--seasons", nargs="*", help=f"default: {' '.join(TRAIN_SEASONS)}")
+    silver.set_defaults(func=_silver)
 
     args = parser.parse_args(argv)
     logging.basicConfig(

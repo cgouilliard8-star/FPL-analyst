@@ -4,6 +4,7 @@ The archive stopped weekly updates after 2024-25 (it now refreshes ~3x/year), so
 is used strictly to bootstrap the training set. In-season data comes from our own
 deadline-stamped collector in ``fpl.data.fpl_api``.
 """
+
 from __future__ import annotations
 
 import logging
@@ -20,12 +21,33 @@ log = logging.getLogger(__name__)
 # here rather than silently producing a half-empty feature table three steps later.
 REQUIRED_COLUMNS = frozenset(
     {
-        "name", "position", "team", "GW", "minutes", "total_points",
-        "goals_scored", "assists", "clean_sheets", "goals_conceded", "saves",
-        "bonus", "bps", "yellow_cards", "red_cards", "own_goals",
-        "penalties_missed", "penalties_saved", "influence", "creativity",
-        "threat", "ict_index", "was_home", "opponent_team", "value",
-        "selected", "kickoff_time",
+        "name",
+        "position",
+        "team",
+        "GW",
+        "minutes",
+        "total_points",
+        "goals_scored",
+        "assists",
+        "clean_sheets",
+        "goals_conceded",
+        "saves",
+        "bonus",
+        "bps",
+        "yellow_cards",
+        "red_cards",
+        "own_goals",
+        "penalties_missed",
+        "penalties_saved",
+        "influence",
+        "creativity",
+        "threat",
+        "ict_index",
+        "was_home",
+        "opponent_team",
+        "value",
+        "selected",
+        "kickoff_time",
     }
 )
 
@@ -34,6 +56,52 @@ TIMEOUT = 60
 
 def _season_url(season: str) -> str:
     return f"{ARCHIVE_BASE}/{season}/gws/merged_gw.csv"
+
+
+def _players_url(season: str) -> str:
+    return f"{ARCHIVE_BASE}/{season}/players_raw.csv"
+
+
+PLAYER_COLUMNS = frozenset({"id", "code", "first_name", "second_name", "element_type", "team"})
+
+
+def fetch_players(season: str, *, session: requests.Session | None = None) -> pd.DataFrame:
+    """Download one season's player registry.
+
+    This is what maps a season-local ``element`` id to the cross-season ``code``.
+    See ``fpl.entity.resolve`` for why that distinction is load-bearing.
+    """
+    url = _players_url(season)
+    log.info("fetching %s", url)
+    getter = session.get if session else requests.get
+    response = getter(url, timeout=TIMEOUT)
+    response.raise_for_status()
+
+    frame = pd.read_csv(StringIO(response.text))
+    missing = PLAYER_COLUMNS - set(frame.columns)
+    if missing:
+        raise ValueError(
+            f"{season}: player registry is missing {sorted(missing)}. "
+            "The upstream schema has changed and the loader needs updating."
+        )
+    frame["season"] = season
+    return frame
+
+
+def load_players(
+    seasons: tuple[str, ...] = TRAIN_SEASONS, *, refresh: bool = False
+) -> pd.DataFrame:
+    """Load player registries for several seasons, cached to bronze."""
+    frames = []
+    for season in seasons:
+        cache = BRONZE / f"players_{season}.parquet"
+        if cache.exists() and not refresh:
+            frames.append(pd.read_parquet(cache))
+            continue
+        frame = fetch_players(season)
+        frame.to_parquet(cache, index=False)
+        frames.append(frame)
+    return pd.concat(frames, ignore_index=True)
 
 
 def fetch_season(season: str, *, session: requests.Session | None = None) -> pd.DataFrame:

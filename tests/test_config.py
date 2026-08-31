@@ -1,4 +1,5 @@
 """The scoring constants are the model's contract with the game. Guard them."""
+
 from fpl import config
 
 

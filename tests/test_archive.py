@@ -1,4 +1,5 @@
 """The archive loader must fail loudly when upstream changes shape."""
+
 import pandas as pd
 import pytest
 
