@@ -38,7 +38,10 @@ jobs:
       - name: Live snapshot
         run: fpl snapshot
 
-      - name: Project next gameweek and build dashboard data
+      - name: Season replay (from GW1, one free transfer a week, real points)
+        run: fpl simulate --from-gw 1 --to-gw 3
+
+      - name: Project the next five gameweeks and build dashboard data
         env:
           ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
         run: fpl live

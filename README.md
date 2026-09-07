@@ -6,7 +6,8 @@ most. Live for 2026-27, refreshed every morning.
 
 ```
 fpl snapshot     # pull the live FPL API into an immutable, timestamped snapshot
-fpl live         # project the next gameweek and write site/data/live.json
+fpl simulate     # replay GW1-3 from scratch with real transfer rules, scored on real points
+fpl live         # project the next five gameweeks and write site/data/live.json
 ```
 
 The page (`site/`) is static: it loads that one JSON file and does the rating in the
@@ -24,7 +25,31 @@ can afford is tried, and the resulting fifteen is re-solved for its best eleven.
 gain reported is the change in the *team's* projected points, not the difference
 between two players — a signing who doesn't make your eleven gains you nothing, and
 one who changes your captain gains more than his own number. The top five by gain,
-never repeating a signing, are shown with the rating you'd have after each.
+never repeating a signing, are shown with the rating you'd have after each. If the
+best upgrade costs more than you have, a second, funding transfer is found so the
+pair fits under the cap (£100m, or your own team value plus bank if you enter it).
+
+**Free transfers and hits.** Enter how many free transfers you hold. Any transfer
+beyond them is charged FPL's 4-point hit, moves are ranked by gain *net* of the hit,
+and each says plainly whether it is still worth it.
+
+**The next five gameweeks, weighted.** Every player is projected for each of the next
+five gameweeks against that gameweek's actual opponent: a defender's clean-sheet odds
+depend on how much the opponent scores (rolling xG) and how much his own club concedes;
+an attacker's returns on how much the opponent concedes (rolling xG conceded) and how
+much his own club scores. The gameweeks are weighted 100/85/70/55/40% so the next
+deadline dominates but a kind run still counts, and you can rate over the next one,
+three or five.
+
+**Why this move.** Each suggestion expands into its case: the fixture-by-fixture run
+for the player out and the player in, with the opponent's attack or defence rank
+alongside each fixture, both clubs' own strength, which scoring components the points
+come from, availability news, the money, and the hit arithmetic.
+
+**Backtest.** The Backtest tab replays the season from the GW1 deadline: a £100m squad
+built with only what was knowable then, one free transfer a week from GW2 (bankable,
+never a hit), lineup and captain by projection, scored on real points with automatic
+substitutions, against the average manager and the week's top score.
 
 **News and injuries.** Every projection is scaled by FPL's availability flag:
 `chance_of_playing_next_round` where a percentage is given, zero for injured,

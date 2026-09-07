@@ -176,6 +176,36 @@
   .legend i{display:inline-block;width:8px;height:8px;border-radius:2px;margin-right:.3rem;font-style:normal}
   .news{font-size:.82rem;color:var(--warn)}
   .rat{color:var(--ink-2);font-size:.88rem;margin:.4rem 0 0}
+  .money{grid-template-columns:1fr 1fr 1fr 1fr}
+  .hzrow{display:flex;align-items:center;gap:.5rem;flex-wrap:wrap;margin-bottom:.6rem}
+  .hzrow .lbl{font-family:var(--m);font-size:.6rem;letter-spacing:.12em;text-transform:uppercase;color:var(--ink-3)}
+  .move{grid-template-columns:1.8rem 1fr auto;grid-template-areas:"rk who gain" "why why why"}
+  .move .rk{grid-area:rk} .move .who{grid-area:who} .move .gain{grid-area:gain}
+  .move .net{font-size:.78rem;color:var(--ink-2);font-variant-numeric:tabular-nums}
+  .move .net.bad{color:var(--crit);font-weight:700} .move .net.good{color:var(--accent);font-weight:700}
+  .move.nogo{border-style:dashed;opacity:.85}
+  .move .whybtn{font-size:.75rem;padding:.25rem .5rem}
+  .whyp{grid-area:why;border-top:1px dashed var(--line);padding-top:.7rem;margin-top:.2rem;font-size:.86rem;color:var(--ink-2)}
+  .whyp h4{margin:.5rem 0 .25rem;font-size:.7rem;font-family:var(--m);letter-spacing:.1em;text-transform:uppercase;color:var(--ink-3)}
+  .whyp p{margin:.3rem 0}
+  .whyp .lead{color:var(--ink);font-size:.9rem}
+  .fx{width:100%;border-collapse:collapse;font-size:.8rem;font-variant-numeric:tabular-nums}
+  .fx th{font-family:var(--m);font-size:.58rem;letter-spacing:.1em;text-transform:uppercase;color:var(--ink-3);text-align:left;padding:.2rem .35rem;border-bottom:1px solid var(--line)}
+  .fx td{padding:.25rem .35rem;border-bottom:1px solid var(--line);vertical-align:middle}
+  .fx td.n{text-align:right}
+  .fx .in{color:var(--accent);font-weight:700}
+  .dif{display:inline-block;font-family:var(--m);font-size:.58rem;font-weight:700;letter-spacing:.06em;padding:.1rem .35rem;border-radius:4px;margin-left:.3rem;white-space:nowrap}
+  .dif.easy{background:var(--accent-soft);color:var(--accent)} .dif.mid{background:var(--surface-2);color:var(--ink-2)} .dif.hard{background:var(--crit-soft);color:var(--crit)}
+  .delta{display:flex;flex-wrap:wrap;gap:.4rem .8rem;font-family:var(--m);font-size:.7rem}
+  .delta span b{font-variant-numeric:tabular-nums}
+  .delta .up{color:var(--accent)} .delta .down{color:var(--crit)}
+  .bt{display:flex;flex-direction:column;gap:.6rem}
+  .btgw{display:grid;grid-template-columns:auto 1fr;gap:.2rem .9rem;align-items:baseline}
+  .btgw .pts{font-size:1.5rem;font-weight:800;font-variant-numeric:tabular-nums}
+  .btgw .pts small{font-size:.75rem;font-weight:600;color:var(--ink-3);margin-left:.3rem}
+  .btgw .tr{font-size:.9rem}
+  .btgw .meta{font-size:.8rem;color:var(--ink-3)}
+  @media (max-width:640px){.money{grid-template-columns:1fr 1fr}}
   footer{color:var(--ink-3);font-size:.82rem;padding:2.5rem 0 3rem;border-top:1px solid var(--line);margin-top:2.5rem}
   [hidden]{display:none!important}
   @media (prefers-reduced-motion:no-preference){.meter i{transition:width .35s ease}}
@@ -193,6 +223,7 @@
     <button role="tab" aria-selected="true" data-tab="rate">Rate my team</button>
     <button role="tab" aria-selected="false" data-tab="best">Best squad this week</button>
     <button role="tab" aria-selected="false" data-tab="all">All players</button>
+    <button role="tab" aria-selected="false" data-tab="test">Backtest</button>
   </nav>
 
   <main>
@@ -202,8 +233,10 @@
           <div class="money">
             <div class="mbox"><label for="tv">Team value £m</label><input type="number" id="tv" step="0.1" min="0" placeholder="100.0" inputmode="decimal"></div>
             <div class="mbox"><label for="bank">In the bank £m</label><input type="number" id="bank" step="0.1" min="0" value="0.0" inputmode="decimal"></div>
+            <div class="mbox"><label for="ft">Free transfers</label><input type="number" id="ft" step="1" min="0" max="5" value="1" inputmode="numeric"></div>
             <div class="mbox"><label>Budget left</label><div class="big" id="left">£0.0m</div></div>
           </div>
+          <div class="hzrow"><span class="lbl">Rate over</span><div class="forms" id="hz" role="group" aria-label="Horizon" style="margin:0"></div><span class="hint" id="hzhint"></span></div>
           <div class="forms" id="forms" role="group" aria-label="Formation"></div>
           <div class="pitchwrap">
             <div class="banner"><span id="bnr-left">SQUAD 0 / 15</span><span id="bnr-right">BUDGET £100.0m</span></div>
@@ -236,10 +269,11 @@
 
     <section id="tab-best" hidden><div id="best"></div></section>
     <section id="tab-all" hidden><div id="all"></div></section>
+    <section id="tab-test" hidden><div id="test"></div></section>
   </main>
 
   <footer>
-    Projections come from a component model (appearance, attacking, clean sheet, bonus, goalkeeping, defensive contribution) trained on 2022-23 to 2025-26 and this season's fixtures, then scaled by FPL's own availability flag so injuries, suspensions and loan moves are reflected the day they're announced. Ratings are relative to the best £100m squad this week. Refreshed daily.
+    Projections come from a component model (appearance, attacking, clean sheet, bonus, goalkeeping, defensive contribution) trained on 2022-23 to 2025-26 and this season's fixtures, then scaled by FPL's own availability flag and news (return dates, loans, departures) so injuries and suspensions are reflected the day they're announced. Each of the next five gameweeks is projected with its own opponent's attack and defence strength (rolling xG and xG conceded) and weighted 100/85/70/55/40% by distance from the next deadline. Ratings are relative to the best £100m squad over the same horizon. Transfers beyond your free ones are charged the 4-point hit before a move is called worth it. Refreshed daily.
   </footer>
 </div>
 
@@ -255,11 +289,24 @@ for (let d=XI_MIN.DEF; d<=XI_MAX.DEF; d++) for (let m=XI_MIN.MID; m<=XI_MAX.MID;
   if (1+d+m+f === 11) FORMATIONS.push({GK:1, DEF:d, MID:m, FWD:f});
 const fname = f => `${f.DEF}-${f.MID}-${f.FWD}`;
 const COLOURS = {appearance:"var(--ink-3)", attacking:"var(--fwd)", clean_sheet:"var(--def)", bonus:"var(--accent)", goalkeeping:"var(--gk)", defensive:"var(--plum)"};
-const LABELS = {appearance:"appearance", attacking:"attacking", clean_sheet:"clean sheet", bonus:"bonus", goalkeeping:"goalkeeping", defensive:"def. contribution"};
+const LABELS = {appearance:"appearance", attacking:"attacking", clean_sheet:"clean sheet", bonus:"bonus", goalkeeping:"saves & conceded", defensive:"def. contribution"};
 
 // Stats a picker column can show. get() reads from a player record.
+const HORIZONS = {ep1:{label:"Next GW", long:"next gameweek", n:1, short:"GW"}, ep3:{label:"Next 3 GWs", long:"next 3 gameweeks", n:3, short:"3 GWs"}, ep5:{label:"Next 5 GWs", long:"next 5 gameweeks", n:5, short:"5 GWs"}};
+let metric = "ep5";
+const OPT = () => (DATA.meta.optimal_by && DATA.meta.optimal_by[metric]) || DATA.meta.optimal_points;
+const HIT = () => DATA.meta.transfer_hit ?? 4;
+const ftVal = () => { const v = parseInt(document.getElementById("ft").value, 10); return isFinite(v) && v >= 0 ? Math.min(5, v) : 1; };
+// Opponent strings come as "Sunderland (A)" or "Arsenal (H) + Spurs (A)" for a double.
+const oppParts = opp => String(opp||"").split(" + ").map(x => { const m = x.match(/^(.*) \((H|A)\)$/); return m ? {name:m[1], home:m[2]==="H"} : {name:x, home:true}; });
+const oppShort = opp => oppParts(opp).map(o => (o.home?"":"@")+short(o.name)).join(", ");
+const oppLong = opp => oppParts(opp).map(o => (o.home?"vs ":"at ")+o.name).join(" + ");
+
 const STATS = {
   ep:        {label:"Projected",   get:p=>p.ep,                       fmt:v=>v.toFixed(1)},
+  ep1:       {label:"Next GW",     get:p=>p.ep1,                      fmt:v=>v.toFixed(1)},
+  ep3:       {label:"Next 3 GWs",  get:p=>p.ep3,                      fmt:v=>v.toFixed(1)},
+  ep5:       {label:"Next 5 GWs",  get:p=>p.ep5,                      fmt:v=>v.toFixed(1)},
   fpl_ep:    {label:"FPL xP",      get:p=>p.fpl_ep,                   fmt:v=>v.toFixed(1)},
   price:     {label:"Price",       get:p=>p.price,                    fmt:v=>"£"+v.toFixed(1)},
   owned:     {label:"Selected %",  get:p=>p.owned_pct,                fmt:v=>v.toFixed(1)+"%"},
@@ -322,7 +369,12 @@ function legalAfter(players, outs, ins){
   for (const p of ins){ clubs[p.team]=(clubs[p.team]||0)+1; if (clubs[p.team] > MAX_PER_CLUB) return false; }
   return true;
 }
-function suggestTransfers(players, pool, bank, teamValue, formation, topN=5){
+function applyHit(m, free){
+  m.hit = free==null ? 0 : HIT() * Math.max(0, m.transfers - free);
+  m.net = m.gain - m.hit; m.worth_it = m.net > 1e-9;
+  return m;
+}
+function suggestTransfers(players, pool, bank, teamValue, formation, topN=5, free=null){
   const base = bestEleven(players, formation).points;
   const value = teamValue || players.reduce((s,p)=>s+p.price,0);
   const budget = availableBudget(players, bank, teamValue);
@@ -360,7 +412,7 @@ function suggestTransfers(players, pool, bank, teamValue, formation, topN=5){
     }
     if (best) doubles.push(best);
   }
-  const all = [...singles, ...doubles].sort((a,b)=>b.gain-a.gain);
+  const all = [...singles, ...doubles].map(m=>applyHit(m, free)).sort((a,b)=>b.net-a.net);
   const seen = new Set(), ranked = [];
   for (const r of all){ if (r.in.some(p=>seen.has(p.code))) continue; r.in.forEach(p=>seen.add(p.code)); r.rank=ranked.length+1; ranked.push(r); if (ranked.length===topN) break; }
   return ranked;
@@ -383,8 +435,8 @@ const xiPlayers = () => state.slots.filter(s=>s.area==="xi" && s.code).map(s=>BY
 const squadValue = () => squadPlayers().reduce((s,p)=>s+p.price,0);
 const clubCount = team => squadPlayers().filter(p=>p.team===team).length;
 function setFormation(f){ state.formation = f; state.slots = buildSlots(f, state.slots.map(s=>s.code).filter(Boolean)); update(); }
-function save(){ try{ localStorage.setItem("fpl-squad-v3", JSON.stringify({formation:state.formation, codes:state.slots.map(s=>s.code), bank:document.getElementById("bank").value, tv:document.getElementById("tv").value, cols})); }catch(e){} }
-function load(){ try{ const s=JSON.parse(localStorage.getItem("fpl-squad-v3")||"null"); if(!s) return false; state.formation=s.formation; state.slots=buildSlots(s.formation, s.codes.filter(Boolean)); document.getElementById("bank").value=s.bank??"0.0"; document.getElementById("tv").value=s.tv??""; if (Array.isArray(s.cols)&&s.cols.length===3) cols=s.cols; return true; }catch(e){ return false; } }
+function save(){ try{ localStorage.setItem("fpl-squad-v3", JSON.stringify({formation:state.formation, codes:state.slots.map(s=>s.code), bank:document.getElementById("bank").value, tv:document.getElementById("tv").value, ft:document.getElementById("ft").value, metric, cols})); }catch(e){} }
+function load(){ try{ const s=JSON.parse(localStorage.getItem("fpl-squad-v3")||"null"); if(!s) return false; state.formation=s.formation; state.slots=buildSlots(s.formation, s.codes.filter(Boolean)); document.getElementById("bank").value=s.bank??"0.0"; document.getElementById("tv").value=s.tv??""; document.getElementById("ft").value=s.ft??"1"; if (HORIZONS[s.metric]) metric=s.metric; if (Array.isArray(s.cols)&&s.cols.length===3) cols=s.cols; return true; }catch(e){ return false; } }
 
 // ---------- pitch ----------
 function slotEl(slot, index, captain){
@@ -393,13 +445,13 @@ function slotEl(slot, index, captain){
   if (!p){ b.appendChild(el("div","ic","+")); b.appendChild(el("div","posl",slot.pos)); b.appendChild(el("div","nm","Add")); b.title=`Add a ${slot.pos}`; }
   else {
     b.appendChild(el("div","posl",p.position)); b.appendChild(el("div","nm",p.web_name));
-    b.appendChild(el("div","pr",`£${fmt(p.price,1)}m · ${p.home?"":"@"}${short(p.opponent)}`));
+    b.appendChild(el("div","pr",`£${fmt(p.price,1)}m · ${oppShort(p.opponent)}`));
     b.appendChild(el("div","ep",fmt(p.ep,1)+" pts"));
     const badges = el("div","badges");
     if (captain===p.code) badges.appendChild(el("span","c","C"));
     if (p.availability<1) badges.appendChild(el("span","fl "+(p.availability===0?"out":"d"), p.availability===0?"OUT":(p.chance!=null?p.chance+"%":"DOUBT")));
     b.appendChild(badges);
-    b.title = `${p.name} · ${p.team} ${p.home?"vs":"at"} ${p.opponent} · projected ${fmt(p.ep)}${p.news?" · "+p.news:""}`;
+    b.title = `${p.name} · ${p.team} ${oppLong(p.opponent)} · ${HORIZONS[metric].long} ${fmt(p.ep)}${p.news?" · "+p.news:""}`;
   }
   b.onclick = () => openPicker(index);
   return b;
@@ -426,7 +478,7 @@ function renderPitch(){
 }
 
 // ---------- picker: FPL-style table ----------
-function statLabel(key){ return STATS[key].label.replace("{lastgw}", DATA.meta.last_gameweek); }
+function statLabel(key){ if (key==="ep") return "Proj. "+HORIZONS[metric].short; return STATS[key].label.replace("{lastgw}", DATA.meta.last_gameweek); }
 function playerTable(opts){
   const box = el("div","ptable");
   const q = opts.q || "", maxPrice = opts.maxPrice || Infinity, club = opts.club || "";
@@ -451,7 +503,7 @@ function playerTable(opts){
     s.onclick = () => { if (sort.key===key) sort.dir*=-1; else { sort.key=key; sort.dir=-1; } opts.rerender(); };
     h.appendChild(s); return h;
   };
-  tr.appendChild(head("Player","ep",0)); tr.appendChild(head("Projected","ep",0));
+  tr.appendChild(head("Player","ep",0)); tr.appendChild(head(statLabel("ep"),"ep",0));
   cols.forEach((k,i) => tr.appendChild(head(statLabel(k), k, i+1)));
   th.appendChild(tr); t.appendChild(th);
   const tb = el("tbody");
@@ -461,7 +513,7 @@ function playerTable(opts){
     const c1 = el("td"); const cell = el("div","pcell");
     cell.appendChild(el("div","kit "+p.position, p.position));
     const who = el("div","who"); who.appendChild(el("b",null,p.web_name));
-    who.appendChild(el("small",null,`${p.team} · ${p.home?"vs":"at"} ${p.opponent}`));
+    who.appendChild(el("small",null,`${p.team} · ${oppLong(p.opponent)}`));
     if (why) who.appendChild(el("span","why",why)); else if (p.news) who.appendChild(el("span","why",p.news));
     cell.appendChild(who);
     if (p.availability<1) cell.appendChild(el("span","flag "+(p.availability===0?"out":"d"), p.availability===0?"OUT":(p.chance!=null?p.chance+"%":"DOUBT")));
@@ -520,20 +572,94 @@ function openPicker(index){
 }
 
 // ---------- rating + moves ----------
+function renderHorizon(){
+  const hz = document.getElementById("hz"); hz.replaceChildren();
+  Object.entries(HORIZONS).forEach(([k,h]) => { const b=el("button",null,h.label); b.type="button"; b.setAttribute("aria-pressed", k===metric); b.onclick=()=>setHorizon(k); hz.appendChild(b); });
+  const w = (DATA.meta.horizon_weights||[1,.85,.7,.55,.4]).slice(0, HORIZONS[metric].n).map(x=>Math.round(x*100)+"%").join(" / ");
+  document.getElementById("hzhint").textContent = HORIZONS[metric].n===1 ? "Next deadline only." : `Gameweeks weighted ${w}.`;
+}
+function setHorizon(k){ metric = k; DATA.players.forEach(p => p.ep = p[k] ?? p.ep1 ?? p.ep); renderHorizon(); update(); renderAll(); }
+
+// Rank chips: how hard a fixture is for THIS player's job. A defender cares about
+// the opponent's attack rank (1 = scores most); an attacker about the opponent's
+// defence rank (20 = leaks most).
+function difficulty(position, f){
+  const defensive = position==="GK" || position==="DEF";
+  const rank = defensive ? f.opp_att : f.opp_def;
+  if (rank==null) return null;
+  const hard = defensive ? rank <= 7 : rank <= 7, easy = defensive ? rank >= 14 : rank >= 14;
+  return {rank, label: defensive ? `att #${rank}` : `def #${rank}`, cls: hard ? "hard" : easy ? "easy" : "mid", text: hard ? "tough" : easy ? "kind" : "average"};
+}
+function fixturesIn(p){ return (p.fixtures||[]).filter(f => f.gw - DATA.meta.gameweek < HORIZONS[metric].n); }
+function weightedBreakdown(p){
+  const out = {}; fixturesIn(p).forEach(f => Object.entries(f.breakdown||{}).forEach(([k,v]) => { out[k] = (out[k]||0) + (v||0)*(f.w||0); })); return out;
+}
+function whyPanel(m, free, budget){
+  const box = el("div","whyp"); const h = HORIZONS[metric];
+  m.out.forEach((o, idx) => {
+    const n = m.in[idx];
+    const fo = fixturesIn(o), fn = fixturesIn(n);
+    const kind = c => fixturesIn(c).filter(f => (difficulty(c.position,f)||{}).cls==="easy").length;
+    const tough = c => fixturesIn(c).filter(f => (difficulty(c.position,f)||{}).cls==="hard").length;
+    const defensive = n.position==="GK" || n.position==="DEF";
+    const teamCtx = c => defensive ? `the league's #${c.own_def??"?"} defence` : `the league's #${c.own_att??"?"} attack`;
+    // Lead sentence
+    const lead = el("p","lead");
+    lead.textContent = `${n.web_name} projects ${fmt(n.ep,1)} ${h.n===1?"points":"weighted points"} over the ${h.long} against ${o.web_name}'s ${fmt(o.ep,1)}. `
+      + `${n.web_name} plays for ${teamCtx(n)} and faces ${kind(n)} kind and ${tough(n)} tough fixture${fn.length===1?"":"s"} out of ${fn.length}; `
+      + `${o.web_name} (${teamCtx(o)}) faces ${kind(o)} kind and ${tough(o)} tough out of ${fo.length}.`
+      + (n.availability<1 ? ` Note ${n.web_name} is flagged (${Math.round(n.availability*100)}% available${n.news?": "+n.news:""}).` : "")
+      + (o.availability<1 ? ` ${o.web_name} is flagged${o.news?": "+o.news:""}.` : "");
+    box.appendChild(lead);
+    // Fixture-by-fixture table
+    box.appendChild(el("h4",null,`Fixture run · ${defensive ? "opponent attack rank (1 = scores most)" : "opponent defence rank (20 = concedes most)"}`));
+    const t = el("table","fx"); const th = el("tr"); ["GW","Out: "+o.web_name,"pts","In: "+n.web_name,"pts","w"].forEach(x=>th.appendChild(el("th",null,x))); t.appendChild(th);
+    const gws = [...new Set([...fo.map(f=>f.gw), ...fn.map(f=>f.gw)])].sort((a,b)=>a-b);
+    gws.forEach(gw => {
+      const a = fo.find(f=>f.gw===gw), b = fn.find(f=>f.gw===gw); const r = el("tr");
+      r.appendChild(el("td",null,"GW"+gw));
+      const cell = (f, pos, cls) => { const td = el("td", cls); if (!f){ td.textContent = "blank"; return td; } td.appendChild(document.createTextNode(oppLong(f.opp))); const d = difficulty(pos, f); if (d){ const c = el("span","dif "+d.cls, d.label); c.title = `${d.text} fixture: ${defensive ? "they score "+fmt(f.opp_xg??0,2)+" xG a game" : "they concede "+fmt(f.opp_xgc??0,2)+" xG a game"} (last 5)`; td.appendChild(c); } if (f.avail!=null && f.avail<1) td.appendChild(el("span","dif hard",Math.round(f.avail*100)+"% fit")); return td; };
+      r.appendChild(cell(a, o.position)); r.appendChild(el("td","n", a ? fmt(a.ep,1) : "0.0"));
+      r.appendChild(cell(b, n.position, "in")); r.appendChild(el("td","n in", b ? fmt(b.ep,1) : "0.0"));
+      r.appendChild(el("td","n", Math.round(((b||a)||{w:0}).w*100)+"%"));
+      t.appendChild(r);
+    });
+    box.appendChild(t);
+    // Component deltas
+    const wo = weightedBreakdown(o), wn = weightedBreakdown(n);
+    const keys = Object.keys(LABELS).filter(k => Math.abs((wn[k]||0)-(wo[k]||0)) > 0.05);
+    if (keys.length){
+      box.appendChild(el("h4",null,"Where the points come from (weighted, in minus out)"));
+      const d = el("div","delta");
+      keys.sort((a,b)=>Math.abs((wn[b]||0)-(wo[b]||0))-Math.abs((wn[a]||0)-(wo[a]||0))).forEach(k => { const v=(wn[k]||0)-(wo[k]||0); const sp=el("span", v>0?"up":"down"); sp.appendChild(document.createTextNode(LABELS[k]+" ")); sp.appendChild(el("b",null,(v>0?"+":"")+fmt(v,1))); d.appendChild(sp); });
+      box.appendChild(d);
+    }
+  });
+  // Money + hit
+  const money = el("p");
+  money.textContent = `${m.transfers===2 ? "Two transfers: the second one funds the first. " : ""}Price change ${m.cost_change>=0?"+":""}£${fmt(m.cost_change,1)}m, squad £${fmt(m.value_after,1)}m of £${fmt(budget,1)}m. `
+    + (free==null ? "" : m.hit>0 ? `You have ${free} free transfer${free===1?"":"s"}, so this costs a ${m.hit}-point hit: +${fmt(m.gain,1)} gross becomes ${m.net>=0?"+":""}${fmt(m.net,1)} net${m.worth_it?" — still worth it.":" — not worth it unless you bank a transfer first."}` : `Covered by your ${free} free transfer${free===1?"":"s"}: no hit.`);
+  box.appendChild(money);
+  const whole = el("p","hint");
+  whole.textContent = `The gain is measured on the whole team: the best eleven and captain are re-picked after the swap, so a signing that changes who starts or who wears the armband is credited for that too.`;
+  box.appendChild(whole);
+  return box;
+}
+
 function renderRating(){
   const box = document.getElementById("rating"), mv = document.getElementById("moves");
   box.replaceChildren(); mv.replaceChildren();
   const players = squadPlayers();
   const c = el("div","card"); c.appendChild(el("h2",null,"Rating"));
   if (players.length < 15){ c.appendChild(el("p","hint",`${15-players.length} more to add. Tap the empty slots.`)); box.appendChild(c); return; }
-  const bank = bankVal(), tv = teamValueVal(), opt = DATA.meta.optimal_points;
-  const lineup = bestEleven(players, state.formation), free = bestEleven(players);
+  const bank = bankVal(), tv = teamValueVal(), opt = OPT(), free = ftVal(), h = HORIZONS[metric];
+  const lineup = bestEleven(players, state.formation), freeShape = bestEleven(players);
   const rating = 100*lineup.points/opt;
   const k = el("dl","kpis");
-  [["rating","/100",fmt(rating,1)],["projected","pts",fmt(lineup.points,1)],["best £100m squad","pts",fmt(opt,1)],["captain","",BY[lineup.captain].web_name]].forEach(([t,u,v])=>{ const d=el("div","kpi"); d.appendChild(el("dt",null,t+(u?" "+u:""))); d.appendChild(el("dd",null,v)); k.appendChild(d); });
+  [["rating","/100",fmt(rating,1)],[h.long,"pts",fmt(lineup.points,1)],["best £100m squad","pts",fmt(opt,1)],["captain","",BY[lineup.captain].web_name]].forEach(([t,u,v])=>{ const d=el("div","kpi"); d.appendChild(el("dt",null,t+(u?" "+u:""))); d.appendChild(el("dd",null,v)); k.appendChild(d); });
   c.appendChild(k);
   const meter = el("div","meter"); const i = el("i"); i.style.width = Math.min(100,rating)+"%"; meter.appendChild(i); c.appendChild(meter);
-  if (free.points - lineup.points > 0.05) c.appendChild(el("p","tip",`${fname(free.formation)} with the same fifteen would project ${fmt(free.points,1)} (+${fmt(free.points-lineup.points,1)}). Auto-pick lineup does that.`));
+  if (freeShape.points - lineup.points > 0.05) c.appendChild(el("p","tip",`${fname(freeShape.formation)} with the same fifteen would project ${fmt(freeShape.points,1)} (+${fmt(freeShape.points-lineup.points,1)}). Auto-pick lineup does that.`));
   const budget = availableBudget(players, bank, tv);
   if (squadValue() > budget + 1e-9) c.appendChild(el("p","tip",`Squad costs £${fmt(squadValue(),1)}m against a budget of £${fmt(budget,1)}m. Set your team value if it has grown, or trim the squad.`));
   const flagged = players.filter(p=>p.availability<1);
@@ -545,26 +671,32 @@ function renderRating(){
   }
   box.appendChild(c);
 
-  const moves = suggestTransfers(players, DATA.players, bank, tv, state.formation, 5);
+  const moves = suggestTransfers(players, DATA.players, bank, tv, state.formation, 5, free);
   const mc = el("div","card"); mc.appendChild(el("h2",null,"Five moves that lift your rating"));
-  mc.appendChild(el("p","hint",`Every move keeps you inside £${fmt(budget,1)}m. Where the best upgrade costs more than you have, a second transfer funds it.`));
+  mc.appendChild(el("p","hint",`Ranked by gain over the ${h.long} net of any ${HIT()}-point hit (you have ${free} free transfer${free===1?"":"s"}). Every move keeps you inside £${fmt(budget,1)}m; where the best upgrade costs more than you have, a second transfer funds it. Tap "Why" for the fixture-by-fixture case.`));
   if (!moves.length) mc.appendChild(el("p","hint","No transfer inside your budget improves the projected eleven in this formation."));
   const list = el("div","moves");
   moves.forEach(m => {
-    const row = el("div","move"); row.appendChild(el("div","rk",m.rank));
+    const row = el("div","move"+(m.worth_it?"":" nogo")); row.appendChild(el("div","rk",m.rank));
     const who = el("div","who");
     m.out.forEach((o,idx) => {
       const pair = el("div","pair"); const n = m.in[idx];
       pair.appendChild(el("b",null,o.web_name)); if (o.availability<1) pair.appendChild(el("span","flag "+(o.availability===0?"out":"d"), o.availability===0?"OUT":"DOUBT"));
       pair.appendChild(el("span","arrow","→")); pair.appendChild(el("b",null,n.web_name)); pair.appendChild(el("span","pos "+n.position,n.position));
-      pair.appendChild(el("span","hint",`${n.team} ${n.home?"vs":"at"} ${n.opponent} · ${fmt(o.ep,1)} → ${fmt(n.ep,1)}`));
+      pair.appendChild(el("span","hint",`${n.team} ${oppLong(n.opponent)} · ${fmt(o.ep,1)} → ${fmt(n.ep,1)}`));
       if (idx===0 && m.transfers===2) pair.appendChild(el("span","two","2 TRANSFERS"));
       who.appendChild(pair);
     });
     who.appendChild(el("div","why",`${m.cost_change>=0?"+":""}£${fmt(m.cost_change,1)}m · squad £${fmt(m.value_after,1)}m of £${fmt(budget,1)}m · rating after ${fmt(100*m.points_after/opt,1)}/100${m.in.some(p=>p.news)?" · "+m.in.filter(p=>p.news).map(p=>p.news).join(" · "):""}`));
     row.appendChild(who);
-    const g = el("div","gain"); g.appendChild(el("b",null,"+"+fmt(m.gain))); g.appendChild(el("small",null,"team pts"));
-    const ap = el("button","btn apply","Apply"); ap.type="button"; ap.onclick=()=>{ m.out.forEach((o,idx)=>{ const s=state.slots.find(s=>s.code===o.code); if(s) s.code=m.in[idx].code; }); state.slots=buildSlots(state.formation, state.slots.map(s=>s.code).filter(Boolean)); update(); }; g.appendChild(ap);
+    const g = el("div","gain"); g.appendChild(el("b",null,"+"+fmt(m.gain))); g.appendChild(el("small",null,"team pts · "+h.short));
+    if (m.hit>0) g.appendChild(el("span","net "+(m.worth_it?"good":"bad"), `−${m.hit} hit → ${m.net>=0?"+":""}${fmt(m.net,1)} net${m.worth_it?"":" · not worth it"}`));
+    else g.appendChild(el("span","net","no hit"));
+    const btns = el("div"); btns.style.display="flex"; btns.style.gap=".35rem";
+    const why = el("button","btn whybtn","Why?"); why.type="button"; why.setAttribute("aria-expanded","false");
+    why.onclick = () => { const open = row.querySelector(".whyp"); if (open){ open.remove(); why.textContent="Why?"; why.setAttribute("aria-expanded","false"); } else { row.appendChild(whyPanel(m, free, budget)); why.textContent="Hide"; why.setAttribute("aria-expanded","true"); } };
+    const ap = el("button","btn apply","Apply"); ap.type="button"; ap.onclick=()=>{ m.out.forEach((o,idx)=>{ const s=state.slots.find(s=>s.code===o.code); if(s) s.code=m.in[idx].code; }); state.slots=buildSlots(state.formation, state.slots.map(s=>s.code).filter(Boolean)); document.getElementById("ft").value = Math.max(0, free - m.transfers); update(); };
+    btns.appendChild(why); btns.appendChild(ap); g.appendChild(btns);
     row.appendChild(g); list.appendChild(row);
   });
   mc.appendChild(list); mv.appendChild(mc);
@@ -604,9 +736,9 @@ function playerCard(p, opts={}){
   hd.appendChild(el("span","nm",p.web_name)); hd.appendChild(el("span","pos "+p.position,p.position));
   if (opts.captain) hd.appendChild(el("span","cap","CAPTAIN"));
   if (p.availability<1) hd.appendChild(el("span","flag "+(p.availability===0?"out":"d"), p.availability===0?"OUT":(p.chance!=null?p.chance+"%":"DOUBT")));
-  hd.appendChild(el("span","hint",`${p.team} ${p.home?"vs":"at"} ${p.opponent}${p.fixtures>1?" (+1)":""} · £${fmt(p.price,1)}m · ${fmt(p.owned_pct,1)}% owned`));
+  hd.appendChild(el("span","hint",`${p.team} ${oppLong(p.opponent)} · £${fmt(p.price,1)}m · ${fmt(p.owned_pct,1)}% owned`));
   const nums = el("div","nums");
-  [["projected",fmt(p.ep)],["fpl says",fmt(p.fpl_ep,1)],["start prob",fmt(p.p60)]].forEach(([k,v])=>{ const s=el("span"); s.appendChild(el("b",null,v)); s.appendChild(el("i",null,k)); nums.appendChild(s); });
+  [["next gw",fmt(p.ep1)],["next 5",fmt(p.ep5,1)],["fpl says",fmt(p.fpl_ep,1)],["start prob",fmt(p.p60)]].forEach(([k,v])=>{ const s=el("span"); s.appendChild(el("b",null,v)); s.appendChild(el("i",null,k)); nums.appendChild(s); });
   hd.appendChild(nums); c.appendChild(hd);
   breakdownBar(p.breakdown).forEach(n=>c.appendChild(n));
   if (p.news) c.appendChild(el("p","news",p.news));
@@ -643,11 +775,39 @@ function renderStatus(){
   const left = hrs>48 ? Math.floor(hrs/24)+"d "+Math.round(hrs%24)+"h" : Math.floor(hrs)+"h "+Math.round((hrs%1)*60)+"m";
   [["season",m.season],["gameweek",m.gameweek],["deadline",dl.toUTCString().replace(":00 GMT"," UTC")],["time left",left],["data refreshed",new Date(m.captured_at).toUTCString().replace(":00 GMT"," UTC")],["flagged",m.flagged+" players"]].forEach(([k,v])=>{ const x=el("span"); x.appendChild(document.createTextNode(k+" ")); x.appendChild(el("b",null,v)); s.appendChild(x); });
 }
+function renderBacktest(){
+  const box = document.getElementById("test"); box.replaceChildren(); const bt = DATA.backtest;
+  box.appendChild(el("h2",null,"How the model would have done from GW1"));
+  if (!bt){ box.appendChild(el("p","hint","The season replay has not been run yet (fpl simulate).")); return; }
+  const gws = bt.gameweeks;
+  box.appendChild(el("p","hint",`A squad built from scratch at the GW${gws[0].gameweek} deadline with £100m, using only what was knowable then, then played with FPL's rules: one free transfer a week from GW${gws[0].gameweek+1}, bankable, never a points hit. The lineup and captain each week are the model's best eleven on that gameweek's projection; transfers are chosen on the weighted ${HORIZONS["ep"+bt.rules.horizon]?.long||"next 5 gameweeks"} and only made when worth at least ${bt.rules.min_gain} weighted points. Scored on real points with FPL's automatic substitutions.`));
+  const k = el("dl","kpis");
+  const beat = bt.total - bt.average_total;
+  [["model total",bt.total],["average manager",bt.average_total],["vs average",(beat>=0?"+":"")+beat],["best score each week",bt.highest_total]].forEach(([t,v])=>{ const d=el("div","kpi"); d.appendChild(el("dt",null,t)); d.appendChild(el("dd",null,v)); k.appendChild(d); });
+  box.appendChild(k);
+  const list = el("div","bt");
+  gws.forEach(g => {
+    const c = el("div","card"); const grid = el("div","btgw");
+    const pts = el("div","pts", String(g.points)); pts.appendChild(el("small",null,`GW${g.gameweek}`)); grid.appendChild(pts);
+    const side = el("div");
+    side.appendChild(el("div","meta",`average ${g.average ?? "–"} · highest ${g.highest ?? "–"} · projected ${fmt(g.projected,1)} · £${fmt(g.value,1)}m + £${fmt(g.bank,1)}m bank · ${g.free_transfers} free transfer${g.free_transfers===1?"":"s"} banked after`));
+    const name = code => (BY[code] && BY[code].web_name) || ("#"+code);
+    const tr = el("div","tr");
+    if (g.transfers.length) g.transfers.forEach(t => { tr.appendChild(document.createTextNode(`Transfer: ${t.out_names.join(" + ")} → ${t.in_names.join(" + ")} (+${fmt(t.gain,1)} weighted pts, ${t.cost_change>=0?"+":""}£${fmt(t.cost_change,1)}m)`)); });
+    else tr.textContent = gws[0]===g ? "Squad built." : "Rolled the transfer.";
+    side.appendChild(tr);
+    side.appendChild(el("div","meta",`Captain ${name(g.captain)}. XI: ${g.starters.map(name).join(", ")}. Bench: ${g.bench.map(name).join(", ")}.`));
+    if (g.autosubs.length) side.appendChild(el("div","meta",`Auto-subs: ${g.autosubs.map(a=>`${name(a.out)} → ${name(a.in)}`).join(", ")}.`));
+    grid.appendChild(side); c.appendChild(grid); list.appendChild(c);
+  });
+  box.appendChild(list);
+  if (bt.note) box.appendChild(el("p","tip",bt.note));
+}
 document.querySelectorAll("nav [role=tab]").forEach(b => b.addEventListener("click", () => {
   document.querySelectorAll("nav [role=tab]").forEach(x=>x.setAttribute("aria-selected", x===b));
-  ["rate","best","all"].forEach(t => document.getElementById("tab-"+t).hidden = (t!==b.dataset.tab));
+  ["rate","best","all","test"].forEach(t => document.getElementById("tab-"+t).hidden = (t!==b.dataset.tab));
 }));
-["bank","tv"].forEach(id => document.getElementById(id).addEventListener("input", () => { renderPitch(); renderRating(); save(); }));
+["bank","tv","ft"].forEach(id => document.getElementById(id).addEventListener("input", () => { renderPitch(); renderRating(); save(); }));
 document.getElementById("clear").addEventListener("click", () => { state.slots = buildSlots(state.formation, []); update(); });
 document.getElementById("template").addEventListener("click", templateTeam);
 document.getElementById("autopick").addEventListener("click", () => { const ps=squadPlayers(); if (ps.length===15) setFormation(bestEleven(ps).formation); });
@@ -655,10 +815,11 @@ document.getElementById("autopick").addEventListener("click", () => { const ps=s
 (async function init(){
   try { const r = await fetch("data/live.json"); if (!r.ok) throw new Error(r.status); DATA = await r.json(); }
   catch (e) { document.getElementById("status").textContent = "No live data yet. Run: fpl snapshot && fpl live"; return; }
-  DATA.players.forEach(p => BY[p.code] = p);
-  renderStatus();
+  DATA.players.forEach(p => { BY[p.code] = p; if (p.ep1==null) p.ep1 = p.ep; if (p.ep3==null) p.ep3 = p.ep; if (p.ep5==null) p.ep5 = p.ep; });
   if (!load()) state.slots = buildSlots(state.formation, []);
-  update(); renderBest(); renderAll();
+  DATA.players.forEach(p => p.ep = p[metric]);
+  renderStatus(); renderHorizon();
+  update(); renderBest(); renderAll(); renderBacktest();
 })();
 </script>
 </body>

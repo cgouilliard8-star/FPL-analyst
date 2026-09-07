@@ -84,7 +84,20 @@ def fetch_snapshot(*, session: requests.Session | None = None, workers: int = WO
         "captured_at": datetime.now(timezone.utc).isoformat(),
         "total_players": bootstrap.get("total_players"),
         "events": [
-            {k: e[k] for k in ("id", "name", "deadline_time", "finished", "is_current", "is_next")}
+            {
+                k: e.get(k)
+                for k in (
+                    "id",
+                    "name",
+                    "deadline_time",
+                    "finished",
+                    "is_current",
+                    "is_next",
+                    "average_entry_score",
+                    "highest_score",
+                    "most_captained",
+                )
+            }  # fmt: skip
             for e in bootstrap["events"]
         ],
         "teams": [
@@ -162,12 +175,17 @@ def _fixture_gameweeks(snapshot: dict) -> dict[int, int | None]:
     return {f["id"]: f["event"] for f in snapshot["fixtures"]}
 
 
-def snapshot_to_gameweeks(snapshot: dict, season: str = CURRENT_SEASON) -> pd.DataFrame:
+def snapshot_to_gameweeks(
+    snapshot: dict, season: str = CURRENT_SEASON, *, before_gameweek: int | None = None
+) -> pd.DataFrame:
     """Finished fixtures of the current season, one row per player per fixture.
 
     Output matches the archive's ``merged_gw.csv`` columns, so the same silver and
     feature code runs on it unchanged. ``xP`` is left null: the API does not keep
     its historical expected-points figures.
+
+    ``before_gameweek`` drops everything from that gameweek onward, which is how a
+    backtest reconstructs what was knowable at an earlier deadline.
     """
     names = _team_names(snapshot)
     by_id = {e["id"]: e for e in snapshot["elements"]}
@@ -178,6 +196,8 @@ def snapshot_to_gameweeks(snapshot: dict, season: str = CURRENT_SEASON) -> pd.Da
         if element is None:
             continue
         for h in history:
+            if before_gameweek is not None and h["round"] >= before_gameweek:
+                continue
             row = dict(h)
             row["element"] = int(element_id)
             row["code"] = element["code"]
@@ -190,7 +210,7 @@ def snapshot_to_gameweeks(snapshot: dict, season: str = CURRENT_SEASON) -> pd.Da
 
     frame = pd.DataFrame(rows)
     if frame.empty:
-        return frame
+        return pd.DataFrame(columns=["code", "season", "GW", "kickoff_time", "round"])
     frame["season"] = season
     frame["kickoff_time"] = pd.to_datetime(frame["kickoff_time"], utc=True, errors="coerce")
     for column in (
@@ -216,16 +236,31 @@ def availability_multiplier(status: str, chance: float | None) -> float:
     return 1.0
 
 
-def snapshot_to_upcoming(snapshot: dict, season: str = CURRENT_SEASON) -> pd.DataFrame:
-    """One row per player per fixture in the next gameweek, with outcomes unknown.
+def snapshot_to_upcoming(
+    snapshot: dict,
+    season: str = CURRENT_SEASON,
+    *,
+    gameweeks: list[int] | None = None,
+    as_of_gameweek: int | None = None,
+) -> pd.DataFrame:
+    """One row per player per fixture for the gameweeks to be projected.
 
-    These are the rows the model predicts. They carry fixture context (opponent,
-    venue, kickoff), the current price and ownership, and the availability signal.
+    By default that is the next gameweek only. Passing ``gameweeks`` projects a run
+    of them (the fixture list is known for the whole season), which is what the
+    multi-week horizon and the transfer planner use. Rows carry fixture context
+    (opponent, venue, kickoff), price and ownership, and the availability signal.
     Outcome columns are absent -- there is nothing to leak.
+
+    ``as_of_gameweek`` reconstructs an earlier deadline for a backtest: price and
+    ownership are taken from the player's fixture row in that gameweek rather than
+    from today's registry, and availability is unknown (1.0) because the flags are
+    not archived. The current registry is used only for identity.
     """
-    gameweek = next_gameweek(snapshot)
     names = _team_names(snapshot)
-    fixtures = [f for f in snapshot["fixtures"] if f["event"] == gameweek["id"]]
+    if gameweeks is None:
+        gameweeks = [as_of_gameweek] if as_of_gameweek else [next_gameweek(snapshot)["id"]]
+    wanted = set(gameweeks)
+    fixtures = [f for f in snapshot["fixtures"] if f["event"] in wanted]
 
     # The archive stores ownership as a manager COUNT; bootstrap only offers a
     # percentage. Feeding the percentage through as if it were a count put every live
@@ -233,9 +268,20 @@ def snapshot_to_upcoming(snapshot: dict, season: str = CURRENT_SEASON) -> pd.Dat
     # Prefer the count from the player's most recent fixture row; fall back to
     # percentage x total managers.
     latest_selected: dict[int, float] = {}
+    as_of_value: dict[int, float] = {}
     for element_id, history in snapshot.get("history", {}).items():
-        if history:
-            latest_selected[int(element_id)] = float(history[-1].get("selected") or 0)
+        eid = int(element_id)
+        if as_of_gameweek:
+            prior = [h for h in history if h["round"] < as_of_gameweek]
+            at = [h for h in history if h["round"] == as_of_gameweek]
+            if at:
+                as_of_value[eid] = float(at[0].get("value") or 0)
+                latest_selected[eid] = float(at[0].get("selected") or 0)
+            elif prior:
+                as_of_value[eid] = float(prior[-1].get("value") or 0)
+                latest_selected[eid] = float(prior[-1].get("selected") or 0)
+        elif history:
+            latest_selected[eid] = float(history[-1].get("selected") or 0)
     total_players = float(snapshot.get("total_players") or 0)
     by_team: dict[int, list[dict]] = {}
     for f in fixtures:
@@ -247,12 +293,21 @@ def snapshot_to_upcoming(snapshot: dict, season: str = CURRENT_SEASON) -> pd.Dat
         position = ELEMENT_TYPE_TO_POSITION.get(e["element_type"])
         if position not in ("GK", "DEF", "MID", "FWD"):
             continue
+        if as_of_gameweek:
+            value = as_of_value.get(e["id"])
+            if value is None:
+                continue  # not in the game at that deadline
+            availability, status, chance, news = 1.0, "a", None, ""
+        else:
+            value = e["now_cost"]
+            status, chance, news = e["status"], e["chance_of_playing_next_round"], e["news"] or ""
+            availability = availability_multiplier(status, chance)
         for f in by_team.get(e["team"], []):
             home = f["team_h"] == e["team"]
             rows.append(
                 {
                     "season": season,
-                    "GW": gameweek["id"],
+                    "GW": f["event"],
                     "element": e["id"],
                     "code": e["code"],
                     "name": f"{e['first_name']} {e['second_name']}".strip(),
@@ -263,18 +318,16 @@ def snapshot_to_upcoming(snapshot: dict, season: str = CURRENT_SEASON) -> pd.Dat
                     "opponent_team": f["team_a"] if home else f["team_h"],
                     "was_home": home,
                     "kickoff_time": f["kickoff_time"],
-                    "value": e["now_cost"],
+                    "value": value,
                     "selected": latest_selected.get(
                         e["id"], float(e["selected_by_percent"] or 0) / 100.0 * total_players
                     ),
                     "selected_by_percent": float(e["selected_by_percent"] or 0),
-                    "status": e["status"],
-                    "chance_of_playing": e["chance_of_playing_next_round"],
-                    "news": e["news"] or "",
-                    "availability": availability_multiplier(
-                        e["status"], e["chance_of_playing_next_round"]
-                    ),
-                    "fpl_ep_next": float(e["ep_next"] or 0),
+                    "status": status,
+                    "chance_of_playing": chance,
+                    "news": news,
+                    "availability": availability,
+                    "fpl_ep_next": float(e["ep_next"] or 0) if not as_of_gameweek else 0.0,
                 }
             )
 
@@ -282,11 +335,24 @@ def snapshot_to_upcoming(snapshot: dict, season: str = CURRENT_SEASON) -> pd.Dat
     frame["kickoff_time"] = pd.to_datetime(frame["kickoff_time"], utc=True, errors="coerce")
     log.info(
         "GW%s: %d player-fixture rows, %d flagged as doubtful or out",
-        gameweek["id"],
+        ",".join(str(g) for g in sorted(wanted)),
         len(frame),
         int((frame["availability"] < 1).sum()),
     )
     return frame
+
+
+def gameweek_averages(snapshot: dict) -> dict[int, dict]:
+    """Average and top manager scores per finished gameweek, from the API calendar."""
+    return {
+        e["id"]: {
+            "average": e.get("average_entry_score") or 0,
+            "highest": e.get("highest_score"),
+            "deadline": e.get("deadline_time"),
+        }
+        for e in snapshot["events"]
+        if e.get("finished")
+    }
 
 
 def team_id_map(snapshot: dict, season: str = CURRENT_SEASON) -> pd.DataFrame:

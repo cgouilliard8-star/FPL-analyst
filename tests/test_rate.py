@@ -174,3 +174,56 @@ def test_best_eleven_can_be_pinned_to_a_formation():
 def test_rate_and_suggest_rejects_unknown_codes():
     with pytest.raises(ValueError, match="unknown player codes"):
         rate.rate_and_suggest([9001, 9002, 9003], pool())
+
+
+def test_metric_switches_the_projection_the_team_is_rated_on():
+    frame = pool()
+    frame["ep5"] = frame["expected_points"] * 3 + (frame["code"] % 5)  # reshuffles the order
+    squad = legal_squad(frame)
+    one = rate.rate_squad(squad)
+    five = rate.rate_squad(squad, metric="ep5")
+    assert five["points"] > one["points"]
+    assert five["points"] == pytest.approx(rate.best_eleven(squad, metric="ep5").points)
+    with pytest.raises(ValueError, match="metric"):
+        rate.rate_squad(squad, metric="ep9")
+
+
+def test_transfers_beyond_the_free_ones_cost_four_points_and_rank_by_net():
+    frame = pool()
+    squad = legal_squad(frame)
+    free = rate.suggest_transfers(squad, frame, bank=50.0, top_n=5)
+    charged = rate.suggest_transfers(squad, frame, bank=50.0, top_n=5, free_transfers=0)
+    assert all(m["hit"] == 0 and m["net"] == m["gain"] for m in free)
+    assert all(m["hit"] == 4 * m["transfers"] for m in charged)
+    assert all(m["net"] == pytest.approx(m["gain"] - m["hit"]) for m in charged)
+    assert all(m["worth_it"] == (m["net"] > 0) for m in charged)
+    nets = [m["net"] for m in charged]
+    assert nets == sorted(nets, reverse=True)
+    one_free = rate.suggest_transfers(squad, frame, bank=50.0, top_n=5, free_transfers=1)
+    assert all(m["hit"] == 4 * (m["transfers"] - 1) for m in one_free)
+
+
+def test_season_sim_autosubs_and_vice_captain():
+    from fpl.evaluate import season_sim
+
+    squad = legal_squad(pool())
+    rows = rate._to_players(squad)
+    eleven = rate._best_eleven(rows)
+    gw = 1
+    # everyone plays and scores 2, except the captain and one starting defender
+    starters = squad[squad["code"].isin(eleven.starters)]
+    absent_def = int(starters[starters["position"] == "DEF"]["code"].iloc[0])
+    actual = pd.DataFrame(
+        {
+            "code": squad["code"],
+            "GW": gw,
+            "total_points": [0 if c in (eleven.captain, absent_def) else 2 for c in squad["code"]],
+            "minutes": [0 if c in (eleven.captain, absent_def) else 90 for c in squad["code"]],
+        }
+    ).set_index(["code", "GW"])
+    total, played, captain, bench, autosubs, _ = season_sim._play(rows, actual, gw)
+    assert captain != eleven.captain and captain in played
+    assert {s["out"] for s in autosubs} == {eleven.captain, absent_def}
+    assert len(played) == 11 and set(played).isdisjoint(bench)
+    # 11 players x 2, plus the vice captain doubled
+    assert total == 11 * 2 + 2

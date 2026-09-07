@@ -18,7 +18,15 @@ from itertools import product
 
 import pandas as pd
 
-from fpl.config import MAX_PER_CLUB, SQUAD_QUOTA, SQUAD_SIZE, XI_MAX, XI_MIN, XI_SIZE
+from fpl.config import (
+    MAX_PER_CLUB,
+    SQUAD_QUOTA,
+    SQUAD_SIZE,
+    TRANSFER_HIT,
+    XI_MAX,
+    XI_MIN,
+    XI_SIZE,
+)
 
 POSITIONS = ("GK", "DEF", "MID", "FWD")
 
@@ -36,6 +44,10 @@ FORMATIONS: tuple[dict[str, int], ...] = tuple(
 
 REQUIRED = ("code", "position", "team", "price", "expected_points")
 
+# Projection columns a manager can rate against: the next gameweek alone, or the
+# deadline-weighted sum over the next three or five.
+METRICS = ("expected_points", "ep1", "ep3", "ep5")
+
 Player = dict  # code, position, team, price, expected_points, availability?
 
 
@@ -48,7 +60,16 @@ class Eleven:
     bench: list[int] = field(default_factory=list)
 
 
-def _to_players(frame: pd.DataFrame) -> list[Player]:
+def _to_players(frame: pd.DataFrame, metric: str = "expected_points") -> list[Player]:
+    """Plain rows with ``expected_points`` set to the chosen ``metric`` column."""
+    if metric not in METRICS:
+        raise ValueError(f"metric must be one of {METRICS}, got {metric!r}")
+    if metric != "expected_points":
+        if metric not in frame.columns:
+            raise ValueError(f"projections have no {metric!r} column")
+        frame = frame.drop(columns=["expected_points"], errors="ignore").rename(
+            columns={metric: "expected_points"}
+        )
     missing = set(REQUIRED) - set(frame.columns)
     if missing:
         raise ValueError(f"missing columns {sorted(missing)}")
@@ -105,8 +126,10 @@ def _best_eleven(squad: list[Player], formation: dict[str, int] | None = None) -
     return best
 
 
-def best_eleven(squad: pd.DataFrame, formation: dict[str, int] | None = None) -> Eleven:
-    players = _to_players(squad)
+def best_eleven(
+    squad: pd.DataFrame, formation: dict[str, int] | None = None, metric: str = "expected_points"
+) -> Eleven:
+    players = _to_players(squad, metric)
     _check_squad(players)
     return _best_eleven(players, formation)
 
@@ -119,10 +142,12 @@ def _rating(points: float, optimal_points: float | None) -> float | None:
     return round(100.0 * points / optimal_points, 1)
 
 
-def rate_squad(squad: pd.DataFrame, optimal_points: float | None = None) -> dict:
+def rate_squad(
+    squad: pd.DataFrame, optimal_points: float | None = None, metric: str = "expected_points"
+) -> dict:
     """Projected points for the squad's best eleven, and a rating against the best
     £100m squad this week (100 = matches it; above 100 is possible for richer squads)."""
-    players = _to_players(squad)
+    players = _to_players(squad, metric)
     _check_squad(players)
     eleven = _best_eleven(players)
     return {
@@ -178,6 +203,8 @@ def suggest_transfers(
     team_value: float | None = None,
     cap: float = BUDGET_CAP,
     funding_candidates: int = 8,
+    metric: str = "expected_points",
+    free_transfers: int | None = None,
 ) -> list[dict]:
     """The ``top_n`` moves that most raise the squad's projected points under the cap.
 
@@ -187,8 +214,13 @@ def suggest_transfers(
     and still raises the team. Every move is scored by re-solving the best eleven of
     the resulting fifteen (within ``formation`` if given); the gain is the change in
     the team's points, and no signing is repeated across the ranked list.
+
+    ``metric`` picks which projection the team is rated on (next gameweek, or the
+    weighted next three or five). With ``free_transfers`` given, each transfer beyond
+    that number costs ``TRANSFER_HIT`` points, moves are ranked by the gain net of
+    that hit, and each carries ``worth_it`` saying whether it still comes out ahead.
     """
-    players = _to_players(squad)
+    players = _to_players(squad, metric)
     _check_squad(players)
     base = _best_eleven(players, formation).points
     value = float(team_value) if team_value else sum(p["price"] for p in players)
@@ -196,7 +228,7 @@ def suggest_transfers(
     owned = {p["code"] for p in players}
 
     by_position: dict[str, list[Player]] = {p: [] for p in POSITIONS}
-    for c in _to_players(pool):
+    for c in _to_players(pool, metric):
         if c["code"] not in owned:
             by_position[c["position"]].append(c)
 
@@ -249,7 +281,9 @@ def suggest_transfers(
         if best:
             doubles.append(best)
 
-    results = sorted(singles + doubles, key=lambda r: -r["gain"])
+    for r in singles + doubles:
+        _apply_hit(r, free_transfers)
+    results = sorted(singles + doubles, key=lambda r: -r["net"])
     seen_in: set[int] = set()
     ranked: list[dict] = []
     for r in results:
@@ -281,6 +315,17 @@ def _move(
     }
 
 
+def _apply_hit(move: dict, free_transfers: int | None) -> None:
+    """Charge the points hit for transfers beyond the free ones and record the net."""
+    if free_transfers is None:
+        hit = 0
+    else:
+        hit = TRANSFER_HIT * max(0, move["transfers"] - int(free_transfers))
+    move["hit"] = hit
+    move["net"] = round(move["gain"] - hit, 2)
+    move["worth_it"] = move["net"] > 1e-9
+
+
 def rate_and_suggest(
     codes: list[int],
     projections: pd.DataFrame,
@@ -289,16 +334,18 @@ def rate_and_suggest(
     team_value: float | None = None,
     top_n: int = 5,
     optimal_points: float | None = None,
+    metric: str = "expected_points",
+    free_transfers: int | None = None,
 ) -> dict:
     """Convenience wrapper: from fifteen player codes to a rating and ranked moves."""
     squad = projections[projections["code"].isin(codes)].copy()
     unknown = set(codes) - set(squad["code"])
     if unknown:
         raise ValueError(f"unknown player codes: {sorted(unknown)}")
-    rating = rate_squad(squad, optimal_points)
+    rating = rate_squad(squad, optimal_points, metric)
     rating["suggestions"] = suggest_transfers(
         squad, projections, bank=bank, top_n=top_n, optimal_points=optimal_points,
-        team_value=team_value,
+        team_value=team_value, metric=metric, free_transfers=free_transfers,
     )  # fmt: skip
     rating["budget"] = round(available_budget(_to_players(squad), bank, team_value), 1)
     rating["value"] = round(float(squad["price"].sum()), 1)

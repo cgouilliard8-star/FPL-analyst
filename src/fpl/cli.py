@@ -116,6 +116,29 @@ def _snapshot(args: argparse.Namespace) -> int:
     return 0
 
 
+def _simulate(args: argparse.Namespace) -> int:
+    import json
+
+    from fpl.data.fpl_api import load_latest_snapshot
+    from fpl.evaluate.season_sim import simulate_season
+    from fpl.report.live import SEASON_SIM_PATH
+
+    gameweeks = tuple(range(args.from_gw, args.to_gw + 1))
+    result = simulate_season(load_latest_snapshot(), gameweeks=gameweeks)
+    SEASON_SIM_PATH.parent.mkdir(parents=True, exist_ok=True)
+    SEASON_SIM_PATH.write_text(json.dumps(result, indent=1))
+    for g in result["gameweeks"]:
+        moves = "; ".join(
+            f"{', '.join(t['out_names'])} -> {', '.join(t['in_names'])}" for t in g["transfers"]
+        )
+        print(
+            f"GW{g['gameweek']}: {g['points']} pts (average {g['average']}, "
+            f"highest {g['highest']}) {moves or 'rolled'}"
+        )
+    print(f"total {result['total']} vs average {result['average_total']} -> {SEASON_SIM_PATH}")
+    return 0
+
+
 def _live(args: argparse.Namespace) -> int:
     from fpl.report.live import build_live, write_live
 
@@ -197,6 +220,15 @@ def main(argv: list[str] | None = None) -> int:
     )
     live.add_argument("--no-explain", action="store_true", help="skip rationale generation")
     live.set_defaults(func=_live)
+
+    sim = sub.add_parser(
+        "simulate",
+        parents=[common],
+        help="replay the season from GW1 with one free transfer a week, scored on real points",
+    )
+    sim.add_argument("--from-gw", type=int, default=1)
+    sim.add_argument("--to-gw", type=int, default=3)
+    sim.set_defaults(func=_simulate)
 
     args = parser.parse_args(argv)
     logging.basicConfig(
