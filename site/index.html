@@ -194,7 +194,10 @@
   .legend i{display:inline-block;width:8px;height:8px;border-radius:2px;margin-right:.3rem;font-style:normal}
   .news{font-size:.82rem;color:var(--warn)}
   .rat{color:var(--ink-2);font-size:.88rem;margin:.4rem 0 0}
-  .money{grid-template-columns:1fr 1fr 1fr 1fr}
+  .money{grid-template-columns:1fr 1fr 1fr 1fr;margin-bottom:.5rem}
+  .toolbar{margin-bottom:.9rem}
+  .chips{display:flex;flex-wrap:wrap;gap:.4rem 1.5rem;align-items:center}
+  .chips .hzrow{margin:0}
   .hzrow{display:flex;align-items:center;gap:.5rem;flex-wrap:wrap;margin-bottom:.6rem}
   .hzrow .lbl{font-family:var(--m);font-size:.6rem;letter-spacing:.12em;text-transform:uppercase;color:var(--ink-3)}
   .move{grid-template-columns:1.8rem 1fr auto;grid-template-areas:"rk who gain" "why why why"}
@@ -309,16 +312,20 @@
 
   <main>
     <section id="tab-rate">
-      <div class="builder">
-        <div class="left">
+      <div class="toolbar">
           <div class="money">
             <div class="mbox"><label for="tv">Team value £m</label><input type="number" id="tv" step="0.1" min="0" placeholder="100.0" inputmode="decimal"></div>
             <div class="mbox"><label for="bank">In the bank £m</label><input type="number" id="bank" step="0.1" min="0" value="0.0" inputmode="decimal"></div>
             <div class="mbox"><label for="ft">Free transfers</label><input type="number" id="ft" step="1" min="0" max="5" value="1" inputmode="numeric"></div>
             <div class="mbox"><label>Budget left</label><div class="big" id="left">£0.0m</div></div>
           </div>
-          <div class="hzrow"><span class="lbl">Rate over</span><div class="forms" id="hz" role="group" aria-label="Horizon" style="margin:0"></div></div>
-          <div class="forms" id="forms" role="group" aria-label="Formation"></div>
+          <div class="chips">
+            <div class="hzrow"><span class="lbl">Rate over</span><div class="forms" id="hz" role="group" aria-label="Horizon" style="margin:0"></div></div>
+            <div class="hzrow"><span class="lbl">Formation</span><div class="forms" id="forms" role="group" aria-label="Formation" style="margin:0"></div></div>
+          </div>
+      </div>
+      <div class="builder">
+        <div class="left">
           <div class="pitchwrap">
             <div class="banner"><span id="bnr-left">SQUAD 0 / 15</span><span id="bnr-right">BUDGET £100.0m</span></div>
             <div class="pitch" id="pitch">
@@ -1199,7 +1206,10 @@ function applyData(data, got){
 })();
 document.getElementById("refresh").addEventListener("click", async () => {
   const b = document.getElementById("refresh"); b.disabled = true; b.textContent = "Refreshing…";
+  document.getElementById("notices").replaceChildren();
   try {
+    if (typeof EMBEDDED !== "undefined"){ notice("ok", "This file has its data built in (refreshed " + new Date(DATA.meta.captured_at).toUTCString().replace(":00 GMT"," UTC") + "). For newer projections open the online site — it refreshes itself every morning."); return; }
+    if (location.protocol === "file:"){ notice("warn", "Refresh only works on the online site or when the site folder is served locally (cd site && python3 -m http.server 8000). Opened from a folder, this page can only show the copy it saved earlier."); return; }
     const got = await loadData();
     if (!got.data || got.cached){ notice("crit", "Could not fetch a newer copy: " + (got.why||"no data") + ". Showing what you already had."); }
     else { const was = DATA && DATA.meta.captured_at; applyData(got.data, got); notice(was===got.data.meta.captured_at ? "ok" : "ok", was===got.data.meta.captured_at ? "You already had the latest data (refreshed " + new Date(got.data.meta.captured_at).toUTCString().replace(":00 GMT"," UTC") + "). New data lands every morning around 06:30 UTC and again on Saturday mornings." : "Updated to the projections refreshed " + new Date(got.data.meta.captured_at).toUTCString().replace(":00 GMT"," UTC") + "."); }
