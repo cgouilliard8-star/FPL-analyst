@@ -25,3 +25,14 @@ def test_clean_sheet_points_match_fpl_rules():
 def test_squad_cannot_be_bought_from_one_club():
     # 15 players, max 3 per club, so at least 5 clubs must be represented.
     assert config.SQUAD_SIZE / config.MAX_PER_CLUB >= 5
+
+
+def test_importing_config_does_not_touch_the_filesystem(tmp_path, monkeypatch):
+    """Data directories are created by loaders on demand, never at import."""
+    import importlib
+
+    monkeypatch.setenv("FPL_DATA_DIR", str(tmp_path / "fresh"))
+    importlib.reload(config)
+    assert not (tmp_path / "fresh").exists()
+    config.ensure_data_dirs()
+    assert (tmp_path / "fresh" / "bronze").is_dir()

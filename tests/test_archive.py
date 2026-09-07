@@ -45,6 +45,12 @@ def test_fetch_season_rejects_missing_columns():
         archive.fetch_season("2024-25", session=_FakeSession(text))
 
 
+def test_fetch_players_rejects_missing_columns():
+    text = pd.DataFrame([{"id": 1}]).to_csv(index=False)
+    with pytest.raises(ValueError, match="player registry is missing"):
+        archive.fetch_players("2024-25", session=_FakeSession(text))
+
+
 def test_required_columns_include_the_target():
     # If total_points ever drops out of the contract, there is nothing to learn.
     assert "total_points" in archive.REQUIRED_COLUMNS

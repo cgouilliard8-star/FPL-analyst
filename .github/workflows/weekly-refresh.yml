@@ -1,20 +1,33 @@
 name: weekly refresh
 
-# The vaastav archive stopped weekly updates after 2024-25, so this job IS the
+# The vaastav archive stopped weekly updates after 2024-25, so this job is the
 # in-season data source. It runs before each gameweek deadline, refreshes data,
 # regenerates projections and publishes the dashboard.
+#
+# The live collector (fpl.data.fpl_api) is the next piece of work. Until it lands,
+# the job exercises the archive-driven pipeline end to end so the deploy path is
+# known to work.
 on:
   schedule:
     - cron: "0 9 * * 4"   # Thursdays 09:00 UTC, ahead of Friday deadlines
   workflow_dispatch:
+    inputs:
+      gameweek:
+        description: "Gameweek to publish"
+        required: false
+        default: "38"
 
 permissions:
   contents: read
   pages: write
   id-token: write
 
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
 jobs:
-  refresh:
+  build:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -24,20 +37,27 @@ jobs:
           cache: pip
       - run: pip install -e ".[dev,llm]"
 
-      # Phases 01-07 fill these in. Kept as explicit steps so the shape of the
-      # weekly job is visible from day one.
-      - name: Snapshot live data
-        run: echo "phase 01 - fpl snapshot"
-      - name: Build features
-        run: echo "phase 02 - fpl features"
-      - name: Predict
-        run: echo "phase 04 - fpl predict"
-      - name: Optimise squad
-        run: echo "phase 05 - fpl optimise"
-      - name: Explain picks
-        run: echo "phase 06 - fpl explain"
+      - name: Data layers
+        run: |
+          fpl bootstrap
+          fpl silver
+          fpl features
+
+      - name: Projections and dashboard payload
         env:
           ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
-          ODDS_API_KEY: ${{ secrets.ODDS_API_KEY }}
-      - name: Publish
-        run: echo "phase 07 - fpl publish"
+        run: fpl publish ${{ github.event.inputs.gameweek || '38' }}
+
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: site
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@v4

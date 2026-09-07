@@ -12,8 +12,13 @@ BRONZE = DATA_DIR / "bronze"  # immutable, deadline-stamped snapshots
 SILVER = DATA_DIR / "silver"  # canonical, entity-resolved
 GOLD = DATA_DIR / "gold"  # leak-free feature store
 
-for _d in (BRONZE, SILVER, GOLD):
-    _d.mkdir(parents=True, exist_ok=True)
+
+def ensure_data_dirs() -> None:
+    """Create the data layers. Called by loaders, not at import time, so importing
+    the package never writes to disk."""
+    for layer in (BRONZE, SILVER, GOLD):
+        layer.mkdir(parents=True, exist_ok=True)
+
 
 # Seasons used for training.
 #
@@ -40,7 +45,7 @@ DEFENSIVE_CONTRIBUTION_POINTS = 2
 # Defensive-contribution thresholds (CBIT for defenders, CBIRT for others).
 # NOTE: this rule arrived in 2025-26, so the column does not exist in any season we
 # train on. The component is implemented and wired into the combiner, but contributes
-# zero until 2025-26+ data is present. See models/defensive.py.
+# zero until 2025-26+ data is present. See models/combine.py.
 DC_THRESHOLD = {"GK": None, "DEF": 10, "MID": 12, "FWD": 12}
 SAVES_PER_POINT = 3
 CONCEDED_PER_MINUS_ONE = 2  # GK/DEF only

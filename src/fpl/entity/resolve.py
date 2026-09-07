@@ -24,6 +24,8 @@ from pathlib import Path
 
 import pandas as pd
 
+from fpl.config import POSITIONS
+
 log = logging.getLogger(__name__)
 
 MAPPINGS_DIR = Path(__file__).parent / "mappings"
@@ -97,8 +99,18 @@ def drop_managers(frame: pd.DataFrame) -> pd.DataFrame:
         raise ValueError("call attach_player_code before drop_managers")
     is_manager = frame["position"] == MANAGER_POSITION
     if is_manager.any():
-        log.info("dropping %d manager rows (out of scope for the player model)", is_manager.sum())
-    return frame.loc[~is_manager].copy()
+        log.info(
+            "dropping %d manager rows (out of scope for the player model)",
+            int(is_manager.sum()),
+        )
+    kept = frame.loc[~is_manager].copy()
+
+    # Anything left must be one of the four playing positions. A stray label here
+    # means a scoring lookup will silently return zero for those rows.
+    unexpected = set(kept["position"].dropna().unique()) - set(POSITIONS)
+    if unexpected:
+        raise ValueError(f"unexpected positions after dropping managers: {sorted(unexpected)}")
+    return kept
 
 
 def attach_player_code(gameweeks: pd.DataFrame, index: pd.DataFrame) -> pd.DataFrame:
@@ -109,12 +121,10 @@ def attach_player_code(gameweeks: pd.DataFrame, index: pd.DataFrame) -> pd.DataF
             corrupt every downstream rolling feature, so it is fatal rather than
             something to fix up later.
     """
-    merged = gameweeks.merge(
-        index[["season", "element", "code", "position", "full_name"]],
-        on=["season", "element"],
-        how="left",
-        suffixes=("", "_registry"),
+    registry = index[["season", "element", "code", "position", "full_name"]].rename(
+        columns={"position": "registry_position"}
     )
+    merged = gameweeks.merge(registry, on=["season", "element"], how="left")
 
     unresolved = merged["code"].isna()
     if unresolved.any():
@@ -129,7 +139,14 @@ def attach_player_code(gameweeks: pd.DataFrame, index: pd.DataFrame) -> pd.DataF
         )
 
     merged["code"] = merged["code"].astype("int64")
-    return merged
+
+    # The gameweek files carry their own `position` column, and it does not agree with
+    # the registry: it labels assistant managers "AM" where the registry says "MGR".
+    # Letting the gameweek column win silently defeated drop_managers and left 322
+    # manager fixture-rows in the 2024-25 training data, predicted at ~0 against an
+    # actual average of ~6. The registry is authoritative, so it overwrites here.
+    merged["position"] = merged["registry_position"]
+    return merged.drop(columns=["registry_position"])
 
 
 def _load_overrides(path: Path) -> dict[str, int]:
@@ -159,6 +176,10 @@ def match_external_names(
     """
     from rapidfuzz import process
     from rapidfuzz.fuzz import WRatio
+
+    columns = ["source_name", "code", "matched_name", "score", "method"]
+    if not names:
+        return pd.DataFrame(columns=columns)
 
     overrides = _load_overrides(overrides_path)
     candidates = index.drop_duplicates(subset="code")[["code", "norm_name", "full_name"]]
@@ -204,7 +225,7 @@ def match_external_names(
             }
         )
 
-    result = pd.DataFrame(rows)
+    result = pd.DataFrame(rows, columns=columns)
     unmatched = int((result["method"] == "unmatched").sum())
     if unmatched:
         log.warning(

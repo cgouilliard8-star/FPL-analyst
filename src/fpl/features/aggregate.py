@@ -1,8 +1,9 @@
 """Collapse per-fixture rows to one row per player per gameweek.
 
-Double gameweeks are real: 5,122 player-gameweeks in the archive contain two
+Double gameweeks are real: a few thousand player-gameweeks per season contain two
 fixtures. Taking one row would throw away half a player's return; the target for
-gameweek *t* must be the sum across every fixture played in it.
+gameweek *t* must be the sum across every fixture played in it, and so must the
+per-fixture events the component model predicts (appearances, clean sheets).
 """
 
 from __future__ import annotations
@@ -15,6 +16,9 @@ log = logging.getLogger(__name__)
 
 # Summed across fixtures within a gameweek.
 SUM_COLUMNS = [
+    # FPL publishes its own expected-points figure. Not a feature -- it is the
+    # baseline we have to beat, and beating it is a checkable claim.
+    "xP",
     "minutes",
     "total_points",
     "goals_scored",
@@ -49,11 +53,18 @@ def aggregate_to_gameweek(silver: pd.DataFrame) -> pd.DataFrame:
     present_sum = [c for c in SUM_COLUMNS if c in silver.columns]
     present_first = [c for c in FIRST_COLUMNS if c in silver.columns]
 
-    frame = silver.sort_values(["code", "season", "GW", "kickoff_time"])
+    frame = silver.sort_values(["code", "season", "GW", "kickoff_time"]).copy()
+    # Per-fixture events, so that a double gameweek counts twice where the rules
+    # score it twice. Binary flags at gameweek level would cap a two-clean-sheet
+    # week at one clean sheet's worth of points.
+    frame["appearances"] = (frame["minutes"] > 0).astype(int)
+    frame["full_appearances"] = (frame["minutes"] >= 60).astype(int)
     grouped = frame.groupby(["code", "season", "GW"], sort=False)
 
     aggregated = grouped.agg(
         **{col: (col, "sum") for col in present_sum},
+        appearances=("appearances", "sum"),
+        full_appearances=("full_appearances", "sum"),
         **{col: (col, "first") for col in present_first},
         fixtures_this_gw=("fixture", "nunique"),
         kickoff_time=("kickoff_time", "min"),

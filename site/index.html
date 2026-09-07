@@ -1,0 +1,244 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>FPL Analyst</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wght@500;600;700;800&family=JetBrains+Mono:wght@400;500;700&display=swap">
+<style>
+  :root{
+    --bg:#FAF7FA; --surface:#fff; --surface-2:#F3EDF5; --line:#E4DAE8; --line-strong:#CFC0D5;
+    --ink:#1C0F21; --ink-2:#57485F; --ink-3:#897A91;
+    --plum:#37003C; --accent:#00734B; --accent-soft:#E1F4EB;
+    --gk:#8A5CF6; --def:#0E7490; --mid:#00734B; --fwd:#B45309;
+    --f:"Archivo","Helvetica Neue",Arial,sans-serif;
+    --m:"JetBrains Mono",ui-monospace,Menlo,monospace;
+  }
+  @media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
+    --bg:#130A16; --surface:#1C1020; --surface-2:#251429; --line:#382140; --line-strong:#4C2F56;
+    --ink:#F4ECF6; --ink-2:#BEAAC6; --ink-3:#8D7895;
+    --plum:#E4C4EA; --accent:#43E29B; --accent-soft:#123328;
+    --gk:#B79BFA; --def:#4CC7E0; --mid:#43E29B; --fwd:#E3A55E;
+  }}
+  :root[data-theme="dark"]{
+    --bg:#130A16; --surface:#1C1020; --surface-2:#251429; --line:#382140; --line-strong:#4C2F56;
+    --ink:#F4ECF6; --ink-2:#BEAAC6; --ink-3:#8D7895;
+    --plum:#E4C4EA; --accent:#43E29B; --accent-soft:#123328;
+    --gk:#B79BFA; --def:#4CC7E0; --mid:#43E29B; --fwd:#E3A55E;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--f);font-size:15px;line-height:1.55;-webkit-font-smoothing:antialiased}
+  .wrap{max-width:1000px;margin:0 auto;padding:0 clamp(1rem,4vw,2rem)}
+  header{border-bottom:1px solid var(--line);padding:2.5rem 0 1.75rem;margin-bottom:2rem}
+  h1{margin:0 0 .35rem;font-size:clamp(1.75rem,4vw,2.25rem);font-weight:800;letter-spacing:-.03em;color:var(--plum)}
+  .sub{color:var(--ink-2);margin:0}
+  .controls{display:flex;flex-wrap:wrap;gap:.75rem;align-items:center;margin-top:1.25rem}
+  label{font-family:var(--m);font-size:.7rem;letter-spacing:.12em;text-transform:uppercase;color:var(--ink-3)}
+  select{font-family:var(--f);font-size:.9rem;padding:.4rem .6rem;border-radius:8px;border:1px solid var(--line-strong);background:var(--surface);color:var(--ink)}
+  .kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:1px;background:var(--line);border:1px solid var(--line);border-radius:12px;overflow:hidden;margin-bottom:2rem}
+  .kpi{background:var(--surface);padding:1rem 1.1rem;display:flex;flex-direction:column;gap:.2rem}
+  .kpi dt{font-family:var(--m);font-size:.68rem;letter-spacing:.1em;text-transform:uppercase;color:var(--ink-3)}
+  .kpi dd{margin:0;font-size:1.5rem;font-weight:700;font-variant-numeric:tabular-nums;letter-spacing:-.02em}
+  h2{font-size:1.15rem;font-weight:700;margin:0 0 1rem;letter-spacing:-.01em}
+  .card{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:1rem 1.15rem;margin-bottom:.75rem}
+  .row{display:flex;flex-wrap:wrap;gap:.6rem;align-items:baseline}
+  .nm{font-weight:700}
+  .pos{font-family:var(--m);font-size:.65rem;font-weight:700;letter-spacing:.1em;padding:.15rem .4rem;border-radius:4px;color:#fff}
+  .pos.GK{background:var(--gk)} .pos.DEF{background:var(--def)} .pos.MID{background:var(--mid)} .pos.FWD{background:var(--fwd)}
+  .meta{color:var(--ink-3);font-size:.85rem}
+  .cap{font-family:var(--m);font-size:.65rem;font-weight:700;letter-spacing:.08em;background:var(--accent-soft);color:var(--accent);padding:.15rem .4rem;border-radius:4px}
+  .nums{margin-left:auto;display:flex;gap:1.1rem;font-variant-numeric:tabular-nums}
+  .nums span{display:flex;flex-direction:column;align-items:flex-end}
+  .nums b{font-size:1.05rem}
+  .nums i{font-style:normal;font-family:var(--m);font-size:.6rem;letter-spacing:.1em;text-transform:uppercase;color:var(--ink-3)}
+  .bar{display:flex;height:7px;border-radius:4px;overflow:hidden;margin:.7rem 0 .5rem;background:var(--surface-2)}
+  .seg{height:100%}
+  .legend{display:flex;flex-wrap:wrap;gap:.75rem;font-family:var(--m);font-size:.65rem;color:var(--ink-3)}
+  .legend i{display:inline-block;width:8px;height:8px;border-radius:2px;margin-right:.3rem;font-style:normal}
+  .why{color:var(--ink-2);font-size:.9rem;margin:.5rem 0 0}
+  table{width:100%;border-collapse:collapse;font-size:.9rem}
+  .tw{overflow-x:auto;border:1px solid var(--line);border-radius:12px;background:var(--surface)}
+  th,td{padding:.55rem .8rem;text-align:left;border-bottom:1px solid var(--line);white-space:nowrap}
+  th{font-family:var(--m);font-size:.65rem;letter-spacing:.1em;text-transform:uppercase;color:var(--ink-3);background:var(--surface-2)}
+  td.n{font-variant-numeric:tabular-nums;text-align:right}
+  tbody tr:last-child td{border-bottom:0}
+  footer{color:var(--ink-3);font-size:.85rem;padding:2.5rem 0 3rem;border-top:1px solid var(--line);margin-top:2.5rem}
+  .err{background:var(--surface);border:1px solid var(--line-strong);border-radius:12px;padding:1.5rem;color:var(--ink-2)}
+  code{font-family:var(--m);font-size:.85em;background:var(--surface-2);padding:.1em .35em;border-radius:4px}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <h1>FPL Analyst</h1>
+    <p class="sub">Projected points, an optimal squad under the real constraints, and why each pick was made.</p>
+    <div class="controls">
+      <label for="gw">Gameweek</label>
+      <select id="gw"></select>
+    </div>
+  </header>
+
+  <main id="main"><p class="meta">Loading…</p></main>
+
+  <footer>
+    Projections from a component model: appearance, attacking, clean sheet, bonus and goalkeeping
+    are predicted separately and summed using FPL's scoring rules. Rationales are generated from
+    that breakdown — every figure comes from the model, none from the language model.
+  </footer>
+</div>
+
+<script>
+const COLOURS = {
+  appearance:  "var(--ink-3)",
+  attacking:   "var(--fwd)",
+  clean_sheet: "var(--def)",
+  bonus:       "var(--accent)",
+  goalkeeping: "var(--gk)"
+};
+const LABELS = {
+  appearance: "appearance", attacking: "attacking", clean_sheet: "clean sheet",
+  bonus: "bonus", goalkeeping: "goalkeeping"
+};
+
+const el = (t, c, x) => { const n = document.createElement(t); if (c) n.className = c; if (x != null) n.textContent = x; return n; };
+
+function breakdownBar(b) {
+  const entries = Object.entries(b).filter(([, v]) => v > 0);
+  const total = entries.reduce((s, [, v]) => s + v, 0) || 1;
+  const bar = el("div", "bar");
+  entries.forEach(([k, v]) => {
+    const seg = el("div", "seg");
+    seg.style.width = (v / total * 100) + "%";
+    seg.style.background = COLOURS[k];
+    seg.title = `${LABELS[k]}: ${v.toFixed(2)}`;
+    bar.appendChild(seg);
+  });
+  const legend = el("div", "legend");
+  entries.forEach(([k, v]) => {
+    const s = el("span");
+    const sw = el("i"); sw.style.background = COLOURS[k];
+    s.appendChild(sw);
+    s.appendChild(document.createTextNode(`${LABELS[k]} ${v.toFixed(2)}`));
+    legend.appendChild(s);
+  });
+  return [bar, legend];
+}
+
+function playerCard(p) {
+  const card = el("div", "card");
+  const row = el("div", "row");
+  row.appendChild(el("span", "nm", p.name));
+  row.appendChild(el("span", "pos " + p.position, p.position));
+  if (p.is_captain) row.appendChild(el("span", "cap", "CAPTAIN"));
+  row.appendChild(el("span", "meta", `${p.team} ${p.home ? "vs" : "at"} ${p.opponent} · £${p.price}m`));
+
+  const nums = el("div", "nums");
+  [["projected", p.projected.toFixed(2)], ["actual", p.actual], ["start prob", p.start_probability]]
+    .forEach(([k, v]) => {
+      const s = el("span");
+      s.appendChild(el("b", null, v));
+      s.appendChild(el("i", null, k));
+      nums.appendChild(s);
+    });
+  row.appendChild(nums);
+  card.appendChild(row);
+
+  breakdownBar(p.breakdown).forEach(n => card.appendChild(n));
+  if (p.rationale) card.appendChild(el("p", "why", p.rationale));
+  return card;
+}
+
+function table(rows) {
+  const wrap = el("div", "tw");
+  const t = el("table");
+  const head = el("thead");
+  const hr = el("tr");
+  ["Player", "Pos", "Club", "Fixture", "£", "Projected", "Actual"].forEach(h => hr.appendChild(el("th", null, h)));
+  head.appendChild(hr); t.appendChild(head);
+  const body = el("tbody");
+  rows.forEach(p => {
+    const tr = el("tr");
+    tr.appendChild(el("td", null, p.name));
+    const pc = el("td"); pc.appendChild(el("span", "pos " + p.position, p.position)); tr.appendChild(pc);
+    tr.appendChild(el("td", null, p.team));
+    tr.appendChild(el("td", null, `${p.home ? "vs" : "at"} ${p.opponent}`));
+    tr.appendChild(el("td", "n", p.price.toFixed(1)));
+    tr.appendChild(el("td", "n", p.projected.toFixed(2)));
+    tr.appendChild(el("td", "n", p.actual));
+    body.appendChild(tr);
+  });
+  t.appendChild(body); wrap.appendChild(t);
+  return wrap;
+}
+
+function render(d) {
+  const main = document.getElementById("main");
+  main.replaceChildren();
+  const s = d.squad;
+
+  const kpis = el("dl", "kpis");
+  [["Gameweek", d.gameweek], ["Projected", s.projected.toFixed(1)],
+   ["Actual", s.actual], ["Squad cost", "£" + s.spend + "m"],
+   ["Season", d.season]].forEach(([k, v]) => {
+    const box = el("div", "kpi");
+    box.appendChild(el("dt", null, k));
+    box.appendChild(el("dd", null, v));
+    kpis.appendChild(box);
+  });
+  main.appendChild(kpis);
+
+  main.appendChild(el("h2", null, "Recommended eleven"));
+  s.starters.forEach(p => main.appendChild(playerCard(p)));
+
+  if (s.bench && s.bench.length) {
+    main.appendChild(el("h2", null, "Bench"));
+    main.appendChild(table(s.bench));
+  }
+
+  main.appendChild(el("h2", null, "Highest projections in the pool"));
+  main.appendChild(table(d.top_projections));
+}
+
+async function load(gw) {
+  const main = document.getElementById("main");
+  try {
+    const r = await fetch(`data/gw${gw}.json`);
+    if (!r.ok) throw new Error(r.status);
+    render(await r.json());
+  } catch (e) {
+    main.replaceChildren();
+    const box = el("div", "err");
+    box.appendChild(el("p", null, `Could not load gameweek ${gw}.`));
+    box.appendChild(el("p", null, "Generate it with: fpl publish --gameweek " + gw));
+    main.appendChild(box);
+  }
+}
+
+(async function init() {
+  const sel = document.getElementById("gw");
+  try {
+    const r = await fetch("data/index.json");
+    if (!r.ok) throw new Error(r.status);
+    const idx = await r.json();
+    idx.gameweeks.forEach(g => {
+      const o = document.createElement("option");
+      o.value = g; o.textContent = "Gameweek " + g;
+      if (g === idx.latest) o.selected = true;
+      sel.appendChild(o);
+    });
+    sel.addEventListener("change", () => load(sel.value));
+    load(idx.latest);
+  } catch (e) {
+    document.getElementById("main").replaceChildren(
+      Object.assign(document.createElement("div"), {
+        className: "err",
+        textContent: "No data yet. Run the pipeline to generate site/data/."
+      })
+    );
+  }
+})();
+</script>
+</body>
+</html>

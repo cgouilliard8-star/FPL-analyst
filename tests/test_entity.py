@@ -10,44 +10,16 @@ def _registry() -> pd.DataFrame:
     """Two seasons in which element id 7 is reused for a different footballer."""
     return pd.DataFrame(
         [
-            {
-                "season": "2023-24",
-                "id": 7,
-                "code": 1001,
-                "first_name": "Gabriel",
-                "second_name": "dos Santos Magalhães",
-                "element_type": 2,
-                "team": 1,
-            },
-            {
-                "season": "2023-24",
-                "id": 9,
-                "code": 1002,
-                "first_name": "Son",
-                "second_name": "Heung-min",
-                "element_type": 3,
-                "team": 2,
-            },
-            {
-                "season": "2024-25",
-                "id": 7,
-                "code": 1002,
-                "first_name": "Heung-Min",
-                "second_name": "Son",
-                "element_type": 3,
-                "team": 2,
-            },
-            {
-                "season": "2024-25",
-                "id": 12,
-                "code": 1003,
-                "first_name": "Mikel",
-                "second_name": "Arteta",
-                "element_type": 5,
-                "team": 1,
-            },
+            {"season": "2023-24", "id": 7, "code": 1001, "first_name": "Gabriel",
+             "second_name": "dos Santos Magalhães", "element_type": 2, "team": 1},
+            {"season": "2023-24", "id": 9, "code": 1002, "first_name": "Son",
+             "second_name": "Heung-min", "element_type": 3, "team": 2},
+            {"season": "2024-25", "id": 7, "code": 1002, "first_name": "Heung-Min",
+             "second_name": "Son", "element_type": 3, "team": 2},
+            {"season": "2024-25", "id": 12, "code": 1003, "first_name": "Mikel",
+             "second_name": "Arteta", "element_type": 5, "team": 1},
         ]
-    )
+    )  # fmt: skip
 
 
 # --- name normalisation -----------------------------------------------------
@@ -115,8 +87,8 @@ def test_build_player_index_rejects_duplicate_keys():
 def _gameweeks() -> pd.DataFrame:
     return pd.DataFrame(
         [
-            {"season": "2023-24", "element": 7, "name": "Gabriel", "total_points": 6},
-            {"season": "2024-25", "element": 7, "name": "Son", "total_points": 2},
+            {"season": "2023-24", "element": 7, "name": "Gabriel", "position": "DEF"},
+            {"season": "2024-25", "element": 7, "name": "Son", "position": "MID"},
         ]
     )
 
@@ -126,6 +98,17 @@ def test_attach_player_code_resolves_reused_ids_correctly():
     by_season = dict(zip(resolved["season"], resolved["code"], strict=True))
     assert by_season["2023-24"] == 1001
     assert by_season["2024-25"] == 1002
+
+
+def test_registry_position_overrides_the_gameweek_files_position():
+    """The gameweek files label managers 'AM'; the registry says 'MGR'. The registry
+    wins, otherwise drop_managers silently matches nothing."""
+    gameweeks = pd.DataFrame(
+        [{"season": "2024-25", "element": 12, "name": "Arteta", "position": "AM"}]
+    )
+    resolved = resolve.attach_player_code(gameweeks, resolve.build_player_index(_registry()))
+    assert resolved.loc[0, "position"] == "MGR"
+    assert "registry_position" not in resolved.columns
 
 
 def test_attach_player_code_is_fatal_on_unresolved_rows():
@@ -139,12 +122,19 @@ def test_drop_managers_removes_only_managers():
     index = resolve.build_player_index(_registry())
     frame = pd.DataFrame(
         [
-            {"season": "2024-25", "element": 12, "name": "Arteta"},
-            {"season": "2024-25", "element": 7, "name": "Son"},
+            {"season": "2024-25", "element": 12, "name": "Arteta", "position": "AM"},
+            {"season": "2024-25", "element": 7, "name": "Son", "position": "MID"},
         ]
     )
     kept = resolve.drop_managers(resolve.attach_player_code(frame, index))
     assert list(kept["position"]) == ["MID"]
+
+
+def test_drop_managers_rejects_stray_positions():
+    """Anything that is not a playing position after managers are gone is a data bug."""
+    frame = pd.DataFrame([{"position": "AM"}, {"position": "MID"}])
+    with pytest.raises(ValueError, match="unexpected positions"):
+        resolve.drop_managers(frame)
 
 
 def test_drop_managers_requires_resolution_first():
@@ -168,6 +158,12 @@ def test_match_external_names_refuses_to_guess():
     result = resolve.match_external_names(["Cristiano Ronaldo"], index)
     assert pd.isna(result.loc[0, "code"])
     assert result.loc[0, "method"] == "unmatched"
+
+
+def test_match_external_names_handles_empty_input():
+    result = resolve.match_external_names([], resolve.build_player_index(_registry()))
+    assert result.empty
+    assert list(result.columns) == ["source_name", "code", "matched_name", "score", "method"]
 
 
 # --- teams ------------------------------------------------------------------
@@ -195,6 +191,5 @@ def test_canonical_team_returns_none_for_unknown():
 def test_every_fpl_spelling_maps_to_itself():
     """Each club's own FPL name must round-trip, or joins to FPL data will fail."""
     aliases = resolve.load_team_aliases()
-    fpl_names = set(aliases.values())
-    for name in fpl_names:
+    for name in set(aliases.values()):
         assert resolve.canonical_team(name, aliases) == name, f"{name} does not round-trip"

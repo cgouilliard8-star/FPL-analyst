@@ -10,6 +10,7 @@ data/gold/
 # secrets
 .env
 .env.*
+!.env.example
 
 # python
 __pycache__/

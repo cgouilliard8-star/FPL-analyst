@@ -45,7 +45,9 @@ def lagged_rolling_mean(
             .rolling(window, min_periods=1)
             .mean()
             .reset_index(level=0, drop=True)
-            .sort_index()
+            # Align by index label, not position: groupby.rolling returns rows in
+            # group order, which is not the caller's row order.
+            .reindex(frame.index)
         )
         for col in columns:
             out[f"{prefix}{col}_mean{window}"] = rolled[col].to_numpy()
@@ -65,41 +67,65 @@ def lagged_expanding_sum(
     return cumulative
 
 
+def _gameweek_level(frame: pd.DataFrame, columns: list[str]) -> pd.DataFrame:
+    """Totals per (season, GW), with the earliest kickoff, for chronological ordering."""
+    return (
+        frame.groupby(["season", "GW"], as_index=False)
+        .agg(**{c: (c, "sum") for c in columns}, kickoff_time=("kickoff_time", "min"))
+        .sort_values("kickoff_time")
+    )
+
+
 def expanding_position_prior(frame: pd.DataFrame, stat: str, minutes: str = "minutes") -> pd.Series:
     """League-wide per-90 rate for the player's position, using only earlier gameweeks.
 
     Used as the shrinkage target: a player in gameweek *t* is compared against what his
     position was averaging *before* t.
 
-    The ordering here is load-bearing. Every step — cumulative sum and the forward fill
-    that covers the opening gameweeks — happens in kickoff order and is only mapped back
-    to the caller's row order at the very end. Forward-filling in the caller's order
-    instead would drag values between chronologically unrelated rows, which is a leak
-    (and was caught by tests/test_no_leakage.py rather than by reading the code).
+    The accumulation happens at gameweek granularity, not row granularity. A row-level
+    ``shift(1)`` in kickoff order looks equivalent but is not: rows from the same match
+    share a timestamp, so a player's prior would include team-mates' results from the
+    very gameweek being predicted. That is a leak the future-corruption test cannot
+    see, because it lives inside the cutoff gameweek rather than after it.
     """
-    ordered = frame.sort_values("kickoff_time")
-    positions = ordered["position"]
-    by_position = ordered.groupby(positions, sort=False)
+    per_position = []
+    for position, rows in frame.groupby("position", sort=False):
+        totals = _gameweek_level(rows, [stat, minutes])
+        totals[stat] = totals[stat].shift(1).cumsum()
+        totals[minutes] = totals[minutes].shift(1).cumsum()
+        totals["prior"] = (totals[stat] / (totals[minutes] / 90.0)).replace(
+            [np.inf, -np.inf], np.nan
+        )
+        totals["prior"] = totals["prior"].ffill().fillna(0.0)
+        totals["position"] = position
+        per_position.append(totals[["season", "GW", "position", "prior"]])
 
-    stat_cum = by_position[stat].transform(lambda s: s.shift(1).cumsum())
-    mins_cum = by_position[minutes].transform(lambda s: s.shift(1).cumsum())
-
-    prior = (stat_cum / (mins_cum / 90.0)).replace([np.inf, -np.inf], np.nan)
-    prior = prior.groupby(positions, sort=False).ffill().fillna(0.0)
-    return prior.reindex(frame.index)
+    lookup = pd.concat(per_position, ignore_index=True)
+    merged = frame[["season", "GW", "position"]].merge(
+        lookup, on=["season", "GW", "position"], how="left"
+    )
+    return pd.Series(merged["prior"].to_numpy(), index=frame.index).fillna(0.0)
 
 
 def expanding_league_mean(frame: pd.DataFrame, column: str) -> pd.Series:
-    """League average of ``column`` using only gameweeks that have already happened.
+    """League average of ``column`` over gameweeks that have already been played.
 
     A plain ``frame[column].mean()`` averages the entire season, future included. Used
-    as a normaliser it silently leaks into every row.
+    as a normaliser it silently leaks into every row. Like the position prior, this is
+    accumulated per gameweek so the current gameweek never contributes to itself.
     """
-    ordered = frame.sort_values("kickoff_time")
-    values = ordered[column]
-    mean_to_date = values.shift(1).expanding(min_periods=1).mean()
-    mean_to_date = mean_to_date.ffill().bfill()
-    return mean_to_date.reindex(frame.index)
+    totals = (
+        frame.groupby(["season", "GW"], as_index=False)
+        .agg(total=(column, "sum"), count=(column, "count"), kickoff_time=("kickoff_time", "min"))
+        .sort_values("kickoff_time")
+    )
+    totals["mean_to_date"] = totals["total"].shift(1).cumsum() / totals["count"].shift(1).cumsum()
+    totals["mean_to_date"] = totals["mean_to_date"].ffill().bfill()
+
+    merged = frame[["season", "GW"]].merge(
+        totals[["season", "GW", "mean_to_date"]], on=["season", "GW"], how="left"
+    )
+    return pd.Series(merged["mean_to_date"].to_numpy(), index=frame.index)
 
 
 def shrunk_per90(
@@ -155,7 +181,7 @@ def build_team_strength(
             .rolling(window, min_periods=1)
             .mean()
             .reset_index(level=[0, 1], drop=True)
-            .sort_index()
+            .reindex(team_gw.index)
         )
         for metric in metrics:
             team_gw[f"{metric}_r{window}"] = rolled[metric].to_numpy()
