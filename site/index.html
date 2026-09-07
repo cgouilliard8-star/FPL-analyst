@@ -330,7 +330,7 @@
           </div>
           <div class="actions">
             <button class="btn" id="template">Use template team</button>
-            <button class="btn" id="autopick">Auto-pick lineup</button>
+            <button class="btn" id="autopick" title="Fill empty slots with the best players you can afford, then set the best formation, eleven and captain">Auto-pick</button>
             <button class="btn link" id="clear">Clear</button>
             <span class="hint">Tap a slot to add a player.</span>
           </div>
@@ -865,25 +865,54 @@ function renderRating(){
 
 function update(){ renderPitch(); renderRating(); save(); }
 
-function templateTeam(){
-  const pool = DATA.players.filter(p=>p.availability>0);
+// Fill whatever slots are empty, keeping the players already picked. ``rank`` orders
+// the candidates (ownership for the template team, projection for auto-pick); a
+// reserve is kept back so every remaining slot can still be filled with a cheapest
+// option. Returns the codes of the full fifteen.
+function fillSquad(rank, keep=[]){
+  const pool = DATA.players.filter(p=>p.availability>0 && p.price>0);
   const cheapest = {}; POSITIONS.forEach(k => cheapest[k] = Math.min(...pool.filter(p=>p.position===k).map(p=>p.price)));
-  const by = [...pool].sort((a,b)=>b.owned_pct-a.owned_pct);
   const picks = [], clubs = {}, counts = {GK:0,DEF:0,MID:0,FWD:0}; let spend = 0;
-  const budget = (teamValueVal() || CAP) + bankVal();
-  const reserve = () => POSITIONS.reduce((s,k)=>s+(SQUAD_QUOTA[k]-counts[k])*cheapest[k],0);
   const take = p => { picks.push(p.code); spend += p.price; counts[p.position]++; clubs[p.team]=(clubs[p.team]||0)+1; };
-  for (const p of by){
-    if (counts[p.position] >= SQUAD_QUOTA[p.position] || (clubs[p.team]||0) >= MAX_PER_CLUB) continue;
-    if (spend + p.price + reserve() - cheapest[p.position] > budget + 1e-9) continue;
-    take(p); if (picks.length===15) break;
-  }
+  keep.map(c=>BY[c]).filter(Boolean).forEach(take);
+  const budget = availableBudget(keep.map(c=>BY[c]).filter(Boolean), bankVal(), teamValueVal());
+  const reserve = () => POSITIONS.reduce((s,k)=>s+(SQUAD_QUOTA[k]-counts[k])*cheapest[k],0);
   const owned = new Set(picks);
-  for (const pos of POSITIONS) while (counts[pos] < SQUAD_QUOTA[pos]){
-    const cand = pool.filter(p=>p.position===pos && !owned.has(p.code) && (clubs[p.team]||0)<MAX_PER_CLUB && spend+p.price+reserve()-cheapest[pos] <= budget+1e-9).sort((a,b)=>b.ep-a.ep)[0];
+  for (const p of [...pool].sort(rank)){
+    if (picks.length===15) break;
+    if (owned.has(p.code) || counts[p.position] >= SQUAD_QUOTA[p.position] || (clubs[p.team]||0) >= MAX_PER_CLUB) continue;
+    if (spend + p.price + reserve() - cheapest[p.position] > budget + 1e-9) continue;
+    take(p); owned.add(p.code);
+  }
+  for (const pos of POSITIONS) while (counts[pos] < SQUAD_QUOTA[pos]){   // last resort: cheapest that fits
+    const cand = pool.filter(p=>p.position===pos && !owned.has(p.code) && (clubs[p.team]||0)<MAX_PER_CLUB).sort((a,b)=>a.price-b.price)[0];
     if (!cand) break; take(cand); owned.add(cand.code);
   }
-  state.slots = buildSlots(state.formation, picks); update();
+  return picks;
+}
+function templateTeam(){
+  state.slots = buildSlots(state.formation, fillSquad((a,b)=>b.owned_pct-a.owned_pct)); update();
+}
+// Auto-pick: fill any empty slots with the best-projected players the budget allows
+// (the solved best squad when starting from nothing), then set the best formation and
+// put the strongest eleven on the pitch with the captain.
+function autoPick(){
+  const have = state.slots.map(s=>s.code).filter(c => c && BY[c]);
+  let codes = have;
+  if (have.length === 0 && DATA.optimal_squads && DATA.optimal_squads[metric]){
+    const budgets = Object.keys(DATA.optimal_squads[metric]).map(Number).sort((a,b)=>a-b);
+    const mine = (teamValueVal() || CAP) + bankVal();
+    const budget = budgets.filter(b => b <= mine + 1e-9).pop() ?? budgets[0];
+    const o = DATA.optimal_squads[metric][String(budget)]; codes = [...o.starters, ...o.bench];
+  } else if (have.length < 15) codes = fillSquad((a,b)=>b.ep-a.ep, have);
+  const players = codes.map(c=>BY[c]).filter(Boolean);
+  if (players.length < 15){ notice("crit", "Could not fill the squad inside your budget — raise the team value or clear a slot."); return; }
+  const best = bestEleven(players);
+  state.formation = best.formation;
+  state.slots = buildSlots(best.formation, codes);
+  update();
+  const added = 15 - have.length;
+  notice("ok", `${added ? `Filled ${added} empty slot${added===1?"":"s"} with the best players your budget allows. ` : ""}Best lineup set: ${fname(best.formation)}, captain ${BY[best.captain].web_name}, vice ${BY[best.vice].web_name}.`);
 }
 
 // ---------- best squad + all players ----------
@@ -1114,7 +1143,7 @@ document.querySelectorAll("nav [role=tab]").forEach(b => b.addEventListener("cli
 ["bank","tv","ft"].forEach(id => document.getElementById(id).addEventListener("input", debounce(() => { renderPitch(); renderRating(); renderBest(); save(); }, 150)));
 document.getElementById("clear").addEventListener("click", () => { state.slots = buildSlots(state.formation, []); update(); });
 document.getElementById("template").addEventListener("click", templateTeam);
-document.getElementById("autopick").addEventListener("click", () => { const ps=squadPlayers(); if (ps.length===15) setFormation(bestEleven(ps).formation); });
+document.getElementById("autopick").addEventListener("click", autoPick);
 
 const SCHEMA = 2, CACHE_KEY = "fpl-live-cache-v2", STALE_HOURS = 36;
 function notice(kind, text){ const n = el("div", kind==="crit" ? "critbox" : kind==="ok" ? "okbox" : "warnbox"); n.style.margin = ".6rem 0 0"; n.textContent = text; document.getElementById("notices").appendChild(n); if (kind==="ok") setTimeout(() => n.remove(), 6000); return n; }
