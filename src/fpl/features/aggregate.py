@@ -12,6 +12,8 @@ import logging
 
 import pandas as pd
 
+from fpl.config import DC_THRESHOLD
+
 log = logging.getLogger(__name__)
 
 # Summed across fixtures within a gameweek.
@@ -45,7 +47,12 @@ SUM_COLUMNS = [
 ]
 
 # Taken from the first fixture of the gameweek (they describe the player, not the match).
-FIRST_COLUMNS = ["full_name", "position", "team", "value", "selected", "element"]
+FIRST_COLUMNS = [
+    "full_name", "position", "team", "value", "selected", "element",
+    # present only on live upcoming rows
+    "web_name", "status", "chance_of_playing", "news", "availability", "fpl_ep_next",
+    "is_upcoming", "selected_by_percent",
+]  # fmt: skip
 
 
 def aggregate_to_gameweek(silver: pd.DataFrame) -> pd.DataFrame:
@@ -59,12 +66,19 @@ def aggregate_to_gameweek(silver: pd.DataFrame) -> pd.DataFrame:
     # week at one clean sheet's worth of points.
     frame["appearances"] = (frame["minutes"] > 0).astype(int)
     frame["full_appearances"] = (frame["minutes"] >= 60).astype(int)
+    # Defensive-contribution points are awarded per fixture on reaching a positional
+    # threshold. Seasons before the rule have no column; they count as never reached.
+    if "defensive_contribution" not in frame.columns:
+        frame["defensive_contribution"] = 0.0
+    threshold = frame["position"].map(DC_THRESHOLD).fillna(10**6)
+    frame["dc_hits"] = (frame["defensive_contribution"].fillna(0) >= threshold).astype(int)
     grouped = frame.groupby(["code", "season", "GW"], sort=False)
 
     aggregated = grouped.agg(
         **{col: (col, "sum") for col in present_sum},
         appearances=("appearances", "sum"),
         full_appearances=("full_appearances", "sum"),
+        dc_hits=("dc_hits", "sum"),
         **{col: (col, "first") for col in present_first},
         fixtures_this_gw=("fixture", "nunique"),
         kickoff_time=("kickoff_time", "min"),

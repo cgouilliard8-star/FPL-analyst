@@ -26,9 +26,9 @@ def ensure_data_dirs() -> None:
 # expected_goals_conceded or starts columns at all (measured: 0% non-null). Including
 # it would mean a quarter of the training set has none of the features the attacking
 # model is built on. The archive goes back to 2016-17 with the same limitation.
-TRAIN_SEASONS: tuple[str, ...] = ("2022-23", "2023-24", "2024-25")
+TRAIN_SEASONS: tuple[str, ...] = ("2022-23", "2023-24", "2024-25", "2025-26")
 ARCHIVE_SEASONS: tuple[str, ...] = ("2021-22", *TRAIN_SEASONS)
-CURRENT_SEASON = "2026-27"
+CURRENT_SEASON = "2026-27"  # live, via fpl.data.fpl_api snapshots
 
 FPL_API_BASE = "https://fantasy.premierleague.com/api"
 ARCHIVE_BASE = "https://raw.githubusercontent.com/vaastav/Fantasy-Premier-League/master/data"
@@ -42,11 +42,11 @@ ASSIST_POINTS = 3
 APPEARANCE_POINTS = 1  # for playing at all
 SIXTY_MINUTE_POINTS = 1  # additional, for 60+ minutes
 DEFENSIVE_CONTRIBUTION_POINTS = 2
-# Defensive-contribution thresholds (CBIT for defenders, CBIRT for others).
-# NOTE: this rule arrived in 2025-26, so the column does not exist in any season we
-# train on. The component is implemented and wired into the combiner, but contributes
-# zero until 2025-26+ data is present. See models/combine.py.
-DC_THRESHOLD = {"GK": None, "DEF": 10, "MID": 12, "FWD": 12}
+# Defensive-contribution thresholds: 2 points per fixture for reaching them.
+# Defenders count clearances, blocks, interceptions and tackles; others also count
+# recoveries. The rule arrived in 2025-26, so it is present in the last training
+# season and in live data, and absent (zero) before that.
+DC_THRESHOLD = {"GK": 10, "DEF": 10, "MID": 12, "FWD": 12}
 SAVES_PER_POINT = 3
 CONCEDED_PER_MINUS_ONE = 2  # GK/DEF only
 YELLOW_CARD_POINTS = -1

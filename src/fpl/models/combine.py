@@ -74,13 +74,8 @@ def decompose(components: pd.DataFrame, positions: pd.Series) -> pd.DataFrame:
         - is_back * components["e_conceded"] / CONCEDED_PER_MINUS_ONE
     )
 
-    # Defensive contribution (2025-26 rule). The column does not exist in any season
-    # we can train on, so this is zero until 2025-26+ data is present. Wired in now so
-    # that adding it later is a one-line change rather than a re-architecture.
-    if "p_dc" in components.columns:
-        out["defensive"] = components["p_dc"] * DEFENSIVE_CONTRIBUTION_POINTS
-    else:
-        out["defensive"] = 0.0
+    # Defensive contribution (2025-26 rule): 2 points per fixture the threshold is hit.
+    out["defensive"] = components["e_dc"] * DEFENSIVE_CONTRIBUTION_POINTS
 
     out["expected_points"] = out[list(CONTRIBUTIONS)].sum(axis=1)
     return out

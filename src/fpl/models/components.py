@@ -56,6 +56,7 @@ SPECS: tuple[ComponentSpec, ...] = (
     ComponentSpec("e_saves", "saves", "count", "expected saves"),
     ComponentSpec("e_conceded", "goals_conceded", "count", "expected goals conceded"),
     ComponentSpec("e_bonus", "bonus", "count", "expected bonus points"),
+    ComponentSpec("e_dc", "dc_hits", "count", "expected defensive-contribution awards"),
 )
 
 REQUIRED_TARGETS = tuple(spec.target for spec in SPECS)

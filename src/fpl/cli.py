@@ -102,6 +102,33 @@ def _publish(args: argparse.Namespace) -> int:
     return 0
 
 
+def _snapshot(args: argparse.Namespace) -> int:
+    from fpl.data.fpl_api import fetch_snapshot, next_gameweek, save_snapshot
+
+    snapshot = fetch_snapshot()
+    path = save_snapshot(snapshot)
+    gameweek = next_gameweek(snapshot)
+    flagged = sum(1 for e in snapshot["elements"] if e["status"] != "a")
+    print(
+        f"GW{gameweek['id']} (deadline {gameweek['deadline_time']}): "
+        f"{len(snapshot['elements'])} players, {flagged} flagged -> {path.name}"
+    )
+    return 0
+
+
+def _live(args: argparse.Namespace) -> int:
+    from fpl.report.live import build_live, write_live
+
+    payload = build_live(explain=not args.no_explain)
+    path = write_live(payload)
+    meta, optimal = payload["meta"], payload["optimal"]
+    print(
+        f"GW{meta['gameweek']}: {meta['players']} projections, {meta['flagged']} flagged, "
+        f"best squad {optimal['projected']:.1f} pts -> {path}"
+    )
+    return 0
+
+
 def main(argv: list[str] | None = None) -> int:
     # Shared flags live on a parent parser so they work either side of the
     # subcommand: both "fpl -v bootstrap" and "fpl bootstrap -v" are accepted.
@@ -159,6 +186,17 @@ def main(argv: list[str] | None = None) -> int:
     pub.add_argument("--season", default="2024-25")
     pub.add_argument("--no-explain", action="store_true", help="skip rationale generation")
     pub.set_defaults(func=_publish)
+
+    snap = sub.add_parser(
+        "snapshot", parents=[common], help="pull the live FPL API into an immutable snapshot"
+    )
+    snap.set_defaults(func=_snapshot)
+
+    live = sub.add_parser(
+        "live", parents=[common], help="project the next gameweek and write site/data/live.json"
+    )
+    live.add_argument("--no-explain", action="store_true", help="skip rationale generation")
+    live.set_defaults(func=_live)
 
     args = parser.parse_args(argv)
     logging.basicConfig(

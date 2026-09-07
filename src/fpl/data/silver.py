@@ -53,9 +53,13 @@ def build_silver(seasons: tuple[str, ...] = TRAIN_SEASONS, *, write: bool = True
     # Sorting by identity then time is what every rolling feature will assume.
     resolved = resolved.sort_values(["code", "kickoff_time"]).reset_index(drop=True)
 
-    duplicates = resolved.duplicated(subset=["code", "season", "GW", "fixture"]).sum()
+    # The archive occasionally repeats a player-fixture row. Keeping both would count
+    # a return twice, so the first occurrence wins and the rest are dropped, loudly.
+    key = ["code", "season", "GW", "fixture"]
+    duplicates = int(resolved.duplicated(subset=key).sum())
     if duplicates:
-        log.warning("%d duplicate (code, season, GW, fixture) rows retained", duplicates)
+        log.warning("dropping %d duplicate (code, season, GW, fixture) rows", duplicates)
+        resolved = resolved.drop_duplicates(subset=key, keep="first").reset_index(drop=True)
 
     if write:
         SILVER_PATH.parent.mkdir(parents=True, exist_ok=True)

@@ -1,21 +1,14 @@
-name: weekly refresh
+name: refresh
 
-# The vaastav archive stopped weekly updates after 2024-25, so this job is the
-# in-season data source. It runs before each gameweek deadline, refreshes data,
-# regenerates projections and publishes the dashboard.
-#
-# The live collector (fpl.data.fpl_api) is the next piece of work. Until it lands,
-# the job exercises the archive-driven pipeline end to end so the deploy path is
-# known to work.
+# Injury news, price changes and availability flags move every day, so the
+# projections are rebuilt every morning and again just before the usual Saturday
+# deadline. Each run snapshots the live API (immutable, timestamped), refits the
+# model on everything up to the next gameweek, and publishes the dashboard.
 on:
   schedule:
-    - cron: "0 9 * * 4"   # Thursdays 09:00 UTC, ahead of Friday deadlines
+    - cron: "0 6 * * *"    # daily 06:00 UTC
+    - cron: "0 10 * * 6"   # Saturday 10:00 UTC, ahead of the typical 11:30 deadline
   workflow_dispatch:
-    inputs:
-      gameweek:
-        description: "Gameweek to publish"
-        required: false
-        default: "38"
 
 permissions:
   contents: read
@@ -37,16 +30,18 @@ jobs:
           cache: pip
       - run: pip install -e ".[dev,llm]"
 
-      - name: Data layers
+      - name: Historical seasons
         run: |
           fpl bootstrap
           fpl silver
-          fpl features
 
-      - name: Projections and dashboard payload
+      - name: Live snapshot
+        run: fpl snapshot
+
+      - name: Project next gameweek and build dashboard data
         env:
           ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
-        run: fpl publish ${{ github.event.inputs.gameweek || '38' }}
+        run: fpl live
 
       - uses: actions/upload-pages-artifact@v3
         with:

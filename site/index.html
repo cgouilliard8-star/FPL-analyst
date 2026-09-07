@@ -12,232 +12,411 @@
     --bg:#FAF7FA; --surface:#fff; --surface-2:#F3EDF5; --line:#E4DAE8; --line-strong:#CFC0D5;
     --ink:#1C0F21; --ink-2:#57485F; --ink-3:#897A91;
     --plum:#37003C; --accent:#00734B; --accent-soft:#E1F4EB;
+    --warn:#9A5B08; --warn-soft:#FBEEDC; --crit:#A81E38; --crit-soft:#FBE6EA;
     --gk:#8A5CF6; --def:#0E7490; --mid:#00734B; --fwd:#B45309;
-    --f:"Archivo","Helvetica Neue",Arial,sans-serif;
-    --m:"JetBrains Mono",ui-monospace,Menlo,monospace;
+    --f:"Archivo","Helvetica Neue",Arial,sans-serif; --m:"JetBrains Mono",ui-monospace,Menlo,monospace;
   }
   @media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
     --bg:#130A16; --surface:#1C1020; --surface-2:#251429; --line:#382140; --line-strong:#4C2F56;
-    --ink:#F4ECF6; --ink-2:#BEAAC6; --ink-3:#8D7895;
-    --plum:#E4C4EA; --accent:#43E29B; --accent-soft:#123328;
+    --ink:#F4ECF6; --ink-2:#BEAAC6; --ink-3:#8D7895; --plum:#E4C4EA; --accent:#43E29B; --accent-soft:#123328;
+    --warn:#E3A55E; --warn-soft:#33220E; --crit:#F0819A; --crit-soft:#3A141F;
     --gk:#B79BFA; --def:#4CC7E0; --mid:#43E29B; --fwd:#E3A55E;
   }}
   :root[data-theme="dark"]{
     --bg:#130A16; --surface:#1C1020; --surface-2:#251429; --line:#382140; --line-strong:#4C2F56;
-    --ink:#F4ECF6; --ink-2:#BEAAC6; --ink-3:#8D7895;
-    --plum:#E4C4EA; --accent:#43E29B; --accent-soft:#123328;
+    --ink:#F4ECF6; --ink-2:#BEAAC6; --ink-3:#8D7895; --plum:#E4C4EA; --accent:#43E29B; --accent-soft:#123328;
+    --warn:#E3A55E; --warn-soft:#33220E; --crit:#F0819A; --crit-soft:#3A141F;
     --gk:#B79BFA; --def:#4CC7E0; --mid:#43E29B; --fwd:#E3A55E;
   }
   *{box-sizing:border-box}
-  body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--f);font-size:15px;line-height:1.55;-webkit-font-smoothing:antialiased}
-  .wrap{max-width:1000px;margin:0 auto;padding:0 clamp(1rem,4vw,2rem)}
-  header{border-bottom:1px solid var(--line);padding:2.5rem 0 1.75rem;margin-bottom:2rem}
-  h1{margin:0 0 .35rem;font-size:clamp(1.75rem,4vw,2.25rem);font-weight:800;letter-spacing:-.03em;color:var(--plum)}
-  .sub{color:var(--ink-2);margin:0}
-  .controls{display:flex;flex-wrap:wrap;gap:.75rem;align-items:center;margin-top:1.25rem}
-  label{font-family:var(--m);font-size:.7rem;letter-spacing:.12em;text-transform:uppercase;color:var(--ink-3)}
-  select{font-family:var(--f);font-size:.9rem;padding:.4rem .6rem;border-radius:8px;border:1px solid var(--line-strong);background:var(--surface);color:var(--ink)}
-  .kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:1px;background:var(--line);border:1px solid var(--line);border-radius:12px;overflow:hidden;margin-bottom:2rem}
-  .kpi{background:var(--surface);padding:1rem 1.1rem;display:flex;flex-direction:column;gap:.2rem}
-  .kpi dt{font-family:var(--m);font-size:.68rem;letter-spacing:.1em;text-transform:uppercase;color:var(--ink-3)}
-  .kpi dd{margin:0;font-size:1.5rem;font-weight:700;font-variant-numeric:tabular-nums;letter-spacing:-.02em}
-  h2{font-size:1.15rem;font-weight:700;margin:0 0 1rem;letter-spacing:-.01em}
-  .card{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:1rem 1.15rem;margin-bottom:.75rem}
-  .row{display:flex;flex-wrap:wrap;gap:.6rem;align-items:baseline}
-  .nm{font-weight:700}
-  .pos{font-family:var(--m);font-size:.65rem;font-weight:700;letter-spacing:.1em;padding:.15rem .4rem;border-radius:4px;color:#fff}
+  body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--f);font-size:15px;line-height:1.5;-webkit-font-smoothing:antialiased}
+  .wrap{max-width:1080px;margin:0 auto;padding:0 clamp(1rem,4vw,2rem)}
+  header{padding:2rem 0 1.25rem;border-bottom:1px solid var(--line)}
+  h1{margin:0;font-size:clamp(1.6rem,4vw,2.1rem);font-weight:800;letter-spacing:-.03em;color:var(--plum)}
+  .sub{color:var(--ink-2);margin:.3rem 0 0}
+  .status{display:flex;flex-wrap:wrap;gap:.5rem 1.25rem;margin-top:1rem;font-family:var(--m);font-size:.72rem;letter-spacing:.06em;text-transform:uppercase;color:var(--ink-3)}
+  .status b{color:var(--ink);font-weight:700}
+  nav{display:flex;gap:.35rem;margin:1.25rem 0 1.5rem;border-bottom:1px solid var(--line)}
+  nav button{font-family:var(--f);font-size:.95rem;font-weight:600;padding:.6rem .9rem;border:0;background:none;color:var(--ink-3);cursor:pointer;border-bottom:2px solid transparent;margin-bottom:-1px}
+  nav button[aria-selected="true"]{color:var(--ink);border-bottom-color:var(--accent)}
+  nav button:focus-visible{outline:2px solid var(--accent);outline-offset:2px;border-radius:4px}
+  h2{font-size:1.1rem;font-weight:700;margin:0 0 .75rem;letter-spacing:-.01em}
+  .eyebrow{font-family:var(--m);font-size:.68rem;letter-spacing:.12em;text-transform:uppercase;color:var(--ink-3)}
+  .card{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:1rem 1.1rem}
+  .grid2{display:grid;grid-template-columns:1fr 1fr;gap:1rem}
+  @media(max-width:760px){.grid2{grid-template-columns:1fr}}
+  .pos{font-family:var(--m);font-size:.62rem;font-weight:700;letter-spacing:.1em;padding:.15rem .4rem;border-radius:4px;color:#fff;white-space:nowrap}
   .pos.GK{background:var(--gk)} .pos.DEF{background:var(--def)} .pos.MID{background:var(--mid)} .pos.FWD{background:var(--fwd)}
-  .meta{color:var(--ink-3);font-size:.85rem}
-  .cap{font-family:var(--m);font-size:.65rem;font-weight:700;letter-spacing:.08em;background:var(--accent-soft);color:var(--accent);padding:.15rem .4rem;border-radius:4px}
-  .nums{margin-left:auto;display:flex;gap:1.1rem;font-variant-numeric:tabular-nums}
-  .nums span{display:flex;flex-direction:column;align-items:flex-end}
-  .nums b{font-size:1.05rem}
-  .nums i{font-style:normal;font-family:var(--m);font-size:.6rem;letter-spacing:.1em;text-transform:uppercase;color:var(--ink-3)}
-  .bar{display:flex;height:7px;border-radius:4px;overflow:hidden;margin:.7rem 0 .5rem;background:var(--surface-2)}
-  .seg{height:100%}
-  .legend{display:flex;flex-wrap:wrap;gap:.75rem;font-family:var(--m);font-size:.65rem;color:var(--ink-3)}
+  .flag{font-family:var(--m);font-size:.62rem;font-weight:700;letter-spacing:.06em;padding:.15rem .4rem;border-radius:4px;white-space:nowrap}
+  .flag.d{background:var(--warn-soft);color:var(--warn)} .flag.out{background:var(--crit-soft);color:var(--crit)}
+  .cap{font-family:var(--m);font-size:.62rem;font-weight:700;letter-spacing:.08em;background:var(--accent-soft);color:var(--accent);padding:.15rem .4rem;border-radius:4px}
+  input[type=text],input[type=number]{font-family:var(--f);font-size:.95rem;padding:.55rem .7rem;border-radius:8px;border:1px solid var(--line-strong);background:var(--surface);color:var(--ink);width:100%}
+  input:focus-visible{outline:2px solid var(--accent);outline-offset:1px}
+  .row{display:flex;gap:.75rem;align-items:center;flex-wrap:wrap}
+  .bank{max-width:170px}
+  .search{position:relative}
+  .results{position:absolute;top:100%;left:0;right:0;z-index:5;background:var(--surface);border:1px solid var(--line-strong);border-radius:10px;margin-top:.3rem;max-height:320px;overflow:auto;box-shadow:0 12px 30px -12px rgba(0,0,0,.35)}
+  .results button{display:grid;grid-template-columns:auto 1fr auto auto;gap:.6rem;align-items:center;width:100%;text-align:left;padding:.5rem .7rem;border:0;background:none;color:var(--ink);font-family:var(--f);font-size:.9rem;cursor:pointer;border-bottom:1px solid var(--line)}
+  .results button:hover,.results button:focus-visible{background:var(--surface-2);outline:none}
+  .results .meta{color:var(--ink-3);font-size:.8rem}
+  .num{font-family:var(--m);font-variant-numeric:tabular-nums}
+  .slots{display:grid;grid-template-columns:repeat(auto-fill,minmax(190px,1fr));gap:.5rem;margin-top:.75rem}
+  .slot{border:1px dashed var(--line-strong);border-radius:10px;padding:.55rem .65rem;min-height:66px;display:flex;flex-direction:column;gap:.2rem;background:var(--surface)}
+  .slot.filled{border-style:solid}
+  .slot.starter{border-color:var(--accent)}
+  .slot .top{display:flex;justify-content:space-between;align-items:center;gap:.4rem}
+  .slot .nm{font-weight:700;font-size:.92rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .slot .sm{color:var(--ink-3);font-size:.78rem;display:flex;gap:.5rem;flex-wrap:wrap;align-items:center}
+  .slot .x{border:0;background:none;color:var(--ink-3);cursor:pointer;font-size:1rem;line-height:1;padding:0 .1rem}
+  .slot .x:hover{color:var(--crit)}
+  .slot .empty{color:var(--ink-3);font-size:.85rem}
+  .kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:1px;background:var(--line);border:1px solid var(--line);border-radius:12px;overflow:hidden;margin:1rem 0}
+  .kpi{background:var(--surface);padding:.85rem 1rem}
+  .kpi dt{font-family:var(--m);font-size:.64rem;letter-spacing:.1em;text-transform:uppercase;color:var(--ink-3)}
+  .kpi dd{margin:.15rem 0 0;font-size:1.45rem;font-weight:700;letter-spacing:-.02em;font-variant-numeric:tabular-nums}
+  .meter{height:8px;border-radius:4px;background:var(--surface-2);overflow:hidden;margin-top:.5rem}
+  .meter i{display:block;height:100%;background:var(--accent)}
+  .moves{display:flex;flex-direction:column;gap:.55rem}
+  .move{display:grid;grid-template-columns:2rem 1fr auto;gap:.75rem;align-items:center;background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:.7rem .85rem}
+  .move .rk{font-family:var(--m);font-size:1.2rem;font-weight:700;color:var(--accent)}
+  .move .who{display:flex;flex-direction:column;gap:.25rem;min-width:0}
+  .move .line{display:flex;gap:.5rem;align-items:center;flex-wrap:wrap;font-size:.92rem}
+  .move .arrow{color:var(--ink-3)}
+  .move .why{font-size:.82rem;color:var(--ink-3)}
+  .move .gain{text-align:right;font-variant-numeric:tabular-nums}
+  .move .gain b{font-size:1.15rem;color:var(--accent)}
+  .move .gain small{display:block;font-family:var(--m);font-size:.64rem;letter-spacing:.08em;text-transform:uppercase;color:var(--ink-3)}
+  .news{font-size:.82rem;color:var(--warn)}
+  .warnbox{border-left:3px solid var(--warn);background:var(--warn-soft);padding:.6rem .8rem;border-radius:0 8px 8px 0;font-size:.9rem;margin-top:.75rem}
+  .critbox{border-left:3px solid var(--crit);background:var(--crit-soft);padding:.6rem .8rem;border-radius:0 8px 8px 0;font-size:.9rem;margin-top:.75rem}
+  .pcard{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:.9rem 1rem;margin-bottom:.6rem}
+  .pcard .hd{display:flex;flex-wrap:wrap;gap:.5rem;align-items:baseline}
+  .pcard .nm{font-weight:700}
+  .pcard .nums{margin-left:auto;display:flex;gap:1rem}
+  .pcard .nums span{display:flex;flex-direction:column;align-items:flex-end;font-variant-numeric:tabular-nums}
+  .pcard .nums b{font-size:1rem}
+  .pcard .nums i{font-style:normal;font-family:var(--m);font-size:.58rem;letter-spacing:.1em;text-transform:uppercase;color:var(--ink-3)}
+  .bar{display:flex;height:6px;border-radius:4px;overflow:hidden;margin:.6rem 0 .4rem;background:var(--surface-2)}
+  .legend{display:flex;flex-wrap:wrap;gap:.7rem;font-family:var(--m);font-size:.62rem;color:var(--ink-3)}
   .legend i{display:inline-block;width:8px;height:8px;border-radius:2px;margin-right:.3rem;font-style:normal}
-  .why{color:var(--ink-2);font-size:.9rem;margin:.5rem 0 0}
-  table{width:100%;border-collapse:collapse;font-size:.9rem}
+  .rat{color:var(--ink-2);font-size:.88rem;margin:.4rem 0 0}
   .tw{overflow-x:auto;border:1px solid var(--line);border-radius:12px;background:var(--surface)}
-  th,td{padding:.55rem .8rem;text-align:left;border-bottom:1px solid var(--line);white-space:nowrap}
-  th{font-family:var(--m);font-size:.65rem;letter-spacing:.1em;text-transform:uppercase;color:var(--ink-3);background:var(--surface-2)}
+  table{width:100%;border-collapse:collapse;font-size:.88rem}
+  th,td{padding:.5rem .7rem;text-align:left;border-bottom:1px solid var(--line);white-space:nowrap}
+  th{font-family:var(--m);font-size:.62rem;letter-spacing:.1em;text-transform:uppercase;color:var(--ink-3);background:var(--surface-2);cursor:pointer;user-select:none}
   td.n{font-variant-numeric:tabular-nums;text-align:right}
   tbody tr:last-child td{border-bottom:0}
-  footer{color:var(--ink-3);font-size:.85rem;padding:2.5rem 0 3rem;border-top:1px solid var(--line);margin-top:2.5rem}
-  .err{background:var(--surface);border:1px solid var(--line-strong);border-radius:12px;padding:1.5rem;color:var(--ink-2)}
-  code{font-family:var(--m);font-size:.85em;background:var(--surface-2);padding:.1em .35em;border-radius:4px}
+  .hint{color:var(--ink-3);font-size:.85rem}
+  footer{color:var(--ink-3);font-size:.82rem;padding:2.5rem 0 3rem;border-top:1px solid var(--line);margin-top:2.5rem}
+  [hidden]{display:none!important}
 </style>
 </head>
 <body>
 <div class="wrap">
   <header>
     <h1>FPL Analyst</h1>
-    <p class="sub">Projected points, an optimal squad under the real constraints, and why each pick was made.</p>
-    <div class="controls">
-      <label for="gw">Gameweek</label>
-      <select id="gw"></select>
-    </div>
+    <p class="sub">Rate your fifteen against this week's projections, see who's flagged, and get the five moves that lift your team most.</p>
+    <div class="status" id="status">Loading…</div>
   </header>
 
-  <main id="main"><p class="meta">Loading…</p></main>
+  <nav role="tablist">
+    <button role="tab" aria-selected="true" data-tab="rate">Rate my team</button>
+    <button role="tab" aria-selected="false" data-tab="best">Best squad this week</button>
+    <button role="tab" aria-selected="false" data-tab="all">All players</button>
+  </nav>
+
+  <main>
+    <section id="tab-rate">
+      <div class="grid2">
+        <div class="card">
+          <h2>Your squad</h2>
+          <div class="row">
+            <div class="search" style="flex:1;min-width:220px">
+              <input type="text" id="q" placeholder="Search a player or club…" autocomplete="off" aria-label="Search players">
+              <div class="results" id="results" hidden></div>
+            </div>
+            <div class="bank">
+              <input type="number" id="bank" step="0.1" min="0" value="0.0" aria-label="Money in the bank, £m" title="Money in the bank (£m)">
+            </div>
+          </div>
+          <p class="hint" style="margin:.5rem 0 0">Two keepers, five defenders, five midfielders, three forwards, max three per club. Bank is in £m.</p>
+          <div class="slots" id="slots"></div>
+          <div class="row" style="margin-top:.75rem">
+            <button id="clear" class="hint" style="border:0;background:none;cursor:pointer;text-decoration:underline">Clear squad</button>
+          </div>
+        </div>
+        <div>
+          <div id="rating"></div>
+          <div id="moves" style="margin-top:1rem"></div>
+        </div>
+      </div>
+    </section>
+
+    <section id="tab-best" hidden>
+      <div id="best"></div>
+    </section>
+
+    <section id="tab-all" hidden>
+      <div class="row" style="margin-bottom:.75rem"><input type="text" id="qall" placeholder="Filter…" style="max-width:320px" aria-label="Filter players"></div>
+      <div id="all"></div>
+    </section>
+  </main>
 
   <footer>
-    Projections from a component model: appearance, attacking, clean sheet, bonus and goalkeeping
-    are predicted separately and summed using FPL's scoring rules. Rationales are generated from
-    that breakdown — every figure comes from the model, none from the language model.
+    Projections come from a component model (appearance, attacking, clean sheet, bonus, goalkeeping, defensive contribution) trained on 2022-23 to 2025-26 and this season's fixtures, then scaled by FPL's own availability flag so injuries, suspensions and loan moves are reflected the day they're announced. Ratings are relative to the best squad money could buy this week. Refreshed daily.
   </footer>
 </div>
 
 <script>
-const COLOURS = {
-  appearance:  "var(--ink-3)",
-  attacking:   "var(--fwd)",
-  clean_sheet: "var(--def)",
-  bonus:       "var(--accent)",
-  goalkeeping: "var(--gk)"
-};
-const LABELS = {
-  appearance: "appearance", attacking: "attacking", clean_sheet: "clean sheet",
-  bonus: "bonus", goalkeeping: "goalkeeping"
-};
+// ---------- data ----------
+const SQUAD_QUOTA = {GK:2, DEF:5, MID:5, FWD:3};
+const XI_MIN = {GK:1, DEF:3, MID:2, FWD:1}, XI_MAX = {GK:1, DEF:5, MID:5, FWD:3};
+const MAX_PER_CLUB = 3, POSITIONS = ["GK","DEF","MID","FWD"];
+const FORMATIONS = [];
+for (let d=XI_MIN.DEF; d<=XI_MAX.DEF; d++) for (let m=XI_MIN.MID; m<=XI_MAX.MID; m++) for (let f=XI_MIN.FWD; f<=XI_MAX.FWD; f++)
+  if (1+d+m+f === 11) FORMATIONS.push({GK:1, DEF:d, MID:m, FWD:f});
 
-const el = (t, c, x) => { const n = document.createElement(t); if (c) n.className = c; if (x != null) n.textContent = x; return n; };
+const COLOURS = {appearance:"var(--ink-3)", attacking:"var(--fwd)", clean_sheet:"var(--def)", bonus:"var(--accent)", goalkeeping:"var(--gk)", defensive:"var(--plum)"};
+const LABELS = {appearance:"appearance", attacking:"attacking", clean_sheet:"clean sheet", bonus:"bonus", goalkeeping:"goalkeeping", defensive:"def. contribution"};
 
-function breakdownBar(b) {
-  const entries = Object.entries(b).filter(([, v]) => v > 0);
-  const total = entries.reduce((s, [, v]) => s + v, 0) || 1;
-  const bar = el("div", "bar");
-  entries.forEach(([k, v]) => {
-    const seg = el("div", "seg");
-    seg.style.width = (v / total * 100) + "%";
-    seg.style.background = COLOURS[k];
-    seg.title = `${LABELS[k]}: ${v.toFixed(2)}`;
-    bar.appendChild(seg);
-  });
-  const legend = el("div", "legend");
-  entries.forEach(([k, v]) => {
-    const s = el("span");
-    const sw = el("i"); sw.style.background = COLOURS[k];
-    s.appendChild(sw);
-    s.appendChild(document.createTextNode(`${LABELS[k]} ${v.toFixed(2)}`));
-    legend.appendChild(s);
-  });
+let DATA = null, BY = {}, squad = [];
+const el = (t,c,x) => { const n=document.createElement(t); if(c) n.className=c; if(x!=null) n.textContent=x; return n; };
+const fmt = (v,d=2) => Number(v).toFixed(d);
+
+// ---------- rating engine (mirror of fpl/optimise/rate.py) ----------
+function bestEleven(players){
+  const by = {GK:[],DEF:[],MID:[],FWD:[]};
+  players.forEach(p => by[p.position].push(p));
+  POSITIONS.forEach(k => by[k].sort((a,b)=>b.ep-a.ep));
+  let best = null;
+  for (const f of FORMATIONS){
+    const chosen = POSITIONS.flatMap(k => by[k].slice(0, f[k]));
+    const cap = chosen.reduce((a,b)=> b.ep>a.ep?b:a);
+    const pts = chosen.reduce((s,p)=>s+p.ep,0) + cap.ep;
+    if (!best || pts > best.points) best = {points:pts, starters:chosen.map(p=>p.code), captain:cap.code, formation:f};
+  }
+  const st = new Set(best.starters);
+  best.bench = players.filter(p=>!st.has(p.code)).map(p=>p.code);
+  return best;
+}
+function squadProblems(players){
+  const counts = {GK:0,DEF:0,MID:0,FWD:0}, clubs = {};
+  players.forEach(p => { counts[p.position]++; clubs[p.team]=(clubs[p.team]||0)+1; });
+  const missing = POSITIONS.filter(k => counts[k] < SQUAD_QUOTA[k]).map(k => `${SQUAD_QUOTA[k]-counts[k]} ${k}`);
+  const over = Object.entries(clubs).filter(([,n]) => n > MAX_PER_CLUB).map(([t])=>t);
+  return {missing, over, complete: players.length===15 && missing.length===0 && over.length===0};
+}
+function suggestTransfers(players, pool, bank, topN=5){
+  const base = bestEleven(players).points;
+  const owned = new Set(players.map(p=>p.code));
+  const clubs = {}; players.forEach(p => clubs[p.team]=(clubs[p.team]||0)+1);
+  const out = [];
+  for (const leaving of players){
+    const rest = players.filter(p=>p.code!==leaving.code);
+    const budget = leaving.price + bank + 1e-9;
+    for (const arriving of pool){
+      if (owned.has(arriving.code) || arriving.position!==leaving.position || arriving.price>budget) continue;
+      if (arriving.team!==leaving.team && (clubs[arriving.team]||0) >= MAX_PER_CLUB) continue;
+      const pts = bestEleven([...rest, arriving]).points, gain = pts-base;
+      if (gain <= 1e-9) continue;
+      out.push({out:leaving, in:arriving, gain, points_after:pts, cost_change:arriving.price-leaving.price});
+    }
+  }
+  out.sort((a,b)=>b.gain-a.gain);
+  const seen = new Set(), ranked = [];
+  for (const r of out){ if (seen.has(r.in.code)) continue; seen.add(r.in.code); r.rank = ranked.length+1; ranked.push(r); if (ranked.length===topN) break; }
+  return ranked;
+}
+
+// ---------- shared pieces ----------
+function flagEl(p){
+  if (p.availability >= 1) return null;
+  const f = el("span", "flag " + (p.availability===0 ? "out" : "d"));
+  f.textContent = p.availability===0 ? "OUT" : (p.chance!=null ? p.chance+"%" : "DOUBT");
+  if (p.news) f.title = p.news;
+  return f;
+}
+function breakdownBar(b){
+  const entries = Object.entries(b).filter(([,v]) => v>0.005);
+  const total = entries.reduce((s,[,v])=>s+v,0)||1;
+  const bar = el("div","bar");
+  entries.forEach(([k,v]) => { const s=el("div"); s.style.width=(v/total*100)+"%"; s.style.background=COLOURS[k]; s.title=`${LABELS[k]}: ${fmt(v)}`; bar.appendChild(s); });
+  const legend = el("div","legend");
+  entries.forEach(([k,v]) => { const s=el("span"); const sw=el("i"); sw.style.background=COLOURS[k]; s.appendChild(sw); s.appendChild(document.createTextNode(`${LABELS[k]} ${fmt(v)}`)); legend.appendChild(s); });
   return [bar, legend];
 }
-
-function playerCard(p) {
-  const card = el("div", "card");
-  const row = el("div", "row");
-  row.appendChild(el("span", "nm", p.name));
-  row.appendChild(el("span", "pos " + p.position, p.position));
-  if (p.is_captain) row.appendChild(el("span", "cap", "CAPTAIN"));
-  row.appendChild(el("span", "meta", `${p.team} ${p.home ? "vs" : "at"} ${p.opponent} · £${p.price}m`));
-
-  const nums = el("div", "nums");
-  [["projected", p.projected.toFixed(2)], ["actual", p.actual], ["start prob", p.start_probability]]
-    .forEach(([k, v]) => {
-      const s = el("span");
-      s.appendChild(el("b", null, v));
-      s.appendChild(el("i", null, k));
-      nums.appendChild(s);
-    });
-  row.appendChild(nums);
-  card.appendChild(row);
-
-  breakdownBar(p.breakdown).forEach(n => card.appendChild(n));
-  if (p.rationale) card.appendChild(el("p", "why", p.rationale));
-  return card;
+function playerCard(p, opts={}){
+  const c = el("div","pcard"); const hd = el("div","hd");
+  hd.appendChild(el("span","nm",p.web_name)); hd.appendChild(el("span","pos "+p.position,p.position));
+  if (opts.captain) hd.appendChild(el("span","cap","CAPTAIN"));
+  const fl = flagEl(p); if (fl) hd.appendChild(fl);
+  hd.appendChild(el("span","hint",`${p.team} ${p.home?"vs":"at"} ${p.opponent}${p.fixtures>1?" (+1)":""} · £${fmt(p.price,1)}m · ${fmt(p.owned_pct,1)}% owned`));
+  const nums = el("div","nums");
+  [["projected",fmt(p.ep)],["fpl says",fmt(p.fpl_ep,1)],["start prob",fmt(p.p60)]].forEach(([k,v])=>{ const s=el("span"); s.appendChild(el("b",null,v)); s.appendChild(el("i",null,k)); nums.appendChild(s); });
+  hd.appendChild(nums); c.appendChild(hd);
+  breakdownBar(p.breakdown).forEach(n=>c.appendChild(n));
+  if (p.news) c.appendChild(el("p","news",p.news));
+  if (p.rationale) c.appendChild(el("p","rat",p.rationale));
+  return c;
 }
 
-function table(rows) {
-  const wrap = el("div", "tw");
-  const t = el("table");
-  const head = el("thead");
-  const hr = el("tr");
-  ["Player", "Pos", "Club", "Fixture", "£", "Projected", "Actual"].forEach(h => hr.appendChild(el("th", null, h)));
-  head.appendChild(hr); t.appendChild(head);
-  const body = el("tbody");
-  rows.forEach(p => {
-    const tr = el("tr");
-    tr.appendChild(el("td", null, p.name));
-    const pc = el("td"); pc.appendChild(el("span", "pos " + p.position, p.position)); tr.appendChild(pc);
-    tr.appendChild(el("td", null, p.team));
-    tr.appendChild(el("td", null, `${p.home ? "vs" : "at"} ${p.opponent}`));
-    tr.appendChild(el("td", "n", p.price.toFixed(1)));
-    tr.appendChild(el("td", "n", p.projected.toFixed(2)));
-    tr.appendChild(el("td", "n", p.actual));
-    body.appendChild(tr);
+// ---------- rate my team ----------
+function saveSquad(){ try{ localStorage.setItem("fpl-squad", JSON.stringify({codes:squad.map(p=>p.code), bank:document.getElementById("bank").value})); }catch(e){} }
+function loadSquad(){ try{ const s=JSON.parse(localStorage.getItem("fpl-squad")||"null"); if(!s) return; squad = s.codes.map(c=>BY[c]).filter(Boolean); document.getElementById("bank").value = s.bank ?? "0.0"; }catch(e){} }
+
+function renderSlots(){
+  const box = document.getElementById("slots"); box.replaceChildren();
+  const eleven = (squadProblems(squad).complete) ? bestEleven(squad) : null;
+  const starters = new Set(eleven ? eleven.starters : []);
+  POSITIONS.forEach(pos => {
+    const have = squad.filter(p=>p.position===pos);
+    for (let i=0;i<SQUAD_QUOTA[pos];i++){
+      const p = have[i]; const s = el("div","slot"+(p?" filled":"")+(p&&starters.has(p.code)?" starter":""));
+      if (!p){ s.appendChild(el("span","pos "+pos,pos)); s.appendChild(el("span","empty","empty")); box.appendChild(s); continue; }
+      const top = el("div","top"); const l = el("span","nm",p.web_name);
+      const x = el("button","x","×"); x.title="Remove"; x.setAttribute("aria-label","Remove "+p.web_name); x.onclick=()=>{ squad=squad.filter(q=>q.code!==p.code); update(); };
+      top.appendChild(l); top.appendChild(x); s.appendChild(top);
+      const sm = el("div","sm"); sm.appendChild(el("span","pos "+pos,pos)); sm.appendChild(el("span",null,p.team));
+      sm.appendChild(el("span","num",`£${fmt(p.price,1)}m`)); sm.appendChild(el("span","num",fmt(p.ep)+" pts"));
+      if (eleven && eleven.captain===p.code) sm.appendChild(el("span","cap","C"));
+      const fl = flagEl(p); if (fl) sm.appendChild(fl);
+      s.appendChild(sm); box.appendChild(s);
+    }
   });
-  t.appendChild(body); wrap.appendChild(t);
-  return wrap;
 }
+function renderRating(){
+  const box = document.getElementById("rating"), mv = document.getElementById("moves");
+  box.replaceChildren(); mv.replaceChildren();
+  const prob = squadProblems(squad);
+  if (!prob.complete){
+    const c = el("div","card"); c.appendChild(el("h2",null,"Rating"));
+    const parts = [];
+    if (prob.missing.length) parts.push("still need " + prob.missing.join(", "));
+    if (prob.over.length) parts.push("more than three from " + prob.over.join(", "));
+    c.appendChild(el("p","hint", parts.length ? parts.join(" · ") : "Add fifteen players to rate the team."));
+    box.appendChild(c); return;
+  }
+  const bank = parseFloat(document.getElementById("bank").value)||0;
+  const e = bestEleven(squad), opt = DATA.meta.optimal_points, rating = 100*e.points/opt;
+  const c = el("div","card"); c.appendChild(el("h2",null,"Rating"));
+  const k = el("dl","kpis");
+  [["rating","/100",fmt(rating,1)],["projected","pts",fmt(e.points,1)],["best possible","pts",fmt(opt,1)],["formation","",`${e.formation.DEF}-${e.formation.MID}-${e.formation.FWD}`],["captain","",BY[e.captain].web_name]].forEach(([t,u,v])=>{
+    const d=el("div","kpi"); d.appendChild(el("dt",null,t+(u?" "+u:""))); d.appendChild(el("dd",null,v)); k.appendChild(d); });
+  c.appendChild(k);
+  const meter = el("div","meter"); const i = el("i"); i.style.width = rating+"%"; meter.appendChild(i); c.appendChild(meter);
+  const flagged = squad.filter(p=>p.availability<1);
+  if (flagged.length){
+    const w = el("div", flagged.some(p=>p.availability===0) ? "critbox" : "warnbox");
+    w.appendChild(el("b",null, flagged.length + (flagged.length===1?" player flagged":" players flagged")));
+    flagged.forEach(p => w.appendChild(el("div",null,`${p.web_name}: ${p.news || "doubtful"}`)));
+    c.appendChild(w);
+  }
+  box.appendChild(c);
 
-function render(d) {
-  const main = document.getElementById("main");
-  main.replaceChildren();
-  const s = d.squad;
-
-  const kpis = el("dl", "kpis");
-  [["Gameweek", d.gameweek], ["Projected", s.projected.toFixed(1)],
-   ["Actual", s.actual], ["Squad cost", "£" + s.spend + "m"],
-   ["Season", d.season]].forEach(([k, v]) => {
-    const box = el("div", "kpi");
-    box.appendChild(el("dt", null, k));
-    box.appendChild(el("dd", null, v));
-    kpis.appendChild(box);
+  const moves = suggestTransfers(squad, DATA.players, bank, 5);
+  const mc = el("div","card"); mc.appendChild(el("h2",null,"Five moves that lift your rating"));
+  if (!moves.length){ mc.appendChild(el("p","hint","No single transfer inside your budget improves the projected eleven. That's a good squad for this week.")); }
+  const list = el("div","moves");
+  moves.forEach(m => {
+    const row = el("div","move"); row.appendChild(el("div","rk",m.rank));
+    const who = el("div","who"); const line = el("div","line");
+    line.appendChild(el("b",null,m.out.web_name)); const of=flagEl(m.out); if(of) line.appendChild(of);
+    line.appendChild(el("span","arrow","→")); line.appendChild(el("b",null,m.in.web_name)); line.appendChild(el("span","pos "+m.in.position,m.in.position));
+    line.appendChild(el("span","hint",`${m.in.team} ${m.in.home?"vs":"at"} ${m.in.opponent}`));
+    who.appendChild(line);
+    who.appendChild(el("div","why",`${fmt(m.out.ep)} → ${fmt(m.in.ep)} projected · ${m.cost_change>=0?"+":""}£${fmt(m.cost_change,1)}m · team rating ${fmt(100*m.points_after/opt,1)}/100${m.in.news?" · "+m.in.news:""}`));
+    row.appendChild(who);
+    const g = el("div","gain"); g.appendChild(el("b",null,"+"+fmt(m.gain))); g.appendChild(el("small",null,"team pts")); row.appendChild(g);
+    list.appendChild(row);
   });
-  main.appendChild(kpis);
+  mc.appendChild(list); mv.appendChild(mc);
+}
+function update(){ renderSlots(); renderRating(); saveSquad(); }
 
-  main.appendChild(el("h2", null, "Recommended eleven"));
-  s.starters.forEach(p => main.appendChild(playerCard(p)));
-
-  if (s.bench && s.bench.length) {
-    main.appendChild(el("h2", null, "Bench"));
-    main.appendChild(table(s.bench));
-  }
-
-  main.appendChild(el("h2", null, "Highest projections in the pool"));
-  main.appendChild(table(d.top_projections));
+function search(q){
+  const box = document.getElementById("results"); box.replaceChildren();
+  q = q.trim().toLowerCase(); if (q.length<2){ box.hidden=true; return; }
+  const owned = new Set(squad.map(p=>p.code));
+  const hits = DATA.players.filter(p => !owned.has(p.code) && (p.web_name.toLowerCase().includes(q) || p.name.toLowerCase().includes(q) || p.team.toLowerCase().includes(q))).slice(0,12);
+  if (!hits.length){ box.hidden=true; return; }
+  hits.forEach(p => {
+    const b = el("button"); b.type="button";
+    b.appendChild(el("span","pos "+p.position,p.position));
+    const n = el("span"); n.appendChild(el("b",null,p.web_name+" ")); n.appendChild(el("span","meta",p.team)); const fl=flagEl(p); if(fl){ n.appendChild(document.createTextNode(" ")); n.appendChild(fl);} b.appendChild(n);
+    b.appendChild(el("span","num",`£${fmt(p.price,1)}m`)); b.appendChild(el("span","num",fmt(p.ep)+" pts"));
+    b.onclick = () => { add(p); document.getElementById("q").value=""; box.hidden=true; };
+    box.appendChild(b);
+  });
+  box.hidden=false;
+}
+function add(p){
+  const have = squad.filter(x=>x.position===p.position).length;
+  if (have >= SQUAD_QUOTA[p.position]) { alert(`You already have ${SQUAD_QUOTA[p.position]} ${p.position}.`); return; }
+  if (squad.filter(x=>x.team===p.team).length >= MAX_PER_CLUB){ alert(`Already three from ${p.team}.`); return; }
+  squad.push(p); update();
 }
 
-async function load(gw) {
-  const main = document.getElementById("main");
-  try {
-    const r = await fetch(`data/gw${gw}.json`);
-    if (!r.ok) throw new Error(r.status);
-    render(await r.json());
-  } catch (e) {
-    main.replaceChildren();
-    const box = el("div", "err");
-    box.appendChild(el("p", null, `Could not load gameweek ${gw}.`));
-    box.appendChild(el("p", null, "Generate it with: fpl publish --gameweek " + gw));
-    main.appendChild(box);
-  }
+// ---------- best squad ----------
+function renderBest(){
+  const box = document.getElementById("best"); box.replaceChildren();
+  const o = DATA.optimal;
+  const k = el("dl","kpis");
+  [["gameweek",DATA.meta.gameweek],["projected pts",fmt(o.projected,1)],["squad cost","£"+fmt(o.spend,1)+"m"],["captain",BY[o.captain].web_name]].forEach(([t,v])=>{ const d=el("div","kpi"); d.appendChild(el("dt",null,t)); d.appendChild(el("dd",null,v)); k.appendChild(d); });
+  box.appendChild(k);
+  box.appendChild(el("h2",null,"Recommended eleven"));
+  o.starters.forEach(c => box.appendChild(playerCard(BY[c],{captain:c===o.captain})));
+  box.appendChild(el("h2",null,"Bench")); o.bench.forEach(c => box.appendChild(playerCard(BY[c])));
 }
 
-(async function init() {
-  const sel = document.getElementById("gw");
+// ---------- all players ----------
+let sortKey="ep", sortDir=-1;
+function renderAll(){
+  const q=(document.getElementById("qall").value||"").toLowerCase();
+  const rows = DATA.players.filter(p=>!q || p.web_name.toLowerCase().includes(q)||p.team.toLowerCase().includes(q)||p.position.toLowerCase()===q)
+    .sort((a,b)=> (a[sortKey]>b[sortKey]?1:a[sortKey]<b[sortKey]?-1:0)*sortDir);
+  const box=document.getElementById("all"); box.replaceChildren();
+  const tw=el("div","tw"), t=el("table"), th=el("thead"), tr=el("tr");
+  [["web_name","Player"],["position","Pos"],["team","Club"],["opponent","Fixture"],["price","£"],["ep","Projected"],["fpl_ep","FPL says"],["p60","Start"],["availability","Avail"],["owned_pct","Owned %"]].forEach(([k,l])=>{ const h=el("th",null,l+(sortKey===k?(sortDir<0?" ↓":" ↑"):"")); h.onclick=()=>{ if(sortKey===k) sortDir*=-1; else {sortKey=k; sortDir=-1;} renderAll(); }; tr.appendChild(h); });
+  th.appendChild(tr); t.appendChild(th); const tb=el("tbody");
+  rows.slice(0,300).forEach(p=>{ const r=el("tr");
+    const n=el("td"); n.appendChild(el("b",null,p.web_name)); const fl=flagEl(p); if(fl){ n.appendChild(document.createTextNode(" ")); n.appendChild(fl);} r.appendChild(n);
+    const pc=el("td"); pc.appendChild(el("span","pos "+p.position,p.position)); r.appendChild(pc);
+    r.appendChild(el("td",null,p.team)); r.appendChild(el("td",null,`${p.home?"vs":"at"} ${p.opponent}`));
+    r.appendChild(el("td","n",fmt(p.price,1))); r.appendChild(el("td","n",fmt(p.ep))); r.appendChild(el("td","n",fmt(p.fpl_ep,1)));
+    r.appendChild(el("td","n",fmt(p.p60))); r.appendChild(el("td","n",fmt(p.availability))); r.appendChild(el("td","n",fmt(p.owned_pct,1)));
+    if (p.news) r.title=p.news; tb.appendChild(r); });
+  t.appendChild(tb); tw.appendChild(t); box.appendChild(tw);
+  if (rows.length>300) box.appendChild(el("p","hint",`Showing 300 of ${rows.length}. Filter to narrow.`));
+}
+
+// ---------- boot ----------
+function renderStatus(){
+  const m = DATA.meta, s = document.getElementById("status"); s.replaceChildren();
+  const dl = new Date(m.deadline), now = new Date(), hrs = Math.max(0, (dl-now)/36e5);
+  const left = hrs>48 ? Math.floor(hrs/24)+"d "+Math.round(hrs%24)+"h" : Math.floor(hrs)+"h "+Math.round((hrs%1)*60)+"m";
+  [["season",m.season],["gameweek",m.gameweek],["deadline",dl.toUTCString().replace(":00 GMT"," UTC")],["time left",left],["data refreshed",new Date(m.captured_at).toUTCString().replace(":00 GMT"," UTC")],["flagged",m.flagged+" players"]].forEach(([k,v])=>{ const x=el("span"); x.appendChild(document.createTextNode(k+" ")); x.appendChild(el("b",null,v)); s.appendChild(x); });
+}
+document.querySelectorAll("nav [role=tab]").forEach(b => b.addEventListener("click", () => {
+  document.querySelectorAll("nav [role=tab]").forEach(x=>x.setAttribute("aria-selected", x===b));
+  ["rate","best","all"].forEach(t => document.getElementById("tab-"+t).hidden = (t!==b.dataset.tab));
+}));
+document.getElementById("q").addEventListener("input", e => search(e.target.value));
+document.getElementById("q").addEventListener("focus", e => search(e.target.value));
+document.addEventListener("click", e => { if (!e.target.closest(".search")) document.getElementById("results").hidden = true; });
+document.getElementById("bank").addEventListener("input", () => { renderRating(); saveSquad(); });
+document.getElementById("clear").addEventListener("click", () => { squad=[]; update(); });
+document.getElementById("qall").addEventListener("input", renderAll);
+
+(async function init(){
   try {
-    const r = await fetch("data/index.json");
-    if (!r.ok) throw new Error(r.status);
-    const idx = await r.json();
-    idx.gameweeks.forEach(g => {
-      const o = document.createElement("option");
-      o.value = g; o.textContent = "Gameweek " + g;
-      if (g === idx.latest) o.selected = true;
-      sel.appendChild(o);
-    });
-    sel.addEventListener("change", () => load(sel.value));
-    load(idx.latest);
+    const r = await fetch("data/live.json"); if (!r.ok) throw new Error(r.status);
+    DATA = await r.json();
   } catch (e) {
-    document.getElementById("main").replaceChildren(
-      Object.assign(document.createElement("div"), {
-        className: "err",
-        textContent: "No data yet. Run the pipeline to generate site/data/."
-      })
-    );
+    document.getElementById("status").textContent = "No live data yet. Run: fpl snapshot && fpl live";
+    return;
   }
+  DATA.players.forEach(p => BY[p.code] = p);
+  renderStatus(); loadSquad(); update(); renderBest(); renderAll();
 })();
 </script>
 </body>

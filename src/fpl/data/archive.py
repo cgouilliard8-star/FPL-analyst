@@ -1,8 +1,8 @@
 """Historical FPL data from the vaastav/Fantasy-Premier-League archive.
 
 The archive stopped weekly updates after 2024-25 (it now refreshes ~3x/year), so it
-is used strictly to bootstrap the training set. In-season data comes from our own
-deadline-stamped collector in ``fpl.data.fpl_api``.
+is used strictly to bootstrap the training set. In-season data will come from a
+deadline-stamped collector against the live API (planned: ``fpl.data.fpl_api``).
 """
 
 from __future__ import annotations
@@ -13,7 +13,7 @@ from io import StringIO
 import pandas as pd
 import requests
 
-from fpl.config import ARCHIVE_BASE, BRONZE, TRAIN_SEASONS
+from fpl.config import ARCHIVE_BASE, BRONZE, TRAIN_SEASONS, ensure_data_dirs
 
 log = logging.getLogger(__name__)
 
@@ -92,6 +92,7 @@ def load_players(
     seasons: tuple[str, ...] = TRAIN_SEASONS, *, refresh: bool = False
 ) -> pd.DataFrame:
     """Load player registries for several seasons, cached to bronze."""
+    ensure_data_dirs()
     frames = []
     for season in seasons:
         cache = BRONZE / f"players_{season}.parquet"
@@ -138,6 +139,7 @@ def load_seasons(
     Cached locally because the archive is static history — re-downloading it on every
     run is slow and rude. Pass ``refresh=True`` to force a re-fetch.
     """
+    ensure_data_dirs()
     frames = []
     for season in seasons:
         cache = BRONZE / f"archive_{season}.parquet"

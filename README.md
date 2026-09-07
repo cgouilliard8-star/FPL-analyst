@@ -1,8 +1,39 @@
 # FPL Analyst
 
-Weekly Fantasy Premier League analysis: projects expected points for every player,
-picks the optimal squad under the real FPL constraints, and explains each pick from
-the model's own arithmetic.
+Rate your Fantasy Premier League squad against this week's projections, see who's
+flagged by injury or transfer news, and get the five transfers that lift your team
+most. Live for 2026-27, refreshed every morning.
+
+```
+fpl snapshot     # pull the live FPL API into an immutable, timestamped snapshot
+fpl live         # project the next gameweek and write site/data/live.json
+```
+
+The page (`site/`) is static: it loads that one JSON file and does the rating in the
+browser, so it runs on GitHub Pages with nothing behind it.
+
+## What the live page does
+
+**Rate my team.** Search and pick your fifteen (quotas and the three-per-club rule are
+enforced as you go), enter your bank, and the page picks your best legal eleven and
+captain by projection, scores it, and rates it against the best £100m squad the model
+can build this week. Flagged players are called out with FPL's own news text.
+
+**Five moves, ranked.** For every player you own, every same-position replacement you
+can afford is tried, and the resulting fifteen is re-solved for its best eleven. The
+gain reported is the change in the *team's* projected points, not the difference
+between two players — a signing who doesn't make your eleven gains you nothing, and
+one who changes your captain gains more than his own number. The top five by gain,
+never repeating a signing, are shown with the rating you'd have after each.
+
+**News and injuries.** Every projection is scaled by FPL's availability flag:
+`chance_of_playing_next_round` where a percentage is given, zero for injured,
+suspended or departed players with no percentage, 75% for an unspecified doubt. The
+flag is applied after the model rather than learned by it, because it carries
+information — scans, press conferences, loan moves — that no rolling window can see.
+It moves every day, which is why the refresh is daily.
+
+## Pipeline
 
 ```
 fpl bootstrap    # historical seasons -> data/bronze
@@ -10,8 +41,12 @@ fpl silver       # one identity per player across seasons -> data/silver
 fpl features     # leak-free feature table -> data/gold
 fpl backtest     # walk-forward comparison of every model
 fpl optimise     # what the projections score as an actual squad
-fpl publish 38   # dashboard JSON for a gameweek -> site/data
+fpl publish 38   # backtest dashboard JSON for a past gameweek
 ```
+
+Training covers 2022-23 to 2025-26 from the archive plus the current season's
+finished fixtures from the snapshot; the upcoming fixtures are what gets predicted.
+Double gameweeks produce two rows per player and are scored twice, as the rules do.
 
 ## Results
 
@@ -75,9 +110,9 @@ What would close the gap to `xP`, in order of expected value:
    window can see. [football-data.co.uk](https://www.football-data.co.uk/englandm.php)
    publishes them free back to 1993 for training; The Odds API's free tier covers the
    live week. This is the single largest missing signal.
-2. **Availability flags.** The live FPL API exposes `chance_of_playing_next_round` and
-   `news`. They are not in the historical archive, so a collector has to snapshot them
-   at each deadline from now on — see *Live pipeline* below.
+2. **Availability flags.** Now applied to every live projection (see above). They are
+   absent from the historical archive, so their effect cannot be backtested until the
+   daily snapshots have accumulated a season of them.
 3. **Shot-level xG** from Understat, to separate a striker taking six weak shots from
    one taking a single big chance.
 
@@ -122,15 +157,17 @@ API; constraining it so it cannot fabricate a statistic is the part worth defend
 Without an `ANTHROPIC_API_KEY` the template runs, so the repo works for anyone who
 clones it.
 
-## Live pipeline
+## Refresh schedule
 
-The historical archive this trains on
-([vaastav/Fantasy-Premier-League](https://github.com/vaastav/Fantasy-Premier-League))
-stopped weekly updates after 2024-25. The in-season data source is therefore a
-collector of our own against the official API, run by `.github/workflows/weekly-refresh.yml`
-before each deadline. That collector is the next piece of work; the workflow file
-shows where it slots in. Until it lands, `fpl publish` operates on the archive, which
-is what the dashboard currently shows.
+`.github/workflows/weekly-refresh.yml` runs every day at 06:00 UTC and again on
+Saturday at 10:00 UTC ahead of the usual deadline. Each run snapshots the live API
+(never overwriting an earlier snapshot), refits the model on everything up to the next
+gameweek, rebuilds `site/data/live.json` and deploys the page. The page shows when the
+data was captured and how long remains to the deadline.
+
+The historical archive this trains on stopped weekly updates after 2024-25, so the
+snapshots are also the in-season history: each one carries every finished fixture of
+the current season from `element-summary/`.
 
 ## Data sources
 
@@ -150,14 +187,14 @@ All free. FotMob is deliberately excluded: its terms forbid automated retrieval.
 
 ```
 src/fpl/
-  data/       archive loader, silver builder      (strict schema validation)
+  data/       archive loader, live API snapshots, silver builder
   entity/     cross-season identity, name matching, curated club aliases
   features/   gameweek aggregation, lagged windows, shrunk per-90 rates
   models/     baselines, component sub-models, rule-based combiner
   evaluate/   walk-forward harness, segmented metrics, cached comparisons
-  optimise/   squad selection as a mixed-integer program (PuLP)
+  optimise/   squad selection (MILP), team rating and transfer suggestions
   explain/    grounded prompt, guardrail, template fallback
-  report/     dashboard JSON
+  report/     live and backtest dashboard JSON
 site/         static dashboard, no build step
 tests/        the leakage suite, identity, rules, optimiser, guardrail
 ```
