@@ -71,8 +71,11 @@
 
   /* ---- builder ---- */
   .builder{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:1.25rem;align-items:start}
-  .builder > .left{position:sticky;top:var(--stick,.75rem)}
-  @media(max-width:880px){.builder{grid-template-columns:1fr} .builder > .left{position:static}}
+  /* Each column is its own pane: it stays put and scrolls only when the pointer is over it. */
+  .builder > .left,.builder > .right{position:sticky;top:.75rem;max-height:calc(100vh - 1.5rem);overflow-y:auto;overscroll-behavior:contain;scrollbar-width:thin;padding-right:.15rem}
+  .builder > .left::-webkit-scrollbar,.builder > .right::-webkit-scrollbar{width:6px}
+  .builder > .left::-webkit-scrollbar-thumb,.builder > .right::-webkit-scrollbar-thumb{background:var(--line-strong);border-radius:3px}
+  @media(max-width:880px){.builder{grid-template-columns:1fr} .builder > .left,.builder > .right{position:static;max-height:none;overflow:visible}}
   .move .pair{font-size:.9rem}
   .move .who .hint{flex-basis:100%}
   .money{display:grid;grid-template-columns:1fr 1fr 1fr;gap:.5rem;margin-bottom:.75rem}
@@ -338,7 +341,7 @@
             <span class="hint">Tap a slot to add a player.</span>
           </div>
         </div>
-        <div>
+        <div class="right">
           <div id="rating"></div>
           <div id="moves" style="margin-top:1rem"></div>
         </div>
@@ -866,13 +869,7 @@ function renderRating(){
   mc.appendChild(list); mv.appendChild(mc);
 }
 
-function pinLeft(){
-  const left = document.querySelector(".builder > .left"); if (!left) return;
-  const spare = window.innerHeight - left.offsetHeight - 12;
-  left.style.setProperty("--stick", (spare >= 12 ? 12 : spare) + "px");
-}
-window.addEventListener("resize", debounce(pinLeft, 100));
-function update(){ renderPitch(); renderRating(); save(); pinLeft(); }
+function update(){ renderPitch(); renderRating(); save(); }
 
 // Fill whatever slots are empty, keeping the players already picked. ``rank`` orders
 // the candidates (ownership for the template team, projection for auto-pick); a
