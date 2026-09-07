@@ -14,7 +14,9 @@
     --plum:#37003C; --accent:#00734B; --accent-soft:#E1F4EB;
     --warn:#9A5B08; --warn-soft:#FBEEDC; --crit:#A81E38; --crit-soft:#FBE6EA;
     --gk:#8A5CF6; --def:#0E7490; --mid:#00734B; --fwd:#B45309;
-    --pitch:#EEF7F2; --pitch-line:#7CC7A6; --pitch-bench:#F3EDF5;
+    --grass-a:#2FA36B; --grass-b:#27965F; --grass-line:rgba(255,255,255,.85);
+    --card:rgba(20,40,30,.62); --card-ink:#fff; --card-sub:rgba(255,255,255,.78);
+    --banner-a:#00E5FF; --banner-b:#7B5CFF;
     --f:"Archivo","Helvetica Neue",Arial,sans-serif; --m:"JetBrains Mono",ui-monospace,Menlo,monospace;
   }
   @media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
@@ -22,27 +24,27 @@
     --ink:#F4ECF6; --ink-2:#BEAAC6; --ink-3:#8D7895; --plum:#E4C4EA; --accent:#43E29B; --accent-soft:#123328;
     --warn:#E3A55E; --warn-soft:#33220E; --crit:#F0819A; --crit-soft:#3A141F;
     --gk:#B79BFA; --def:#4CC7E0; --mid:#43E29B; --fwd:#E3A55E;
-    --pitch:#12241C; --pitch-line:#2E7D5B; --pitch-bench:#251429;
+    --grass-a:#1F6B47; --grass-b:#1A5E3E; --grass-line:rgba(255,255,255,.55); --card:rgba(5,15,10,.7);
   }}
   :root[data-theme="dark"]{
     --bg:#130A16; --surface:#1C1020; --surface-2:#251429; --line:#382140; --line-strong:#4C2F56;
     --ink:#F4ECF6; --ink-2:#BEAAC6; --ink-3:#8D7895; --plum:#E4C4EA; --accent:#43E29B; --accent-soft:#123328;
     --warn:#E3A55E; --warn-soft:#33220E; --crit:#F0819A; --crit-soft:#3A141F;
     --gk:#B79BFA; --def:#4CC7E0; --mid:#43E29B; --fwd:#E3A55E;
-    --pitch:#12241C; --pitch-line:#2E7D5B; --pitch-bench:#251429;
+    --grass-a:#1F6B47; --grass-b:#1A5E3E; --grass-line:rgba(255,255,255,.55); --card:rgba(5,15,10,.7);
   }
   *{box-sizing:border-box}
   body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--f);font-size:15px;line-height:1.5;-webkit-font-smoothing:antialiased}
-  .wrap{max-width:1080px;margin:0 auto;padding:0 clamp(1rem,4vw,2rem)}
-  header{padding:2rem 0 1.25rem;border-bottom:1px solid var(--line)}
-  h1{margin:0;font-size:clamp(1.6rem,4vw,2.1rem);font-weight:800;letter-spacing:-.03em;color:var(--plum)}
+  .wrap{max-width:1120px;margin:0 auto;padding:0 clamp(.75rem,3vw,2rem)}
+  header{padding:1.75rem 0 1.1rem;border-bottom:1px solid var(--line)}
+  h1{margin:0;font-size:clamp(1.5rem,4vw,2rem);font-weight:800;letter-spacing:-.03em;color:var(--plum)}
   .sub{color:var(--ink-2);margin:.3rem 0 0}
-  .status{display:flex;flex-wrap:wrap;gap:.5rem 1.25rem;margin-top:1rem;font-family:var(--m);font-size:.72rem;letter-spacing:.06em;text-transform:uppercase;color:var(--ink-3)}
+  .status{display:flex;flex-wrap:wrap;gap:.4rem 1.2rem;margin-top:.9rem;font-family:var(--m);font-size:.7rem;letter-spacing:.06em;text-transform:uppercase;color:var(--ink-3)}
   .status b{color:var(--ink);font-weight:700}
-  nav{display:flex;gap:.35rem;margin:1.25rem 0 1.5rem;border-bottom:1px solid var(--line)}
-  nav button{font-family:var(--f);font-size:.95rem;font-weight:600;padding:.6rem .9rem;border:0;background:none;color:var(--ink-3);cursor:pointer;border-bottom:2px solid transparent;margin-bottom:-1px}
+  nav{display:flex;gap:.3rem;margin:1rem 0 1.25rem;border-bottom:1px solid var(--line);overflow-x:auto}
+  nav button{font-family:var(--f);font-size:.95rem;font-weight:600;padding:.6rem .9rem;border:0;background:none;color:var(--ink-3);cursor:pointer;border-bottom:2px solid transparent;margin-bottom:-1px;white-space:nowrap}
   nav button[aria-selected="true"]{color:var(--ink);border-bottom-color:var(--accent)}
-  button:focus-visible,[tabindex]:focus-visible{outline:2px solid var(--accent);outline-offset:2px;border-radius:6px}
+  button:focus-visible,select:focus-visible,input:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
   h2{font-size:1.1rem;font-weight:700;margin:0 0 .75rem;letter-spacing:-.01em}
   .card{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:1rem 1.1rem}
   .pos{font-family:var(--m);font-size:.62rem;font-weight:700;letter-spacing:.1em;padding:.15rem .4rem;border-radius:4px;color:#fff;white-space:nowrap}
@@ -50,87 +52,118 @@
   .flag{font-family:var(--m);font-size:.62rem;font-weight:700;letter-spacing:.06em;padding:.15rem .4rem;border-radius:4px;white-space:nowrap}
   .flag.d{background:var(--warn-soft);color:var(--warn)} .flag.out{background:var(--crit-soft);color:var(--crit)}
   .cap{font-family:var(--m);font-size:.62rem;font-weight:700;letter-spacing:.08em;background:var(--accent-soft);color:var(--accent);padding:.15rem .4rem;border-radius:4px}
-  input[type=text],input[type=number]{font-family:var(--f);font-size:.95rem;padding:.55rem .7rem;border-radius:8px;border:1px solid var(--line-strong);background:var(--surface);color:var(--ink);width:100%}
-  input:focus-visible{outline:2px solid var(--accent);outline-offset:1px}
-  .row{display:flex;gap:.75rem;align-items:center;flex-wrap:wrap}
-  .num{font-family:var(--m);font-variant-numeric:tabular-nums}
+  input[type=text],input[type=number],select{font-family:var(--f);font-size:.95rem;padding:.5rem .65rem;border-radius:8px;border:1px solid var(--line-strong);background:var(--surface);color:var(--ink)}
   .hint{color:var(--ink-3);font-size:.85rem}
   .btn{font-family:var(--f);font-size:.9rem;font-weight:600;padding:.5rem .85rem;border-radius:8px;border:1px solid var(--line-strong);background:var(--surface);color:var(--ink);cursor:pointer}
   .btn:hover{background:var(--surface-2)}
   .btn.link{border:0;background:none;color:var(--ink-3);text-decoration:underline;padding:.3rem .2rem}
+  .num{font-family:var(--m);font-variant-numeric:tabular-nums}
 
   /* ---- builder ---- */
-  .builder{display:grid;grid-template-columns:minmax(0,1.05fr) minmax(0,.95fr);gap:1.25rem;align-items:start}
-  @media(max-width:860px){.builder{grid-template-columns:1fr}}
-  .topbar{display:flex;flex-wrap:wrap;gap:.75rem;align-items:center;justify-content:space-between;margin-bottom:.75rem}
-  .bankbox{display:flex;align-items:center;gap:.6rem;background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:.45rem .7rem}
-  .bankbox .lbl{font-family:var(--m);font-size:.62rem;letter-spacing:.12em;text-transform:uppercase;color:var(--accent);font-weight:700}
-  .bankbox input{width:74px;padding:.3rem .45rem;text-align:right}
-  .bankbox .val{font-family:var(--m);font-variant-numeric:tabular-nums;font-size:.9rem}
-  .bankbox .val b{color:var(--accent)}
-  .forms{display:flex;flex-wrap:wrap;gap:.35rem}
+  .builder{display:grid;grid-template-columns:minmax(0,1.1fr) minmax(0,.9fr);gap:1.25rem;align-items:start}
+  @media(max-width:880px){.builder{grid-template-columns:1fr}}
+  .money{display:grid;grid-template-columns:1fr 1fr 1fr;gap:.5rem;margin-bottom:.75rem}
+  @media(max-width:480px){.money{grid-template-columns:1fr 1fr}}
+  .mbox{background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:.5rem .7rem;display:flex;flex-direction:column;gap:.2rem}
+  .mbox label{font-family:var(--m);font-size:.6rem;letter-spacing:.12em;text-transform:uppercase;color:var(--ink-3)}
+  .mbox input{width:100%;padding:.3rem .45rem;font-size:1rem;font-weight:700}
+  .mbox .big{font-size:1.15rem;font-weight:800;font-variant-numeric:tabular-nums}
+  .mbox .big.ok{color:var(--accent)} .mbox .big.over{color:var(--crit)}
+  .forms{display:flex;flex-wrap:wrap;gap:.35rem;margin-bottom:.6rem}
   .forms button{font-family:var(--m);font-size:.78rem;font-weight:600;padding:.35rem .55rem;border-radius:6px;border:1px solid var(--line-strong);background:var(--surface);color:var(--ink-2);cursor:pointer}
   .forms button[aria-pressed="true"]{background:var(--plum);border-color:var(--plum);color:#fff}
   :root[data-theme="dark"] .forms button[aria-pressed="true"]{color:#1C0F21}
   @media (prefers-color-scheme:dark){:root:not([data-theme="light"]) .forms button[aria-pressed="true"]{color:#1C0F21}}
-  .pitch{position:relative;background:var(--pitch);border:2px solid var(--pitch-line);border-radius:12px;padding:1.1rem .6rem .9rem;overflow:hidden}
-  .pitch::before,.pitch::after{content:"";position:absolute;left:50%;transform:translateX(-50%);border:2px solid var(--pitch-line);pointer-events:none}
-  .pitch::before{top:-2px;width:54%;height:22%;border-top:0;border-radius:0 0 6px 6px}
-  .pitch::after{bottom:-2px;width:26%;height:11%;border-bottom:0;border-radius:90px 90px 0 0}
-  .line{display:flex;justify-content:center;gap:clamp(.4rem,2vw,1.1rem);margin:.35rem 0 1rem;position:relative;z-index:1}
+
+  .pitchwrap{border-radius:14px;overflow:hidden;border:1px solid var(--line)}
+  .banner{display:flex;justify-content:space-between;align-items:center;padding:.55rem .9rem;background:linear-gradient(90deg,var(--banner-a),var(--banner-b));color:#0B0520;font-weight:800;font-size:.9rem}
+  .banner span{font-family:var(--m);font-size:.72rem;font-weight:700;letter-spacing:.06em}
+  .pitch{position:relative;background:repeating-linear-gradient(180deg,var(--grass-a) 0 11.1%,var(--grass-b) 11.1% 22.2%);padding:1.4rem .5rem 1.2rem;overflow:hidden}
+  .pitch svg.lines{position:absolute;inset:0;width:100%;height:100%;pointer-events:none}
+  .line{display:flex;justify-content:center;gap:clamp(.3rem,1.5vw,.9rem);margin:0 0 1.1rem;position:relative;z-index:1}
   .line:last-child{margin-bottom:0}
-  .slot{width:clamp(78px,17vw,104px);display:flex;flex-direction:column;align-items:center;gap:.25rem;background:none;border:0;padding:0;cursor:pointer;color:var(--ink);font-family:var(--f)}
-  .avatar{width:48px;height:48px;border-radius:50%;background:var(--surface);border:2px solid var(--line-strong);display:grid;place-items:center;font-size:1.3rem;color:var(--accent);font-weight:700;position:relative}
-  .slot.filled .avatar{border-color:var(--accent);font-size:.7rem;font-family:var(--m);letter-spacing:.06em}
-  .slot.filled .avatar .c{position:absolute;top:-6px;right:-6px;width:20px;height:20px;border-radius:50%;background:var(--accent);color:#fff;font-size:.62rem;font-weight:800;display:grid;place-items:center}
-  .slot.flag-d .avatar{border-color:var(--warn)} .slot.flag-out .avatar{border-color:var(--crit)}
-  .slot .nm{font-size:.76rem;font-weight:700;max-width:100%;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;background:var(--surface);padding:.1rem .4rem;border-radius:4px;border:1px solid var(--line)}
-  .slot .sub2{font-family:var(--m);font-size:.64rem;color:var(--ink-3);font-variant-numeric:tabular-nums}
-  .slot .sub2 b{color:var(--ink)}
-  .slot.empty .nm{color:var(--ink-3);font-weight:500}
-  .bench{margin-top:.75rem;background:var(--pitch-bench);border:1px solid var(--line);border-radius:12px;padding:.6rem .6rem .8rem}
-  .bench .lbl{text-align:center;font-family:var(--m);font-size:.62rem;letter-spacing:.14em;text-transform:uppercase;color:var(--ink-3);margin-bottom:.4rem}
-  .actions{display:flex;flex-wrap:wrap;gap:.5rem 1rem;align-items:center;margin-top:.75rem}
+  .slot{width:clamp(74px,16vw,104px);display:flex;flex-direction:column;align-items:stretch;background:var(--card);border:1px solid rgba(255,255,255,.25);border-radius:9px;padding:.45rem .35rem .4rem;cursor:pointer;color:var(--card-ink);font-family:var(--f);text-align:center;backdrop-filter:blur(2px)}
+  .slot:hover{border-color:#fff}
+  .slot .ic{font-size:1.35rem;line-height:1;margin-bottom:.15rem}
+  .slot .posl{font-family:var(--m);font-size:.62rem;letter-spacing:.14em;font-weight:700;color:var(--card-sub)}
+  .slot .nm{font-size:.78rem;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-top:.15rem}
+  .slot .pr{font-family:var(--m);font-size:.66rem;color:var(--card-sub);font-variant-numeric:tabular-nums}
+  .slot .ep{font-family:var(--m);font-size:.8rem;font-weight:700;background:rgba(255,255,255,.92);color:#0B3D2A;border-radius:5px;margin-top:.3rem;padding:.1rem 0;font-variant-numeric:tabular-nums}
+  .slot .badges{display:flex;justify-content:center;gap:.25rem;margin-top:.25rem;min-height:1rem}
+  .slot .c{font-family:var(--m);font-size:.6rem;font-weight:800;background:#fff;color:#0B3D2A;border-radius:50%;width:16px;height:16px;display:grid;place-items:center}
+  .slot .fl{font-family:var(--m);font-size:.58rem;font-weight:800;border-radius:4px;padding:0 .3rem}
+  .slot .fl.d{background:#F5C56B;color:#3A2400} .slot .fl.out{background:#F27189;color:#3A0010}
+  .slot.empty{border-style:dashed}
+  .bench{background:var(--surface-2);padding:.6rem .5rem .8rem;border-top:1px solid var(--line)}
+  .bench .lbl{text-align:center;font-family:var(--m);font-size:.62rem;letter-spacing:.14em;text-transform:uppercase;color:var(--ink-3);margin-bottom:.45rem}
+  .bench .slot{background:var(--surface);color:var(--ink);border-color:var(--line-strong)}
+  .bench .slot .posl,.bench .slot .pr{color:var(--ink-3)}
+  .bench .slot .ep{background:var(--accent-soft);color:var(--accent)}
+  .actions{display:flex;flex-wrap:wrap;gap:.5rem .9rem;align-items:center;margin-top:.75rem}
 
   /* ---- picker ---- */
-  .sheet-bg{position:fixed;inset:0;background:rgba(10,4,12,.45);z-index:20;display:flex;align-items:flex-end;justify-content:center}
-  @media(min-width:700px){.sheet-bg{align-items:center}}
-  .sheet{background:var(--surface);color:var(--ink);width:min(680px,100%);max-height:88vh;border-radius:16px 16px 0 0;display:flex;flex-direction:column;border:1px solid var(--line)}
-  @media(min-width:700px){.sheet{border-radius:16px}}
-  .sheet .hd{display:flex;gap:.6rem;align-items:center;padding:.9rem 1rem .6rem;border-bottom:1px solid var(--line)}
-  .sheet .hd h3{margin:0;font-size:1rem;flex:1}
-  .sheet .hd .x{border:0;background:none;font-size:1.3rem;cursor:pointer;color:var(--ink-3)}
-  .sheet .q{padding:.6rem 1rem}
-  .sheet .list{overflow:auto;padding:0 .5rem .75rem}
-  .opt{display:grid;grid-template-columns:auto 1fr auto auto auto;gap:.6rem;align-items:center;width:100%;text-align:left;padding:.55rem .6rem;border:0;background:none;color:var(--ink);font-family:var(--f);font-size:.9rem;cursor:pointer;border-radius:8px}
-  .opt:hover,.opt:focus-visible{background:var(--surface-2);outline:none}
-  .opt[disabled]{opacity:.45;cursor:not-allowed}
-  .opt .meta{color:var(--ink-3);font-size:.8rem}
-  .opt .why{grid-column:2/-1;font-size:.76rem;color:var(--warn)}
+  .sheet-bg{position:fixed;inset:0;background:rgba(10,4,12,.5);z-index:20;display:flex;align-items:stretch;justify-content:center}
+  .sheet{background:var(--bg);color:var(--ink);width:min(760px,100%);height:100%;display:flex;flex-direction:column}
+  @media(min-width:760px){.sheet-bg{align-items:center;padding:1.5rem}.sheet{height:min(92vh,900px);border-radius:16px;border:1px solid var(--line);overflow:hidden}}
+  .sheet .hd{display:flex;gap:.6rem;align-items:center;padding:.8rem 1rem .5rem}
+  .sheet .hd h3{margin:0;font-size:1.05rem;flex:1}
+  .sheet .hd .x{border:0;background:var(--surface-2);width:34px;height:34px;border-radius:50%;font-size:1.2rem;cursor:pointer;color:var(--ink)}
+  .sheet .bbar{margin:0 1rem .6rem;padding:.5rem;border-radius:10px;background:linear-gradient(90deg,var(--banner-a),var(--banner-b));color:#0B0520;font-weight:800;text-align:center;font-size:.9rem}
+  .sheet .q{padding:0 1rem .5rem}
+  .sheet .q input{width:100%;font-size:1rem}
+  .filters{display:flex;gap:.45rem;padding:0 1rem .6rem;flex-wrap:wrap}
+  .filters select,.filters input{font-size:.85rem;padding:.4rem .55rem}
+  .ptable{overflow:auto;flex:1;padding:0 .5rem 1rem}
+  .ptable table{width:100%;table-layout:fixed;border-collapse:separate;border-spacing:0;font-size:.88rem;background:var(--surface);border-radius:10px;border:1px solid var(--line)}
+  .ptable col.c-player{width:42%} .ptable col.c-stat{width:14.5%}
+  .ptable th{position:sticky;top:0;background:var(--surface-2);z-index:2;padding:.45rem .45rem;text-align:right;font-family:var(--m);font-size:.62rem;letter-spacing:.06em;text-transform:uppercase;color:var(--ink-3);border-bottom:1px solid var(--line);white-space:nowrap}
+  .ptable th:first-child{text-align:left;padding-left:.7rem}
+  .ptable th select{font-family:var(--m);font-size:.6rem;letter-spacing:.04em;text-transform:uppercase;padding:.2rem .1rem .2rem .2rem;border:1px solid transparent;background:transparent;color:var(--ink-2);cursor:pointer;max-width:calc(100% - 1.2rem);text-overflow:ellipsis}
+  .ptable th{overflow:hidden;text-overflow:ellipsis}
+  .ptable td{overflow:hidden;text-overflow:ellipsis}
+  .ptable th select:hover{border-color:var(--line-strong)}
+  .ptable th .sort{border:0;background:none;cursor:pointer;color:var(--ink-3);font-size:.75rem;padding:0 .1rem}
+  .ptable th .sort.on{color:var(--accent)}
+  .ptable td{padding:.5rem .45rem;border-bottom:1px solid var(--line);text-align:right;font-variant-numeric:tabular-nums;white-space:nowrap}
+  .ptable td:first-child{text-align:left;padding-left:.5rem}
+  .ptable tr:last-child td{border-bottom:0}
+  .prow{cursor:pointer} .prow:hover td{background:var(--surface-2)}
+  .prow.off{opacity:.45;cursor:not-allowed}
+  .pcell{display:flex;align-items:center;gap:.5rem;min-width:0}
+  .pcell .kit{width:26px;height:26px;border-radius:6px;display:grid;place-items:center;font-family:var(--m);font-size:.55rem;font-weight:800;color:#fff;flex-shrink:0}
+  .pcell .kit.GK{background:var(--gk)} .pcell .kit.DEF{background:var(--def)} .pcell .kit.MID{background:var(--mid)} .pcell .kit.FWD{background:var(--fwd)}
+  .pcell .who{display:flex;flex-direction:column;line-height:1.2;min-width:0}
+  .pcell .who b{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .pcell .who small{color:var(--ink-3);font-size:.74rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .pcell .why{font-size:.7rem;color:var(--warn)}
+  .ptable .count{padding:.5rem .7rem;color:var(--ink-3);font-size:.8rem}
 
   /* ---- rating ---- */
-  .kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:1px;background:var(--line);border:1px solid var(--line);border-radius:12px;overflow:hidden;margin:.75rem 0}
-  .kpi{background:var(--surface);padding:.8rem .9rem}
-  .kpi dt{font-family:var(--m);font-size:.62rem;letter-spacing:.1em;text-transform:uppercase;color:var(--ink-3)}
-  .kpi dd{margin:.1rem 0 0;font-size:1.4rem;font-weight:700;letter-spacing:-.02em;font-variant-numeric:tabular-nums}
+  .kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(115px,1fr));gap:1px;background:var(--line);border:1px solid var(--line);border-radius:12px;overflow:hidden;margin:.75rem 0}
+  .kpi{background:var(--surface);padding:.75rem .85rem}
+  .kpi dt{font-family:var(--m);font-size:.6rem;letter-spacing:.1em;text-transform:uppercase;color:var(--ink-3)}
+  .kpi dd{margin:.1rem 0 0;font-size:1.35rem;font-weight:700;letter-spacing:-.02em;font-variant-numeric:tabular-nums}
   .meter{height:8px;border-radius:4px;background:var(--surface-2);overflow:hidden;margin-top:.4rem}
   .meter i{display:block;height:100%;background:var(--accent)}
   .tip{font-size:.88rem;color:var(--ink-2);margin:.6rem 0 0}
   .warnbox{border-left:3px solid var(--warn);background:var(--warn-soft);padding:.6rem .8rem;border-radius:0 8px 8px 0;font-size:.9rem;margin-top:.75rem}
   .critbox{border-left:3px solid var(--crit);background:var(--crit-soft);padding:.6rem .8rem;border-radius:0 8px 8px 0;font-size:.9rem;margin-top:.75rem}
   .moves{display:flex;flex-direction:column;gap:.55rem}
-  .move{display:grid;grid-template-columns:2rem 1fr auto;gap:.75rem;align-items:center;background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:.7rem .85rem}
+  .move{display:grid;grid-template-columns:1.8rem 1fr auto;gap:.7rem;align-items:center;background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:.7rem .8rem}
   .move .rk{font-family:var(--m);font-size:1.2rem;font-weight:700;color:var(--accent)}
-  .move .who{display:flex;flex-direction:column;gap:.25rem;min-width:0}
-  .move .line2{display:flex;gap:.5rem;align-items:center;flex-wrap:wrap;font-size:.92rem}
+  .move .who{display:flex;flex-direction:column;gap:.3rem;min-width:0}
+  .move .pair{display:flex;gap:.45rem;align-items:center;flex-wrap:wrap;font-size:.92rem}
   .move .arrow{color:var(--ink-3)}
-  .move .why{font-size:.82rem;color:var(--ink-3)}
-  .move .gain{text-align:right;font-variant-numeric:tabular-nums}
+  .move .why{font-size:.8rem;color:var(--ink-3)}
+  .move .two{font-family:var(--m);font-size:.6rem;font-weight:700;letter-spacing:.08em;background:var(--plum);color:#fff;padding:.12rem .4rem;border-radius:4px}
+  :root[data-theme="dark"] .move .two{color:#1C0F21}
+  @media (prefers-color-scheme:dark){:root:not([data-theme="light"]) .move .two{color:#1C0F21}}
+  .move .gain{text-align:right;font-variant-numeric:tabular-nums;display:flex;flex-direction:column;align-items:flex-end;gap:.3rem}
   .move .gain b{font-size:1.15rem;color:var(--accent)}
-  .move .gain small{display:block;font-family:var(--m);font-size:.62rem;letter-spacing:.08em;text-transform:uppercase;color:var(--ink-3)}
+  .move .gain small{font-family:var(--m);font-size:.6rem;letter-spacing:.08em;text-transform:uppercase;color:var(--ink-3)}
   .move .apply{font-size:.78rem;padding:.3rem .55rem}
 
-  /* ---- shared cards / tables ---- */
+  /* ---- shared ---- */
   .pcard{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:.9rem 1rem;margin-bottom:.6rem}
   .pcard .hd{display:flex;flex-wrap:wrap;gap:.5rem;align-items:baseline}
   .pcard .nm{font-weight:700}
@@ -143,12 +176,6 @@
   .legend i{display:inline-block;width:8px;height:8px;border-radius:2px;margin-right:.3rem;font-style:normal}
   .news{font-size:.82rem;color:var(--warn)}
   .rat{color:var(--ink-2);font-size:.88rem;margin:.4rem 0 0}
-  .tw{overflow-x:auto;border:1px solid var(--line);border-radius:12px;background:var(--surface)}
-  table{width:100%;border-collapse:collapse;font-size:.88rem}
-  th,td{padding:.5rem .7rem;text-align:left;border-bottom:1px solid var(--line);white-space:nowrap}
-  th{font-family:var(--m);font-size:.62rem;letter-spacing:.1em;text-transform:uppercase;color:var(--ink-3);background:var(--surface-2);cursor:pointer;user-select:none}
-  td.n{font-variant-numeric:tabular-nums;text-align:right}
-  tbody tr:last-child td{border-bottom:0}
   footer{color:var(--ink-3);font-size:.82rem;padding:2.5rem 0 3rem;border-top:1px solid var(--line);margin-top:2.5rem}
   [hidden]{display:none!important}
   @media (prefers-reduced-motion:no-preference){.meter i{transition:width .35s ease}}
@@ -158,7 +185,7 @@
 <div class="wrap">
   <header>
     <h1>FPL Analyst</h1>
-    <p class="sub">Build your fifteen on the pitch, pick a formation, and get a rating plus the five moves that lift your team most.</p>
+    <p class="sub">Build your fifteen on the pitch, set your team value and bank, and get a rating plus the five moves that lift your team most.</p>
     <div class="status" id="status">Loading…</div>
   </header>
 
@@ -172,16 +199,27 @@
     <section id="tab-rate">
       <div class="builder">
         <div>
-          <div class="topbar">
-            <div class="forms" id="forms" role="group" aria-label="Formation"></div>
-            <div class="bankbox">
-              <span class="lbl">In the bank</span>
-              <input type="number" id="bank" step="0.1" min="0" value="0.0" aria-label="Money in the bank, £m">
-              <span class="val" id="bankval"></span>
-            </div>
+          <div class="money">
+            <div class="mbox"><label for="tv">Team value £m</label><input type="number" id="tv" step="0.1" min="0" placeholder="100.0" inputmode="decimal"></div>
+            <div class="mbox"><label for="bank">In the bank £m</label><input type="number" id="bank" step="0.1" min="0" value="0.0" inputmode="decimal"></div>
+            <div class="mbox"><label>Budget left</label><div class="big" id="left">£0.0m</div></div>
           </div>
-          <div class="pitch" id="pitch"></div>
-          <div class="bench" id="bench"></div>
+          <div class="forms" id="forms" role="group" aria-label="Formation"></div>
+          <div class="pitchwrap">
+            <div class="banner"><span id="bnr-left">SQUAD 0 / 15</span><span id="bnr-right">BUDGET £100.0m</span></div>
+            <div class="pitch" id="pitch">
+              <svg class="lines" viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true">
+                <g fill="none" stroke="var(--grass-line)" stroke-width=".35" vector-effect="non-scaling-stroke">
+                  <rect x="1.2" y="0" width="97.6" height="100"/>
+                  <rect x="22" y="0" width="56" height="17"/>
+                  <rect x="37" y="0" width="26" height="6.5"/>
+                  <path d="M38 17 A12 6 0 0 0 62 17"/>
+                  <path d="M30 100 A20 9 0 0 1 70 100"/>
+                </g>
+              </svg>
+            </div>
+            <div class="bench" id="bench"></div>
+          </div>
           <div class="actions">
             <button class="btn" id="template">Use template team</button>
             <button class="btn" id="autopick">Auto-pick lineup</button>
@@ -197,11 +235,7 @@
     </section>
 
     <section id="tab-best" hidden><div id="best"></div></section>
-
-    <section id="tab-all" hidden>
-      <div class="row" style="margin-bottom:.75rem"><input type="text" id="qall" placeholder="Filter…" style="max-width:320px" aria-label="Filter players"></div>
-      <div id="all"></div>
-    </section>
+    <section id="tab-all" hidden><div id="all"></div></section>
   </main>
 
   <footer>
@@ -215,7 +249,7 @@
 // ---------- constants (mirror of fpl/config.py and fpl/optimise/rate.py) ----------
 const SQUAD_QUOTA = {GK:2, DEF:5, MID:5, FWD:3};
 const XI_MIN = {GK:1, DEF:3, MID:2, FWD:1}, XI_MAX = {GK:1, DEF:5, MID:5, FWD:3};
-const MAX_PER_CLUB = 3, POSITIONS = ["GK","DEF","MID","FWD"], BUDGET = 100.0;
+const MAX_PER_CLUB = 3, POSITIONS = ["GK","DEF","MID","FWD"], CAP = 100.0, FUNDING_CANDIDATES = 8;
 const FORMATIONS = [];
 for (let d=XI_MIN.DEF; d<=XI_MAX.DEF; d++) for (let m=XI_MIN.MID; m<=XI_MAX.MID; m++) for (let f=XI_MIN.FWD; f<=XI_MAX.FWD; f++)
   if (1+d+m+f === 11) FORMATIONS.push({GK:1, DEF:d, MID:m, FWD:f});
@@ -223,20 +257,51 @@ const fname = f => `${f.DEF}-${f.MID}-${f.FWD}`;
 const COLOURS = {appearance:"var(--ink-3)", attacking:"var(--fwd)", clean_sheet:"var(--def)", bonus:"var(--accent)", goalkeeping:"var(--gk)", defensive:"var(--plum)"};
 const LABELS = {appearance:"appearance", attacking:"attacking", clean_sheet:"clean sheet", bonus:"bonus", goalkeeping:"goalkeeping", defensive:"def. contribution"};
 
-let DATA = null, BY = {};
-// squad state: formation + 15 slots. Each slot: {pos, area:"xi"|"bench", code|null}
-let state = {formation: {GK:1, DEF:4, MID:4, FWD:2}, slots: []};
+// Stats a picker column can show. get() reads from a player record.
+const STATS = {
+  ep:        {label:"Projected",   get:p=>p.ep,                       fmt:v=>v.toFixed(1)},
+  fpl_ep:    {label:"FPL xP",      get:p=>p.fpl_ep,                   fmt:v=>v.toFixed(1)},
+  price:     {label:"Price",       get:p=>p.price,                    fmt:v=>"£"+v.toFixed(1)},
+  owned:     {label:"Selected %",  get:p=>p.owned_pct,                fmt:v=>v.toFixed(1)+"%"},
+  last_gw:   {label:"GW{lastgw}",  get:p=>p.season.last_gw_points??0, fmt:v=>String(v)},
+  total:     {label:"Total pts",   get:p=>p.season.total_points??0,   fmt:v=>String(Math.round(v))},
+  form:      {label:"Form",        get:p=>p.season.form??0,           fmt:v=>v.toFixed(1)},
+  ppg:       {label:"Pts / game",  get:p=>p.season.points_per_game??0,fmt:v=>v.toFixed(1)},
+  minutes:   {label:"Minutes",     get:p=>p.season.minutes??0,        fmt:v=>String(Math.round(v))},
+  goals:     {label:"Goals",       get:p=>p.season.goals_scored??0,   fmt:v=>String(Math.round(v))},
+  assists:   {label:"Assists",     get:p=>p.season.assists??0,        fmt:v=>String(Math.round(v))},
+  cs:        {label:"Clean sheets",get:p=>p.season.clean_sheets??0,   fmt:v=>String(Math.round(v))},
+  gc:        {label:"Conceded",    get:p=>p.season.goals_conceded??0, fmt:v=>String(Math.round(v))},
+  bonus:     {label:"Bonus",       get:p=>p.season.bonus??0,          fmt:v=>String(Math.round(v))},
+  bps:       {label:"BPS",         get:p=>p.season.bps??0,            fmt:v=>String(Math.round(v))},
+  xg:        {label:"xG",          get:p=>p.season.expected_goals??0, fmt:v=>v.toFixed(2)},
+  xa:        {label:"xA",          get:p=>p.season.expected_assists??0,fmt:v=>v.toFixed(2)},
+  xgc:       {label:"xGC",         get:p=>p.season.expected_goals_conceded??0,fmt:v=>v.toFixed(2)},
+  dc:        {label:"Def. con.",   get:p=>p.season.defensive_contribution??0,fmt:v=>String(Math.round(v))},
+  saves:     {label:"Saves",       get:p=>p.season.saves??0,          fmt:v=>String(Math.round(v))},
+  ict:       {label:"ICT",         get:p=>p.season.ict_index??0,      fmt:v=>v.toFixed(1)},
+  p60:       {label:"Start prob",  get:p=>p.p60,                      fmt:v=>Math.round(v*100)+"%"},
+  avail:     {label:"Availability",get:p=>p.availability,             fmt:v=>Math.round(v*100)+"%"},
+};
 
+let DATA = null, BY = {};
+let state = {formation:{GK:1, DEF:4, MID:4, FWD:2}, slots:[]};
+let cols = ["price","owned","last_gw"];   // the three switchable columns; projected is always first
+let sort = {key:"ep", dir:-1};
+
+const short = team => (DATA && DATA.meta.clubs && DATA.meta.clubs[team]) || team.slice(0,3).toUpperCase();
 const el = (t,c,x) => { const n=document.createElement(t); if(c) n.className=c; if(x!=null) n.textContent=x; return n; };
 const fmt = (v,d=2) => Number(v).toFixed(d);
+const bankVal = () => parseFloat(document.getElementById("bank").value)||0;
+const teamValueVal = () => { const v=parseFloat(document.getElementById("tv").value); return isFinite(v)&&v>0 ? v : null; };
 
-// ---------- engine ----------
-function bestEleven(players, fixedFormation=null){
+// ---------- engine (mirror of rate.py) ----------
+function bestEleven(players, fixed=null){
   const by = {GK:[],DEF:[],MID:[],FWD:[]};
   players.forEach(p => by[p.position].push(p));
   POSITIONS.forEach(k => by[k].sort((a,b)=>b.ep-a.ep));
   let best = null;
-  for (const f of (fixedFormation ? [fixedFormation] : FORMATIONS)){
+  for (const f of (fixed ? [fixed] : FORMATIONS)){
     const chosen = POSITIONS.flatMap(k => by[k].slice(0, f[k]));
     if (chosen.length !== 11) continue;
     const cap = chosen.reduce((a,b)=> b.ep>a.ep?b:a);
@@ -247,25 +312,57 @@ function bestEleven(players, fixedFormation=null){
   best.bench = players.filter(p=>!st.has(p.code)).map(p=>p.code);
   return best;
 }
-function suggestTransfers(players, pool, bank, formation, topN=5){
+function availableBudget(players, bank, teamValue){
+  if (teamValue) return teamValue + bank;
+  return Math.max(CAP, players.reduce((s,p)=>s+p.price,0)) + bank;
+}
+function legalAfter(players, outs, ins){
+  const clubs = {};
+  players.forEach(p => { if (!outs.includes(p)) clubs[p.team]=(clubs[p.team]||0)+1; });
+  for (const p of ins){ clubs[p.team]=(clubs[p.team]||0)+1; if (clubs[p.team] > MAX_PER_CLUB) return false; }
+  return true;
+}
+function suggestTransfers(players, pool, bank, teamValue, formation, topN=5){
   const base = bestEleven(players, formation).points;
+  const value = teamValue || players.reduce((s,p)=>s+p.price,0);
+  const budget = availableBudget(players, bank, teamValue);
   const owned = new Set(players.map(p=>p.code));
-  const clubs = {}; players.forEach(p => clubs[p.team]=(clubs[p.team]||0)+1);
-  const out = [];
+  const byPos = {GK:[],DEF:[],MID:[],FWD:[]};
+  pool.forEach(c => { if (!owned.has(c.code)) byPos[c.position].push(c); });
+  const mk = (outs, ins, gain) => { const cost = ins.reduce((s,p)=>s+p.price,0) - outs.reduce((s,p)=>s+p.price,0); return {out:outs, in:ins, transfers:outs.length, gain, points_after:base+gain, cost_change:cost, value_after:value+cost}; };
+  const singles = [], unfunded = [];
   for (const leaving of players){
     const rest = players.filter(p=>p.code!==leaving.code);
-    const budget = leaving.price + bank + 1e-9;
-    for (const arriving of pool){
-      if (owned.has(arriving.code) || arriving.position!==leaving.position || arriving.price>budget) continue;
-      if (arriving.team!==leaving.team && (clubs[arriving.team]||0) >= MAX_PER_CLUB) continue;
-      const pts = bestEleven([...rest, arriving], formation).points, gain = pts-base;
+    for (const arriving of byPos[leaving.position]){
+      if (!legalAfter(players, [leaving], [arriving])) continue;
+      const gain = bestEleven([...rest, arriving], formation).points - base;
       if (gain <= 1e-9) continue;
-      out.push({out:leaving, in:arriving, gain, points_after:pts, cost_change:arriving.price-leaving.price});
+      if (value - leaving.price + arriving.price <= budget + 1e-9) singles.push(mk([leaving],[arriving],gain));
+      else unfunded.push([leaving, arriving, gain]);
     }
   }
-  out.sort((a,b)=>b.gain-a.gain);
+  const doubles = [];
+  unfunded.sort((a,b)=>b[2]-a[2]);
+  for (const [leaving, arriving] of unfunded.slice(0, FUNDING_CANDIDATES)){
+    const shortfall = value - leaving.price + arriving.price - budget;
+    const afterFirst = [...players.filter(p=>p.code!==leaving.code), arriving];
+    let best = null;
+    for (const out2 of afterFirst){
+      if (out2.code === arriving.code) continue;
+      for (const in2 of byPos[out2.position]){
+        if (in2.code === arriving.code || out2.price - in2.price < shortfall - 1e-9) continue;
+        if (!legalAfter(afterFirst, [out2], [in2])) continue;
+        const trial = [...afterFirst.filter(p=>p.code!==out2.code), in2];
+        const gain = bestEleven(trial, formation).points - base;
+        if (gain <= 1e-9) continue;
+        if (!best || gain > best.gain) best = mk([leaving,out2],[arriving,in2],gain);
+      }
+    }
+    if (best) doubles.push(best);
+  }
+  const all = [...singles, ...doubles].sort((a,b)=>b.gain-a.gain);
   const seen = new Set(), ranked = [];
-  for (const r of out){ if (seen.has(r.in.code)) continue; seen.add(r.in.code); r.rank=ranked.length+1; ranked.push(r); if (ranked.length===topN) break; }
+  for (const r of all){ if (r.in.some(p=>seen.has(p.code))) continue; r.in.forEach(p=>seen.add(p.code)); r.rank=ranked.length+1; ranked.push(r); if (ranked.length===topN) break; }
   return ranked;
 }
 
@@ -275,7 +372,6 @@ function buildSlots(formation, existing=[]){
   POSITIONS.forEach(pos => { for (let i=0;i<f[pos];i++) slots.push({pos, area:"xi", code:null}); });
   slots.push({pos:"GK", area:"bench", code:null});
   [["DEF",SQUAD_QUOTA.DEF-f.DEF],["MID",SQUAD_QUOTA.MID-f.MID],["FWD",SQUAD_QUOTA.FWD-f.FWD]].forEach(([pos,n]) => { for (let i=0;i<n;i++) slots.push({pos, area:"bench", code:null}); });
-  // re-place existing players: best projections into the XI first
   const byPos = {GK:[],DEF:[],MID:[],FWD:[]};
   existing.map(c=>BY[c]).filter(Boolean).forEach(p => byPos[p.position].push(p));
   POSITIONS.forEach(k => byPos[k].sort((a,b)=>b.ep-a.ep));
@@ -283,119 +379,163 @@ function buildSlots(formation, existing=[]){
   return slots;
 }
 const squadPlayers = () => state.slots.map(s=>s.code).filter(Boolean).map(c=>BY[c]);
-const clubCount = team => squadPlayers().filter(p=>p.team===team).length;
+const xiPlayers = () => state.slots.filter(s=>s.area==="xi" && s.code).map(s=>BY[s.code]);
 const squadValue = () => squadPlayers().reduce((s,p)=>s+p.price,0);
+const clubCount = team => squadPlayers().filter(p=>p.team===team).length;
 function setFormation(f){ state.formation = f; state.slots = buildSlots(f, state.slots.map(s=>s.code).filter(Boolean)); update(); }
-function save(){ try{ localStorage.setItem("fpl-squad-v2", JSON.stringify({formation:state.formation, codes:state.slots.map(s=>s.code), bank:document.getElementById("bank").value})); }catch(e){} }
-function load(){ try{ const s=JSON.parse(localStorage.getItem("fpl-squad-v2")||"null"); if(!s) return false; state.formation=s.formation; state.slots=buildSlots(s.formation, s.codes.filter(Boolean)); document.getElementById("bank").value=s.bank ?? "0.0"; return true; }catch(e){ return false; } }
+function save(){ try{ localStorage.setItem("fpl-squad-v3", JSON.stringify({formation:state.formation, codes:state.slots.map(s=>s.code), bank:document.getElementById("bank").value, tv:document.getElementById("tv").value, cols})); }catch(e){} }
+function load(){ try{ const s=JSON.parse(localStorage.getItem("fpl-squad-v3")||"null"); if(!s) return false; state.formation=s.formation; state.slots=buildSlots(s.formation, s.codes.filter(Boolean)); document.getElementById("bank").value=s.bank??"0.0"; document.getElementById("tv").value=s.tv??""; if (Array.isArray(s.cols)&&s.cols.length===3) cols=s.cols; return true; }catch(e){ return false; } }
 
-// ---------- rendering: pitch ----------
-function flagClass(p){ return p.availability>=1 ? "" : (p.availability===0 ? " flag-out" : " flag-d"); }
-function slotButton(slot, index, captain){
+// ---------- pitch ----------
+function slotEl(slot, index, captain){
   const p = slot.code ? BY[slot.code] : null;
-  const b = el("button", "slot " + (p ? "filled"+flagClass(p) : "empty"));
-  b.type = "button"; b.dataset.index = index;
-  const av = el("div","avatar", p ? p.position : "+");
-  if (p && captain===p.code) av.appendChild(el("span","c","C"));
-  b.appendChild(av);
-  b.appendChild(el("div","nm", p ? p.web_name : slot.pos));
-  const sub = el("div","sub2");
-  if (p){ sub.appendChild(document.createTextNode(`£${fmt(p.price,1)} · `)); sub.appendChild(el("b",null,fmt(p.ep,1))); if (p.availability<1){ sub.appendChild(document.createTextNode(" · ")); sub.appendChild(el("span","flag "+(p.availability===0?"out":"d"), p.availability===0?"OUT":(p.chance!=null?p.chance+"%":"DOUBT"))); } }
-  else sub.textContent = "add";
-  b.appendChild(sub);
-  b.title = p ? `${p.name} · ${p.team} ${p.home?"vs":"at"} ${p.opponent}${p.news?" · "+p.news:""}` : `Add a ${slot.pos}`;
+  const b = el("button", "slot"+(p?"":" empty")); b.type="button";
+  if (!p){ b.appendChild(el("div","ic","+")); b.appendChild(el("div","posl",slot.pos)); b.appendChild(el("div","nm","Add")); b.title=`Add a ${slot.pos}`; }
+  else {
+    b.appendChild(el("div","posl",p.position)); b.appendChild(el("div","nm",p.web_name));
+    b.appendChild(el("div","pr",`£${fmt(p.price,1)}m · ${p.home?"":"@"}${short(p.opponent)}`));
+    b.appendChild(el("div","ep",fmt(p.ep,1)+" pts"));
+    const badges = el("div","badges");
+    if (captain===p.code) badges.appendChild(el("span","c","C"));
+    if (p.availability<1) badges.appendChild(el("span","fl "+(p.availability===0?"out":"d"), p.availability===0?"OUT":(p.chance!=null?p.chance+"%":"DOUBT")));
+    b.appendChild(badges);
+    b.title = `${p.name} · ${p.team} ${p.home?"vs":"at"} ${p.opponent} · projected ${fmt(p.ep)}${p.news?" · "+p.news:""}`;
+  }
   b.onclick = () => openPicker(index);
   return b;
 }
 function renderPitch(){
   const pitch = document.getElementById("pitch"), bench = document.getElementById("bench");
-  pitch.replaceChildren(); bench.replaceChildren();
+  [...pitch.querySelectorAll(".line")].forEach(n=>n.remove()); bench.replaceChildren();
   const players = squadPlayers();
-  const complete = players.length === 15;
-  const lineup = complete ? bestEleven(xiPlayers(), state.formation) : null;
+  const lineup = players.length===15 ? bestEleven(xiPlayers(), state.formation) : null;
   const captain = lineup ? lineup.captain : null;
-  POSITIONS.forEach(pos => {
-    const line = el("div","line");
-    state.slots.forEach((s,i) => { if (s.area==="xi" && s.pos===pos) line.appendChild(slotButton(s,i,captain)); });
-    pitch.appendChild(line);
-  });
+  POSITIONS.forEach(pos => { const line = el("div","line"); state.slots.forEach((s,i)=>{ if (s.area==="xi"&&s.pos===pos) line.appendChild(slotEl(s,i,captain)); }); pitch.appendChild(line); });
   bench.appendChild(el("div","lbl","Bench"));
-  const bl = el("div","line");
-  state.slots.forEach((s,i) => { if (s.area==="bench") bl.appendChild(slotButton(s,i,null)); });
-  bench.appendChild(bl);
+  const bl = el("div","line"); state.slots.forEach((s,i)=>{ if (s.area==="bench") bl.appendChild(slotEl(s,i,null)); }); bench.appendChild(bl);
 
   const forms = document.getElementById("forms"); forms.replaceChildren();
   FORMATIONS.forEach(f => { const b=el("button",null,fname(f)); b.type="button"; b.setAttribute("aria-pressed", fname(f)===fname(state.formation)); b.onclick=()=>setFormation(f); forms.appendChild(b); });
 
-  const bank = parseFloat(document.getElementById("bank").value)||0;
-  const v = document.getElementById("bankval"); v.replaceChildren();
-  v.appendChild(el("b",null,`£${fmt(bank,1)}`)); v.appendChild(document.createTextNode(` · squad £${fmt(squadValue(),1)}m`));
+  const budget = availableBudget(players, bankVal(), teamValueVal());
+  const left = budget - squadValue();
+  const lb = document.getElementById("left"); lb.textContent = `£${fmt(left,1)}m`; lb.className = "big " + (left < -1e-9 ? "over" : "ok");
+  document.getElementById("tv").placeholder = fmt(Math.max(CAP, squadValue()),1);
+  document.getElementById("bnr-left").textContent = `SQUAD ${players.length} / 15 · £${fmt(squadValue(),1)}m`;
+  document.getElementById("bnr-right").textContent = `BUDGET £${fmt(budget,1)}m`;
 }
-const xiPlayers = () => state.slots.filter(s=>s.area==="xi" && s.code).map(s=>BY[s.code]);
 
-// ---------- picker ----------
+// ---------- picker: FPL-style table ----------
+function statLabel(key){ return STATS[key].label.replace("{lastgw}", DATA.meta.last_gameweek); }
+function playerTable(opts){
+  const box = el("div","ptable");
+  const q = opts.q || "", maxPrice = opts.maxPrice || Infinity, club = opts.club || "";
+  let rows = DATA.players.filter(p => (!opts.position || p.position===opts.position) && !(opts.exclude && opts.exclude.has(p.code)));
+  if (q) rows = rows.filter(p => p.web_name.toLowerCase().includes(q) || p.name.toLowerCase().includes(q) || p.team.toLowerCase().includes(q));
+  if (isFinite(maxPrice)) rows = rows.filter(p => p.price <= maxPrice + 1e-9);
+  if (club) rows = rows.filter(p => p.team===club);
+  const getter = STATS[sort.key].get;
+  rows.sort((a,b) => { const x=getter(a), y=getter(b); return (x>y?1:x<y?-1:0)*sort.dir || a.web_name.localeCompare(b.web_name); });
+
+  const t = el("table"), th = el("thead"), tr = el("tr");
+  const cg = el("colgroup"); cg.appendChild(el("col","c-player")); for (let i=0;i<4;i++) cg.appendChild(el("col","c-stat")); t.appendChild(cg);
+  const head = (label, key, switchable) => {
+    const h = el("th");
+    if (switchable){
+      const sel = el("select"); sel.setAttribute("aria-label","Choose stat for this column");
+      Object.keys(STATS).forEach(k => { const o=el("option",null,statLabel(k)); o.value=k; if (k===key) o.selected=true; sel.appendChild(o); });
+      sel.onchange = () => { cols[switchable-1] = sel.value; save(); opts.rerender(); };
+      h.appendChild(sel);
+    } else h.appendChild(document.createTextNode(label));
+    const s = el("button","sort"+(sort.key===key?" on":""), sort.key===key ? (sort.dir<0?"▼":"▲") : "⇅"); s.type="button"; s.setAttribute("aria-label","Sort by "+label);
+    s.onclick = () => { if (sort.key===key) sort.dir*=-1; else { sort.key=key; sort.dir=-1; } opts.rerender(); };
+    h.appendChild(s); return h;
+  };
+  tr.appendChild(head("Player","ep",0)); tr.appendChild(head("Projected","ep",0));
+  cols.forEach((k,i) => tr.appendChild(head(statLabel(k), k, i+1)));
+  th.appendChild(tr); t.appendChild(th);
+  const tb = el("tbody");
+  rows.forEach(p => {
+    const why = opts.disabledReason ? opts.disabledReason(p) : null;
+    const r = el("tr","prow"+(why?" off":""));
+    const c1 = el("td"); const cell = el("div","pcell");
+    cell.appendChild(el("div","kit "+p.position, p.position));
+    const who = el("div","who"); who.appendChild(el("b",null,p.web_name));
+    who.appendChild(el("small",null,`${p.team} · ${p.home?"vs":"at"} ${p.opponent}`));
+    if (why) who.appendChild(el("span","why",why)); else if (p.news) who.appendChild(el("span","why",p.news));
+    cell.appendChild(who);
+    if (p.availability<1) cell.appendChild(el("span","flag "+(p.availability===0?"out":"d"), p.availability===0?"OUT":(p.chance!=null?p.chance+"%":"DOUBT")));
+    c1.appendChild(cell); r.appendChild(c1);
+    r.appendChild(el("td",null,STATS.ep.fmt(p.ep)));
+    cols.forEach(k => r.appendChild(el("td",null,STATS[k].fmt(STATS[k].get(p)))));
+    if (!why && opts.onPick) r.onclick = () => opts.onPick(p);
+    r.title = p.name + (p.news ? " · " + p.news : "");
+    tb.appendChild(r);
+  });
+  t.appendChild(tb); box.appendChild(t);
+  box.appendChild(el("div","count",`${rows.length} player${rows.length===1?"":"s"}`));
+  return box;
+}
+function priceSelect(){ const s=el("select"); s.setAttribute("aria-label","Max price"); [["","Unlimited"],...[4.5,5,5.5,6,6.5,7,7.5,8,9,10,11,12,13,14,15].map(v=>[v,`Up to £${v.toFixed(1)}m`])].forEach(([v,l])=>{ const o=el("option",null,l); o.value=v; s.appendChild(o); }); return s; }
+function clubSelect(){ const s=el("select"); s.setAttribute("aria-label","Club"); [["","All clubs"],...[...new Set(DATA.players.map(p=>p.team))].sort().map(c=>[c,c])].forEach(([v,l])=>{ const o=el("option",null,l); o.value=v; s.appendChild(o); }); return s; }
+
 function openPicker(index){
-  const slot = state.slots[index], sheetRoot = document.getElementById("sheet");
+  const slot = state.slots[index], root = document.getElementById("sheet");
   const current = slot.code ? BY[slot.code] : null;
   const owned = new Set(state.slots.map(s=>s.code).filter(Boolean));
-  const bank = parseFloat(document.getElementById("bank").value)||0;
-  const room = BUDGET + bank - squadValue() + (current ? current.price : 0);
-  const bg = el("div","sheet-bg"); const sheet = el("div","sheet");
-  const hd = el("div","hd"); hd.appendChild(el("span","pos "+slot.pos, slot.pos));
-  hd.appendChild(el("h3",null, (current ? "Replace " + current.web_name : "Pick a " + slot.pos) + (slot.area==="bench" ? " (bench)" : "")));
-  const x = el("button","x","×"); x.setAttribute("aria-label","Close"); x.onclick=close; hd.appendChild(x); sheet.appendChild(hd);
-  const qwrap = el("div","q"); const q = el("input"); q.type="text"; q.placeholder="Search name or club…"; q.setAttribute("aria-label","Search"); qwrap.appendChild(q); sheet.appendChild(qwrap);
-  const list = el("div","list"); sheet.appendChild(list);
-  const opts = [];
-  if (current){ const rm = el("button","btn link","Remove " + current.web_name); rm.onclick=()=>{ slot.code=null; close(); update(); }; const w=el("div"); w.style.padding=".2rem .6rem .4rem"; w.appendChild(rm); opts.push(w); }
-  function render(){
-    list.replaceChildren(); opts.forEach(o=>list.appendChild(o));
-    const term = q.value.trim().toLowerCase();
-    DATA.players.filter(p => p.position===slot.pos && !owned.has(p.code) && (!term || p.web_name.toLowerCase().includes(term) || p.name.toLowerCase().includes(term) || p.team.toLowerCase().includes(term)))
-      .sort((a,b)=>b.ep-a.ep).slice(0,60).forEach(p => {
-        const b = el("button","opt"); b.type="button";
-        b.appendChild(el("span","pos "+p.position,p.position));
-        const n = el("span"); n.appendChild(el("b",null,p.web_name+" ")); n.appendChild(el("span","meta",`${p.team} ${p.home?"vs":"at"} ${p.opponent}`)); b.appendChild(n);
-        b.appendChild(el("span","num",`£${fmt(p.price,1)}`)); b.appendChild(el("span","num",fmt(p.ep,1)+" pts"));
-        const fl = p.availability<1 ? el("span","flag "+(p.availability===0?"out":"d"), p.availability===0?"OUT":(p.chance!=null?p.chance+"%":"DOUBT")) : el("span");
-        b.appendChild(fl);
-        let why = null;
-        const overClub = clubCount(p.team) - (current && current.team===p.team ? 1 : 0) >= MAX_PER_CLUB;
-        if (overClub) why = `Already three from ${p.team}`;
-        else if (p.price > room + 1e-9) why = `Over budget by £${fmt(p.price-room,1)}m`;
-        if (why){ b.disabled = true; b.appendChild(el("span","why",why)); }
-        else if (p.news) b.appendChild(el("span","why",p.news));
-        b.onclick = () => { slot.code = p.code; close(); update(); };
-        list.appendChild(b);
-      });
+  const budget = availableBudget(squadPlayers(), bankVal(), teamValueVal());
+  const room = budget - squadValue() + (current ? current.price : 0);
+  const filters = {q:"", maxPrice:Infinity, club:""};
+
+  const bg = el("div","sheet-bg"), sheet = el("div","sheet");
+  const hd = el("div","hd"); const x = el("button","x","←"); x.setAttribute("aria-label","Back"); x.onclick=close; hd.appendChild(x);
+  hd.appendChild(el("h3",null,(current?"Replace "+current.web_name:"Add "+({GK:"a goalkeeper",DEF:"a defender",MID:"a midfielder",FWD:"a forward"})[slot.pos])+(slot.area==="bench"?" (bench)":"")));
+  if (current){ const rm=el("button","btn","Remove"); rm.onclick=()=>{ slot.code=null; close(); update(); }; hd.appendChild(rm); }
+  sheet.appendChild(hd);
+  sheet.appendChild(el("div","bbar",`Room for this slot: £${fmt(room,1)}m`));
+  const qw = el("div","q"); const q = el("input"); q.type="text"; q.placeholder="Search by name or club"; q.setAttribute("aria-label","Search"); qw.appendChild(q); sheet.appendChild(qw);
+  const fl = el("div","filters"); const price = priceSelect(), clubs = clubSelect(); fl.appendChild(price); fl.appendChild(clubs); sheet.appendChild(fl);
+  const holder = el("div"); holder.style.cssText="flex:1;min-height:0;display:flex;flex-direction:column"; sheet.appendChild(holder);
+
+  function rerender(){
+    holder.replaceChildren(playerTable({
+      position: slot.pos, exclude: owned, q: filters.q, maxPrice: filters.maxPrice, club: filters.club, rerender,
+      disabledReason: p => {
+        const over = clubCount(p.team) - (current && current.team===p.team ? 1 : 0) >= MAX_PER_CLUB;
+        if (over) return `Already three from ${p.team}`;
+        if (p.price > room + 1e-9) return `Over budget by £${fmt(p.price-room,1)}m`;
+        return null;
+      },
+      onPick: p => { slot.code = p.code; close(); update(); },
+    }));
   }
-  function close(){ sheetRoot.hidden = true; sheetRoot.replaceChildren(); document.removeEventListener("keydown", esc); }
+  function close(){ root.hidden = true; root.replaceChildren(); document.removeEventListener("keydown", esc); }
   function esc(e){ if (e.key==="Escape") close(); }
-  q.addEventListener("input", render); bg.addEventListener("click", e => { if (e.target===bg) close(); });
+  q.addEventListener("input", () => { filters.q = q.value.trim().toLowerCase(); rerender(); });
+  price.addEventListener("change", () => { filters.maxPrice = price.value ? parseFloat(price.value) : Infinity; rerender(); });
+  clubs.addEventListener("change", () => { filters.club = clubs.value; rerender(); });
+  bg.addEventListener("click", e => { if (e.target===bg) close(); });
   document.addEventListener("keydown", esc);
-  bg.appendChild(sheet); sheetRoot.replaceChildren(bg); sheetRoot.hidden=false; render(); q.focus();
+  bg.appendChild(sheet); root.replaceChildren(bg); root.hidden=false; rerender(); q.focus();
 }
 
-// ---------- rating ----------
+// ---------- rating + moves ----------
 function renderRating(){
   const box = document.getElementById("rating"), mv = document.getElementById("moves");
   box.replaceChildren(); mv.replaceChildren();
   const players = squadPlayers();
   const c = el("div","card"); c.appendChild(el("h2",null,"Rating"));
-  if (players.length < 15){
-    c.appendChild(el("p","hint",`${15-players.length} more to add. Tap the empty slots.`)); box.appendChild(c); return;
-  }
-  const bank = parseFloat(document.getElementById("bank").value)||0;
-  const opt = DATA.meta.optimal_points;
-  const lineup = bestEleven(players, state.formation);        // your formation, best starters within it
-  const free = bestEleven(players);                           // any formation
+  if (players.length < 15){ c.appendChild(el("p","hint",`${15-players.length} more to add. Tap the empty slots.`)); box.appendChild(c); return; }
+  const bank = bankVal(), tv = teamValueVal(), opt = DATA.meta.optimal_points;
+  const lineup = bestEleven(players, state.formation), free = bestEleven(players);
   const rating = 100*lineup.points/opt;
   const k = el("dl","kpis");
   [["rating","/100",fmt(rating,1)],["projected","pts",fmt(lineup.points,1)],["best £100m squad","pts",fmt(opt,1)],["captain","",BY[lineup.captain].web_name]].forEach(([t,u,v])=>{ const d=el("div","kpi"); d.appendChild(el("dt",null,t+(u?" "+u:""))); d.appendChild(el("dd",null,v)); k.appendChild(d); });
   c.appendChild(k);
   const meter = el("div","meter"); const i = el("i"); i.style.width = Math.min(100,rating)+"%"; meter.appendChild(i); c.appendChild(meter);
-  if (free.points - lineup.points > 0.05) c.appendChild(el("p","tip",`Switching to ${fname(free.formation)} with the same fifteen would project ${fmt(free.points,1)} (+${fmt(free.points-lineup.points,1)}). Auto-pick lineup does that.`));
-  if (squadValue() > BUDGET + bank + 1e-9) c.appendChild(el("p","tip",`Squad is £${fmt(squadValue(),1)}m — over £${fmt(BUDGET+bank,1)}m available. Fine if your team value has grown; otherwise adjust the bank.`));
+  if (free.points - lineup.points > 0.05) c.appendChild(el("p","tip",`${fname(free.formation)} with the same fifteen would project ${fmt(free.points,1)} (+${fmt(free.points-lineup.points,1)}). Auto-pick lineup does that.`));
+  const budget = availableBudget(players, bank, tv);
+  if (squadValue() > budget + 1e-9) c.appendChild(el("p","tip",`Squad costs £${fmt(squadValue(),1)}m against a budget of £${fmt(budget,1)}m. Set your team value if it has grown, or trim the squad.`));
   const flagged = players.filter(p=>p.availability<1);
   if (flagged.length){
     const w = el("div", flagged.some(p=>p.availability===0) ? "critbox" : "warnbox");
@@ -405,52 +545,54 @@ function renderRating(){
   }
   box.appendChild(c);
 
-  const moves = suggestTransfers(players, DATA.players, bank, state.formation, 5);
+  const moves = suggestTransfers(players, DATA.players, bank, tv, state.formation, 5);
   const mc = el("div","card"); mc.appendChild(el("h2",null,"Five moves that lift your rating"));
-  if (!moves.length) mc.appendChild(el("p","hint","No single transfer inside your budget improves the projected eleven in this formation. Try a different formation, or that's a good squad for this week."));
+  mc.appendChild(el("p","hint",`Every move keeps you inside £${fmt(budget,1)}m. Where the best upgrade costs more than you have, a second transfer funds it.`));
+  if (!moves.length) mc.appendChild(el("p","hint","No transfer inside your budget improves the projected eleven in this formation."));
   const list = el("div","moves");
   moves.forEach(m => {
     const row = el("div","move"); row.appendChild(el("div","rk",m.rank));
-    const who = el("div","who"); const line = el("div","line2");
-    line.appendChild(el("b",null,m.out.web_name)); if (m.out.availability<1) line.appendChild(el("span","flag "+(m.out.availability===0?"out":"d"), m.out.availability===0?"OUT":"DOUBT"));
-    line.appendChild(el("span","arrow","→")); line.appendChild(el("b",null,m.in.web_name)); line.appendChild(el("span","pos "+m.in.position,m.in.position));
-    line.appendChild(el("span","hint",`${m.in.team} ${m.in.home?"vs":"at"} ${m.in.opponent}`));
-    who.appendChild(line);
-    who.appendChild(el("div","why",`${fmt(m.out.ep)} → ${fmt(m.in.ep)} projected · ${m.cost_change>=0?"+":""}£${fmt(m.cost_change,1)}m · rating after ${fmt(100*m.points_after/opt,1)}/100${m.in.news?" · "+m.in.news:""}`));
+    const who = el("div","who");
+    m.out.forEach((o,idx) => {
+      const pair = el("div","pair"); const n = m.in[idx];
+      pair.appendChild(el("b",null,o.web_name)); if (o.availability<1) pair.appendChild(el("span","flag "+(o.availability===0?"out":"d"), o.availability===0?"OUT":"DOUBT"));
+      pair.appendChild(el("span","arrow","→")); pair.appendChild(el("b",null,n.web_name)); pair.appendChild(el("span","pos "+n.position,n.position));
+      pair.appendChild(el("span","hint",`${n.team} ${n.home?"vs":"at"} ${n.opponent} · ${fmt(o.ep,1)} → ${fmt(n.ep,1)}`));
+      if (idx===0 && m.transfers===2) pair.appendChild(el("span","two","2 TRANSFERS"));
+      who.appendChild(pair);
+    });
+    who.appendChild(el("div","why",`${m.cost_change>=0?"+":""}£${fmt(m.cost_change,1)}m · squad £${fmt(m.value_after,1)}m of £${fmt(budget,1)}m · rating after ${fmt(100*m.points_after/opt,1)}/100${m.in.some(p=>p.news)?" · "+m.in.filter(p=>p.news).map(p=>p.news).join(" · "):""}`));
     row.appendChild(who);
     const g = el("div","gain"); g.appendChild(el("b",null,"+"+fmt(m.gain))); g.appendChild(el("small",null,"team pts"));
-    const ap = el("button","btn apply","Apply"); ap.type="button"; ap.onclick=()=>{ const s=state.slots.find(s=>s.code===m.out.code); if(s){ s.code=m.in.code; update(); } }; g.appendChild(ap);
+    const ap = el("button","btn apply","Apply"); ap.type="button"; ap.onclick=()=>{ m.out.forEach((o,idx)=>{ const s=state.slots.find(s=>s.code===o.code); if(s) s.code=m.in[idx].code; }); state.slots=buildSlots(state.formation, state.slots.map(s=>s.code).filter(Boolean)); update(); }; g.appendChild(ap);
     row.appendChild(g); list.appendChild(row);
   });
   mc.appendChild(list); mv.appendChild(mc);
 }
 function update(){ renderPitch(); renderRating(); save(); }
 
-// ---------- template team: most-owned legal fifteen inside £100m ----------
 function templateTeam(){
   const pool = DATA.players.filter(p=>p.availability>0);
   const cheapest = {}; POSITIONS.forEach(k => cheapest[k] = Math.min(...pool.filter(p=>p.position===k).map(p=>p.price)));
   const by = [...pool].sort((a,b)=>b.owned_pct-a.owned_pct);
-  const picks = [], clubs = {}, counts = {GK:0,DEF:0,MID:0,FWD:0};
-  let spend = 0;
+  const picks = [], clubs = {}, counts = {GK:0,DEF:0,MID:0,FWD:0}; let spend = 0;
+  const budget = (teamValueVal() || CAP) + bankVal();
   const reserve = () => POSITIONS.reduce((s,k)=>s+(SQUAD_QUOTA[k]-counts[k])*cheapest[k],0);
   const take = p => { picks.push(p.code); spend += p.price; counts[p.position]++; clubs[p.team]=(clubs[p.team]||0)+1; };
-  // pass 1: most-owned players, keeping enough money to fill every remaining slot
   for (const p of by){
     if (counts[p.position] >= SQUAD_QUOTA[p.position] || (clubs[p.team]||0) >= MAX_PER_CLUB) continue;
-    if (spend + p.price + reserve() - cheapest[p.position] > BUDGET + 1e-9) continue;
+    if (spend + p.price + reserve() - cheapest[p.position] > budget + 1e-9) continue;
     take(p); if (picks.length===15) break;
   }
-  // pass 2: anything still empty gets the best-projected player we can still afford
   const owned = new Set(picks);
   for (const pos of POSITIONS) while (counts[pos] < SQUAD_QUOTA[pos]){
-    const cand = pool.filter(p=>p.position===pos && !owned.has(p.code) && (clubs[p.team]||0)<MAX_PER_CLUB && spend+p.price+reserve()-cheapest[pos] <= BUDGET+1e-9).sort((a,b)=>b.ep-a.ep)[0];
+    const cand = pool.filter(p=>p.position===pos && !owned.has(p.code) && (clubs[p.team]||0)<MAX_PER_CLUB && spend+p.price+reserve()-cheapest[pos] <= budget+1e-9).sort((a,b)=>b.ep-a.ep)[0];
     if (!cand) break; take(cand); owned.add(cand.code);
   }
   state.slots = buildSlots(state.formation, picks); update();
 }
 
-// ---------- best squad + all players (unchanged) ----------
+// ---------- best squad + all players ----------
 function breakdownBar(b){
   const entries = Object.entries(b).filter(([,v]) => v>0.005); const total = entries.reduce((s,[,v])=>s+v,0)||1;
   const bar = el("div","bar"); entries.forEach(([k,v]) => { const s=el("div"); s.style.width=(v/total*100)+"%"; s.style.background=COLOURS[k]; s.title=`${LABELS[k]}: ${fmt(v)}`; bar.appendChild(s); });
@@ -477,27 +619,21 @@ function renderBest(){
   [["gameweek",DATA.meta.gameweek],["projected pts",fmt(o.projected,1)],["squad cost","£"+fmt(o.spend,1)+"m"],["captain",BY[o.captain].web_name]].forEach(([t,v])=>{ const d=el("div","kpi"); d.appendChild(el("dt",null,t)); d.appendChild(el("dd",null,v)); k.appendChild(d); });
   box.appendChild(k);
   const useIt = el("button","btn","Load this squad into Rate my team"); useIt.onclick=()=>{ state.slots=buildSlots(state.formation,[...o.starters,...o.bench]); update(); document.querySelector('[data-tab="rate"]').click(); }; box.appendChild(useIt);
-  box.appendChild(el("h2",null,"Recommended eleven")); box.lastChild.style.marginTop="1rem";
+  const h = el("h2",null,"Recommended eleven"); h.style.marginTop="1rem"; box.appendChild(h);
   o.starters.forEach(c => box.appendChild(playerCard(BY[c],{captain:c===o.captain})));
   box.appendChild(el("h2",null,"Bench")); o.bench.forEach(c => box.appendChild(playerCard(BY[c])));
 }
-let sortKey="ep", sortDir=-1;
+let allFilters = {q:"", position:"", maxPrice:Infinity, club:""};
 function renderAll(){
-  const q=(document.getElementById("qall").value||"").toLowerCase();
-  const rows = DATA.players.filter(p=>!q || p.web_name.toLowerCase().includes(q)||p.team.toLowerCase().includes(q)||p.position.toLowerCase()===q).sort((a,b)=> (a[sortKey]>b[sortKey]?1:a[sortKey]<b[sortKey]?-1:0)*sortDir);
-  const box=document.getElementById("all"); box.replaceChildren();
-  const tw=el("div","tw"), t=el("table"), th=el("thead"), tr=el("tr");
-  [["web_name","Player"],["position","Pos"],["team","Club"],["opponent","Fixture"],["price","£"],["ep","Projected"],["fpl_ep","FPL says"],["p60","Start"],["availability","Avail"],["owned_pct","Owned %"]].forEach(([k,l])=>{ const h=el("th",null,l+(sortKey===k?(sortDir<0?" ↓":" ↑"):"")); h.onclick=()=>{ if(sortKey===k) sortDir*=-1; else {sortKey=k; sortDir=-1;} renderAll(); }; tr.appendChild(h); });
-  th.appendChild(tr); t.appendChild(th); const tb=el("tbody");
-  rows.slice(0,300).forEach(p=>{ const r=el("tr");
-    const n=el("td"); n.appendChild(el("b",null,p.web_name)); if(p.availability<1){ n.appendChild(document.createTextNode(" ")); n.appendChild(el("span","flag "+(p.availability===0?"out":"d"), p.availability===0?"OUT":(p.chance!=null?p.chance+"%":"DOUBT"))); } r.appendChild(n);
-    const pc=el("td"); pc.appendChild(el("span","pos "+p.position,p.position)); r.appendChild(pc);
-    r.appendChild(el("td",null,p.team)); r.appendChild(el("td",null,`${p.home?"vs":"at"} ${p.opponent}`));
-    r.appendChild(el("td","n",fmt(p.price,1))); r.appendChild(el("td","n",fmt(p.ep))); r.appendChild(el("td","n",fmt(p.fpl_ep,1)));
-    r.appendChild(el("td","n",fmt(p.p60))); r.appendChild(el("td","n",fmt(p.availability))); r.appendChild(el("td","n",fmt(p.owned_pct,1)));
-    if (p.news) r.title=p.news; tb.appendChild(r); });
-  t.appendChild(tb); tw.appendChild(t); box.appendChild(tw);
-  if (rows.length>300) box.appendChild(el("p","hint",`Showing 300 of ${rows.length}. Filter to narrow.`));
+  const box = document.getElementById("all"); box.replaceChildren();
+  const bar = el("div","filters"); bar.style.padding="0 0 .6rem";
+  const q = el("input"); q.type="text"; q.placeholder="Search by name or club"; q.value=allFilters.q; q.style.minWidth="220px"; q.addEventListener("input",()=>{ allFilters.q=q.value.trim().toLowerCase(); renderAll(); q.focus(); });
+  const pos = el("select"); [["","All positions"],...POSITIONS.map(p=>[p,p])].forEach(([v,l])=>{ const o=el("option",null,l); o.value=v; if (v===allFilters.position) o.selected=true; pos.appendChild(o); }); pos.onchange=()=>{ allFilters.position=pos.value; renderAll(); };
+  const price = priceSelect(); price.value = allFilters.maxPrice===Infinity ? "" : String(allFilters.maxPrice); price.onchange=()=>{ allFilters.maxPrice = price.value?parseFloat(price.value):Infinity; renderAll(); };
+  const clubs = clubSelect(); clubs.value = allFilters.club; clubs.onchange=()=>{ allFilters.club=clubs.value; renderAll(); };
+  [q,pos,price,clubs].forEach(n=>bar.appendChild(n)); box.appendChild(bar);
+  const t = playerTable({position: allFilters.position, q: allFilters.q, maxPrice: allFilters.maxPrice, club: allFilters.club, rerender: renderAll});
+  t.style.padding="0"; box.appendChild(t);
 }
 
 // ---------- boot ----------
@@ -511,11 +647,10 @@ document.querySelectorAll("nav [role=tab]").forEach(b => b.addEventListener("cli
   document.querySelectorAll("nav [role=tab]").forEach(x=>x.setAttribute("aria-selected", x===b));
   ["rate","best","all"].forEach(t => document.getElementById("tab-"+t).hidden = (t!==b.dataset.tab));
 }));
-document.getElementById("bank").addEventListener("input", () => { renderPitch(); renderRating(); save(); });
+["bank","tv"].forEach(id => document.getElementById(id).addEventListener("input", () => { renderPitch(); renderRating(); save(); }));
 document.getElementById("clear").addEventListener("click", () => { state.slots = buildSlots(state.formation, []); update(); });
 document.getElementById("template").addEventListener("click", templateTeam);
-document.getElementById("autopick").addEventListener("click", () => { const ps=squadPlayers(); if (ps.length===15){ const f=bestEleven(ps).formation; setFormation(f); } });
-document.getElementById("qall").addEventListener("input", renderAll);
+document.getElementById("autopick").addEventListener("click", () => { const ps=squadPlayers(); if (ps.length===15) setFormation(bestEleven(ps).formation); });
 
 (async function init(){
   try { const r = await fetch("data/live.json"); if (!r.ok) throw new Error(r.status); DATA = await r.json(); }

@@ -81,19 +81,25 @@ def test_illegal_squads_are_rejected():
         rate.best_eleven(four_same_club)
 
 
-def test_suggestions_respect_position_budget_and_club_limit():
+def test_suggestions_respect_position_cap_and_club_limit():
     frame = pool()
     squad = legal_squad(frame)
+    value = float(squad["price"].sum())
     moves = rate.suggest_transfers(squad, frame, bank=0.5, top_n=5)
     clubs = squad["team"].value_counts().to_dict()
     by_code = frame.set_index("code")
+    budget = rate.available_budget(squad.to_dict("records"), 0.5)
     for m in moves:
-        out, inc = by_code.loc[m["out"]], by_code.loc[m["in"]]
-        assert out["position"] == inc["position"]
-        assert inc["price"] <= out["price"] + 0.5 + 1e-9
-        if inc["team"] != out["team"]:
-            assert clubs.get(inc["team"], 0) < 3
-        assert m["in"] not in set(squad["code"])
+        assert len(m["out"]) == len(m["in"]) == m["transfers"]
+        for out_code, in_code in zip(m["out"], m["in"], strict=True):
+            assert by_code.loc[out_code, "position"] == by_code.loc[in_code, "position"]
+            assert in_code not in set(squad["code"])
+        assert m["value_after"] <= budget + 1e-6
+        assert m["value_after"] == pytest.approx(value + m["cost_change"], abs=0.05)
+        if m["transfers"] == 1:
+            inc, out = by_code.loc[m["in"][0]], by_code.loc[m["out"][0]]
+            if inc["team"] != out["team"]:
+                assert clubs.get(inc["team"], 0) < 3
 
 
 def test_suggestions_are_ranked_by_team_gain_and_distinct():
@@ -104,10 +110,39 @@ def test_suggestions_are_ranked_by_team_gain_and_distinct():
     assert [m["rank"] for m in moves] == [1, 2, 3, 4, 5]
     gains = [m["gain"] for m in moves]
     assert gains == sorted(gains, reverse=True)
-    assert len({m["in"] for m in moves}) == 5
+    signings = [c for m in moves for c in m["in"]]
+    assert len(signings) == len(set(signings))
     base = rate.best_eleven(squad).points
     for m in moves:
         assert m["points_after"] == pytest.approx(base + m["gain"], abs=0.02)
+
+
+def test_over_cap_upgrade_is_funded_by_a_second_transfer():
+    """A star signing the bank cannot cover must arrive as a two-transfer move."""
+    frame = pool()
+    squad = legal_squad(frame)
+    star = frame.iloc[0].copy()
+    star["code"], star["team"], star["price"], star["expected_points"] = 9001, "club9", 7.5, 40.0
+    star["web_name"] = "star"
+    enriched = pd.concat([frame, star.to_frame().T], ignore_index=True)
+    enriched["price"] = enriched["price"].astype(float)
+    enriched["expected_points"] = enriched["expected_points"].astype(float)
+    value = float(squad["price"].sum())
+    moves = rate.suggest_transfers(squad, enriched, bank=0.0, team_value=value, top_n=5)
+    star_moves = [m for m in moves if 9001 in m["in"]]
+    assert star_moves, "the star should be reachable"
+    assert star_moves[0]["transfers"] == 2
+    assert star_moves[0]["value_after"] <= value + 1e-6
+
+
+def test_team_value_raises_the_cap():
+    frame = pool()
+    squad = legal_squad(frame)
+    value = float(squad["price"].sum())
+    tight = rate.suggest_transfers(squad, frame, bank=0.0, team_value=value, top_n=50)
+    loose = rate.suggest_transfers(squad, frame, bank=0.0, team_value=value + 3.0, top_n=50)
+    assert max(m["value_after"] for m in loose) > max(m["value_after"] for m in tight)
+    assert rate.available_budget(squad.to_dict("records"), 0.5, 102.3) == pytest.approx(102.8)
 
 
 def test_gain_is_measured_on_the_whole_team():
@@ -127,6 +162,13 @@ def test_gain_is_measured_on_the_whole_team():
     candidate["expected_points"] = min(bench["expected_points"] + 0.1, weakest_starter - 0.05)
     moves = rate.suggest_transfers(squad, pd.DataFrame([candidate]), bank=10.0)
     assert moves == []
+
+
+def test_best_eleven_can_be_pinned_to_a_formation():
+    squad = legal_squad(pool())
+    pinned = rate.best_eleven(squad, {"GK": 1, "DEF": 5, "MID": 4, "FWD": 1})
+    assert pinned.formation == {"GK": 1, "DEF": 5, "MID": 4, "FWD": 1}
+    assert pinned.points <= rate.best_eleven(squad).points + 1e-9
 
 
 def test_rate_and_suggest_rejects_unknown_codes():

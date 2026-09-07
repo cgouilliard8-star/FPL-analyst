@@ -75,8 +75,9 @@ def _check_squad(squad: list[Player]) -> None:
         raise ValueError(f"more than {MAX_PER_CLUB} players from {worst}")
 
 
-def _best_eleven(squad: list[Player]) -> Eleven:
-    """Highest-projected legal eleven; the captain is the top projection in it."""
+def _best_eleven(squad: list[Player], formation: dict[str, int] | None = None) -> Eleven:
+    """Highest-projected legal eleven (within ``formation`` if given); the captain is
+    the top projection in it."""
     by_position: dict[str, list[Player]] = {p: [] for p in POSITIONS}
     for player in squad:
         by_position[player["position"]].append(player)
@@ -84,8 +85,10 @@ def _best_eleven(squad: list[Player]) -> Eleven:
         players.sort(key=lambda p: -p["expected_points"])
 
     best: Eleven | None = None
-    for formation in FORMATIONS:
-        chosen = [p for pos, n in formation.items() for p in by_position[pos][:n]]
+    for shape in FORMATIONS if formation is None else (formation,):
+        chosen = [p for pos, n in shape.items() for p in by_position[pos][:n]]
+        if len(chosen) != XI_SIZE:
+            continue
         captain = max(chosen, key=lambda p: p["expected_points"])
         points = sum(p["expected_points"] for p in chosen) + captain["expected_points"]
         if best is None or points > best.points:
@@ -94,7 +97,7 @@ def _best_eleven(squad: list[Player]) -> Eleven:
                 points=float(points),
                 starters=starters,
                 captain=int(captain["code"]),
-                formation=dict(formation),
+                formation=dict(shape),
             )
     assert best is not None
     starting = set(best.starters)
@@ -102,10 +105,10 @@ def _best_eleven(squad: list[Player]) -> Eleven:
     return best
 
 
-def best_eleven(squad: pd.DataFrame) -> Eleven:
+def best_eleven(squad: pd.DataFrame, formation: dict[str, int] | None = None) -> Eleven:
     players = _to_players(squad)
     _check_squad(players)
-    return _best_eleven(players)
+    return _best_eleven(players, formation)
 
 
 def _rating(points: float, optimal_points: float | None) -> float | None:
@@ -133,6 +136,37 @@ def rate_squad(squad: pd.DataFrame, optimal_points: float | None = None) -> dict
     }
 
 
+BUDGET_CAP = 100.0
+
+
+def available_budget(
+    squad: list[Player], bank: float, team_value: float | None = None, cap: float = BUDGET_CAP
+) -> float:
+    """Money a manager can spend in total.
+
+    FPL values a squad at its selling prices, which the manager can read off their
+    own team page but this model cannot see. So the manager's stated ``team_value``
+    wins when given; otherwise the cap applies, or the squad's current value if that
+    has grown past it. The bank is added either way.
+    """
+    if team_value:
+        return float(team_value) + bank
+    value = sum(p["price"] for p in squad)
+    return max(cap, value) + bank
+
+
+def _legal_after(squad: list[Player], outs: list[Player], ins: list[Player]) -> bool:
+    clubs: dict[str, int] = {}
+    for p in squad:
+        if p not in outs:
+            clubs[p["team"]] = clubs.get(p["team"], 0) + 1
+    for p in ins:
+        clubs[p["team"]] = clubs.get(p["team"], 0) + 1
+        if clubs[p["team"]] > MAX_PER_CLUB:
+            return False
+    return True
+
+
 def suggest_transfers(
     squad: pd.DataFrame,
     pool: pd.DataFrame,
@@ -140,61 +174,88 @@ def suggest_transfers(
     bank: float = 0.0,
     top_n: int = 5,
     optimal_points: float | None = None,
+    formation: dict[str, int] | None = None,
+    team_value: float | None = None,
+    cap: float = BUDGET_CAP,
+    funding_candidates: int = 8,
 ) -> list[dict]:
-    """The ``top_n`` single transfers that most raise the squad's projected points.
+    """The ``top_n`` moves that most raise the squad's projected points under the cap.
 
-    A candidate must play the same position as the player leaving, cost no more than
-    his price plus the bank, and keep every club at or under the three-player limit.
-    Each candidate is scored by re-picking the best eleven of the resulting fifteen.
-    Suggestions are ranked by that gain and never repeat a player coming in.
+    A move is one transfer, or two when one is not enough on its own: if the best
+    replacement for a player costs more than the squad can afford, a second, funding
+    transfer elsewhere in the squad is searched for so the pair fits under the cap
+    and still raises the team. Every move is scored by re-solving the best eleven of
+    the resulting fifteen (within ``formation`` if given); the gain is the change in
+    the team's points, and no signing is repeated across the ranked list.
     """
     players = _to_players(squad)
     _check_squad(players)
-    base = _best_eleven(players).points
+    base = _best_eleven(players, formation).points
+    value = float(team_value) if team_value else sum(p["price"] for p in players)
+    budget = available_budget(players, bank, team_value, cap)
     owned = {p["code"] for p in players}
-    clubs: dict[str, int] = {}
-    for p in players:
-        clubs[p["team"]] = clubs.get(p["team"], 0) + 1
 
-    candidates_by_position: dict[str, list[Player]] = {p: [] for p in POSITIONS}
+    by_position: dict[str, list[Player]] = {p: [] for p in POSITIONS}
     for c in _to_players(pool):
         if c["code"] not in owned:
-            candidates_by_position[c["position"]].append(c)
+            by_position[c["position"]].append(c)
 
-    results: list[dict] = []
+    singles: list[dict] = []
+    unfunded: list[tuple[Player, Player, float]] = []
     for leaving in players:
         rest = [p for p in players if p["code"] != leaving["code"]]
-        budget = leaving["price"] + bank + 1e-9
-        for arriving in candidates_by_position[leaving["position"]]:
-            if arriving["price"] > budget:
+        for arriving in by_position[leaving["position"]]:
+            if not _legal_after(players, [leaving], [arriving]):
                 continue
-            if (
-                arriving["team"] != leaving["team"]
-                and clubs.get(arriving["team"], 0) >= MAX_PER_CLUB
-            ):
-                continue
-            new_points = _best_eleven([*rest, arriving]).points
-            gain = new_points - base
+            gain = _best_eleven([*rest, arriving], formation).points - base
             if gain <= 1e-9:
                 continue
-            results.append(
-                {
-                    "out": int(leaving["code"]),
-                    "in": int(arriving["code"]),
-                    "gain": round(gain, 2),
-                    "points_after": round(new_points, 2),
-                    "rating_after": _rating(new_points, optimal_points),
-                    "cost_change": round(float(arriving["price"] - leaving["price"]), 1),
-                }
-            )
+            new_value = value - leaving["price"] + arriving["price"]
+            if new_value <= budget + 1e-9:
+                singles.append(_move([leaving], [arriving], gain, base, optimal_points, value))
+            else:
+                unfunded.append((leaving, arriving, gain))
 
-    results.sort(key=lambda r: -r["gain"])
+    # Two-transfer moves: fund the best over-budget upgrades with a downgrade elsewhere.
+    doubles: list[dict] = []
+    unfunded.sort(key=lambda t: -t[2])
+    for leaving, arriving, _ in unfunded[:funding_candidates]:
+        shortfall = value - leaving["price"] + arriving["price"] - budget
+        after_first = [p for p in players if p["code"] != leaving["code"]] + [arriving]
+        best: dict | None = None
+        for second_out in after_first:
+            if second_out["code"] == arriving["code"]:
+                continue
+            for second_in in by_position[second_out["position"]]:
+                if second_in["code"] == arriving["code"]:
+                    continue
+                if second_out["price"] - second_in["price"] < shortfall - 1e-9:
+                    continue
+                if not _legal_after(after_first, [second_out], [second_in]):
+                    continue
+                trial = [p for p in after_first if p["code"] != second_out["code"]] + [second_in]
+                gain = _best_eleven(trial, formation).points - base
+                if gain <= 1e-9:
+                    continue
+                if best is None or gain > best["gain"]:
+                    best = _move(
+                        [leaving, second_out],
+                        [arriving, second_in],
+                        gain,
+                        base,
+                        optimal_points,
+                        value,
+                    )
+        if best:
+            doubles.append(best)
+
+    results = sorted(singles + doubles, key=lambda r: -r["gain"])
     seen_in: set[int] = set()
     ranked: list[dict] = []
     for r in results:
-        if r["in"] in seen_in:
+        if any(i in seen_in for i in r["in"]):
             continue
-        seen_in.add(r["in"])
+        seen_in.update(r["in"])
         r["rank"] = len(ranked) + 1
         ranked.append(r)
         if len(ranked) == top_n:
@@ -202,11 +263,30 @@ def suggest_transfers(
     return ranked
 
 
+def _move(
+    outs: list[Player], ins: list[Player], gain: float, base: float,
+    optimal_points: float | None, value: float,
+) -> dict:  # fmt: skip
+    new_points = base + gain
+    cost = sum(p["price"] for p in ins) - sum(p["price"] for p in outs)
+    return {
+        "out": [int(p["code"]) for p in outs],
+        "in": [int(p["code"]) for p in ins],
+        "transfers": len(outs),
+        "gain": round(gain, 2),
+        "points_after": round(new_points, 2),
+        "rating_after": _rating(new_points, optimal_points),
+        "cost_change": round(cost, 1),
+        "value_after": round(value + cost, 1),
+    }
+
+
 def rate_and_suggest(
     codes: list[int],
     projections: pd.DataFrame,
     *,
     bank: float = 0.0,
+    team_value: float | None = None,
     top_n: int = 5,
     optimal_points: float | None = None,
 ) -> dict:
@@ -217,6 +297,9 @@ def rate_and_suggest(
         raise ValueError(f"unknown player codes: {sorted(unknown)}")
     rating = rate_squad(squad, optimal_points)
     rating["suggestions"] = suggest_transfers(
-        squad, projections, bank=bank, top_n=top_n, optimal_points=optimal_points
-    )
+        squad, projections, bank=bank, top_n=top_n, optimal_points=optimal_points,
+        team_value=team_value,
+    )  # fmt: skip
+    rating["budget"] = round(available_budget(_to_players(squad), bank, team_value), 1)
+    rating["value"] = round(float(squad["price"].sum()), 1)
     return rating

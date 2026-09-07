@@ -39,6 +39,41 @@ def _optimal(projections: pd.DataFrame) -> tuple[pd.DataFrame, float]:
     return squad, points
 
 
+SEASON_STATS = (
+    "total_points", "minutes", "goals_scored", "assists", "clean_sheets", "goals_conceded",
+    "bonus", "bps", "saves", "starts", "yellow_cards", "red_cards", "own_goals",
+    "penalties_missed", "penalties_saved", "expected_goals", "expected_assists",
+    "expected_goals_conceded", "defensive_contribution", "influence", "creativity",
+    "threat", "ict_index",
+)  # fmt: skip
+
+
+def _season_totals(snapshot: dict) -> dict[int, dict]:
+    """Season-to-date totals per player, summed from the fixture rows.
+
+    The picker shows these the way the FPL app does; they are context for the
+    manager, not model inputs.
+    """
+    totals: dict[int, dict] = {}
+    by_id = {e["id"]: e for e in snapshot["elements"]}
+    for element_id, history in snapshot.get("history", {}).items():
+        element = by_id.get(int(element_id))
+        if element is None:
+            continue
+        acc = dict.fromkeys(SEASON_STATS, 0.0)
+        last_gw_points = 0
+        for h in history:
+            for stat in SEASON_STATS:
+                acc[stat] += float(h.get(stat) or 0)
+            last_gw_points = int(h.get("total_points") or 0)
+        acc["last_gw_points"] = last_gw_points
+        acc["form"] = float(element.get("form") or 0)
+        acc["points_per_game"] = float(element.get("points_per_game") or 0)
+        acc["games"] = len(history)
+        totals[element["code"]] = {k: round(v, 2) for k, v in acc.items()}
+    return totals
+
+
 def _player_record(row: pd.Series) -> dict:
     return {
         "code": int(row["code"]),
@@ -78,9 +113,11 @@ def build_live(snapshot: dict | None = None, *, explain: bool = True) -> dict:
         explained = explain_frame(rows)
         rationales = dict(zip(explained["code"].astype(int), explained["rationale"], strict=True))
 
+    totals = _season_totals(snapshot)
     players = []
     for _, row in projections.iterrows():
         record = _player_record(row)
+        record["season"] = totals.get(record["code"], {})
         if record["code"] in rationales:
             record["rationale"] = rationales[record["code"]]
         players.append(record)
@@ -90,12 +127,14 @@ def build_live(snapshot: dict | None = None, *, explain: bool = True) -> dict:
         "meta": {
             "season": CURRENT_SEASON,
             "gameweek": gameweek,
+            "last_gameweek": gameweek - 1,
             "deadline": projections["deadline"].iloc[0],
             "captured_at": snapshot["captured_at"],
             "generated_at": datetime.now(timezone.utc).isoformat(),
             "players": len(players),
             "flagged": int((projections["availability"] < 1).sum()),
             "optimal_points": round(optimal_points, 2),
+            "clubs": {t["name"]: t["short_name"] for t in snapshot["teams"]},
         },
         "optimal": {
             "starters": [int(c) for c in squad.loc[squad["is_starter"], "code"]],
