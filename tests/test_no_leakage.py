@@ -57,8 +57,9 @@ OUTCOME_COLUMNS = {
     "red_cards",
     "appearances",
     "full_appearances",
-    "xP",
 }
+# ``xP`` is deliberately not an outcome: FPL publishes it before the deadline, so the
+# current gameweek's value is legitimate pre-match information (``fpl_xp_now``).
 
 CORRUPTIBLE = sorted(OUTCOME_COLUMNS - {"played", "started", "appearances", "full_appearances"})
 

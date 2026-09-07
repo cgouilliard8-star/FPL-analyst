@@ -6,6 +6,7 @@ data/gold/
 *.csv
 !src/fpl/entity/mappings/*.csv
 !tests/fixtures/*.csv
+!data/external/*.csv
 
 # secrets
 .env

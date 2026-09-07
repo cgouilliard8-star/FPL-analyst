@@ -21,6 +21,7 @@ from __future__ import annotations
 
 import json
 import logging
+import time
 from concurrent.futures import ThreadPoolExecutor
 from datetime import datetime, timezone
 from pathlib import Path
@@ -59,10 +60,29 @@ STATUS_UNAVAILABLE = {"i", "s", "u", "n"}  # injured, suspended, unavailable, no
 # --------------------------------------------------------------------------- fetch
 
 
-def _get(session: requests.Session, path: str) -> dict | list:
-    response = session.get(f"{FPL_API_BASE}/{path}", timeout=TIMEOUT)
-    response.raise_for_status()
-    return response.json()
+RETRIES = 4
+BACKOFF = 2.0  # seconds, doubled each attempt
+RETRY_STATUSES = {429, 500, 502, 503, 504}
+
+
+def _get(session: requests.Session, path: str, *, retries: int = RETRIES) -> dict | list:
+    """GET with retries: the FPL API rate-limits and flakes around deadlines, and a
+    refresh that dies on one bad response would leave the site a day stale."""
+    delay = BACKOFF
+    for attempt in range(1, retries + 1):
+        try:
+            response = session.get(f"{FPL_API_BASE}/{path}", timeout=TIMEOUT)
+            if response.status_code in RETRY_STATUSES and attempt < retries:
+                raise requests.HTTPError(f"{response.status_code} for {path}", response=response)
+            response.raise_for_status()
+            return response.json()
+        except (requests.ConnectionError, requests.Timeout, requests.HTTPError, ValueError) as e:
+            if attempt == retries:
+                raise
+            log.warning("%s failed (%s); retry %d/%d in %.0fs", path, e, attempt, retries, delay)
+            time.sleep(delay)
+            delay *= 2
+    raise AssertionError("unreachable")
 
 
 def fetch_snapshot(*, session: requests.Session | None = None, workers: int = WORKERS) -> dict:
@@ -302,7 +322,11 @@ def snapshot_to_upcoming(
             value = e["now_cost"]
             status, chance, news = e["status"], e["chance_of_playing_next_round"], e["news"] or ""
             availability = availability_multiplier(status, chance)
-        for f in by_team.get(e["team"], []):
+        # FPL's own expected points cover the whole gameweek; in a double it goes on
+        # the first fixture row only so the per-gameweek sum is right. It is unknown
+        # for a past deadline (the API keeps no history of it), so None there.
+        ep_next = None if as_of_gameweek else float(e["ep_next"] or 0)
+        for i, f in enumerate(by_team.get(e["team"], [])):
             home = f["team_h"] == e["team"]
             rows.append(
                 {
@@ -327,7 +351,15 @@ def snapshot_to_upcoming(
                     "chance_of_playing": chance,
                     "news": news,
                     "availability": availability,
-                    "fpl_ep_next": float(e["ep_next"] or 0) if not as_of_gameweek else 0.0,
+                    "fpl_ep_next": ep_next if ep_next is not None else 0.0,
+                    "xP": ep_next if i == 0 else None,
+                    "penalties_order": e.get("penalties_order"),
+                    "corners_order": e.get("corners_and_indirect_freekicks_order"),
+                    "freekicks_order": e.get("direct_freekicks_order"),
+                    "transfers_in_event": e.get("transfers_in_event") or 0,
+                    "transfers_out_event": e.get("transfers_out_event") or 0,
+                    "cost_change_start": e.get("cost_change_start") or 0,
+                    "value_season": float(e.get("value_season") or 0),
                 }
             )
 

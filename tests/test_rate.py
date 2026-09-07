@@ -227,3 +227,84 @@ def test_season_sim_autosubs_and_vice_captain():
     assert len(played) == 11 and set(played).isdisjoint(bench)
     # 11 players x 2, plus the vice captain doubled
     assert total == 11 * 2 + 2
+
+
+def with_runs(frame: pd.DataFrame, horizon: int = 3) -> tuple[pd.DataFrame, pd.DataFrame]:
+    """Give every player a per-gameweek run; the total is the ep3 column."""
+    rows = []
+    for _, p in frame.iterrows():
+        for k in range(horizon):
+            ep = float(p["expected_points"]) * (1.0 + 0.3 * ((p["code"] + k) % 3 - 1))
+            rows.append(
+                {
+                    "code": p["code"],
+                    "offset": k,
+                    "expected_points": ep,
+                    "availability": 1.0,
+                    "p_60": 0.9,
+                }
+            )
+    fixtures = pd.DataFrame(rows)
+    weighted = fixtures.assign(
+        w=fixtures["expected_points"]
+        * fixtures["offset"].map(dict(enumerate(rate.HORIZON_WEIGHTS)))
+    )
+    frame = frame.copy()
+    frame["ep3"] = frame["code"].map(weighted.groupby("code")["w"].sum())
+    return frame, fixtures
+
+
+def test_horizon_scoring_repicks_the_eleven_every_gameweek():
+    frame, fixtures = with_runs(pool())
+    squad = legal_squad(frame)
+    r = rate.rate_squad(squad, metric="ep3", fixtures=fixtures)
+    assert len(r["lineups"]) == 3
+    # a player benched next week can start later when his fixture is kinder
+    starters = [set(lu["starters"]) for lu in r["lineups"]]
+    assert any(starters[0] != s for s in starters[1:])
+    # the weighted sum of the per-gameweek elevens (plus cover) is the score
+    expected = sum(
+        rate.HORIZON_WEIGHTS[k] * (lu["points"] + lu["cover"]) for k, lu in enumerate(r["lineups"])
+    )
+    assert r["points"] == pytest.approx(expected, abs=0.05)
+
+
+def test_bench_cover_rewards_a_bench_that_would_play():
+    frame = pool()
+    squad = legal_squad(frame)
+    players = rate._to_players(squad)
+    eleven = rate._best_eleven(players)
+    by = {p["code"]: p for p in players}
+    # make one outfield starter a coin flip to play: the bench now matters
+    risky = next(c for c in eleven.starters if by[c]["position"] != "GK")
+    by[risky]["plays"] = [0.5]
+    cover = rate._bench_cover(players, eleven, 0)
+    assert cover > 0
+    top_sub = max(
+        (by[c] for c in eleven.bench if by[c]["position"] != "GK"), key=lambda p: p["eps"][0]
+    )
+    assert cover == pytest.approx(0.5 * top_sub["eps"][0], abs=0.15)
+    assert rate._at_least([0.5, 0.5]) == pytest.approx([1.0, 0.75, 0.25])
+
+
+def test_team_value_above_squad_value_is_headroom():
+    frame = pool()
+    squad = legal_squad(frame)
+    players = rate._to_players(squad)
+    value = sum(p["price"] for p in players)
+    assert rate.available_budget(players, 0.0, team_value=value + 20) == pytest.approx(value + 20)
+    assert rate.available_budget(players, 1.5, team_value=None) == pytest.approx(
+        max(100.0, value) + 1.5
+    )
+    moves = rate.suggest_transfers(squad, frame, team_value=value + 20, top_n=5)
+    assert any(m["cost_change"] > 0.5 for m in moves)
+
+
+def test_over_budget_squad_only_gets_moves_that_fix_it():
+    frame = pool()
+    squad = legal_squad(frame)
+    players = rate._to_players(squad)
+    value = sum(p["price"] for p in players)
+    moves = rate.suggest_transfers(squad, frame, team_value=value - 3, bank=0.0, top_n=5)
+    assert moves and all(m["fixes_budget"] for m in moves)
+    assert all(m["value_after"] <= value - 3 + 1e-9 for m in moves)

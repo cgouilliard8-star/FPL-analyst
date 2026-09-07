@@ -139,6 +139,31 @@ def _simulate(args: argparse.Namespace) -> int:
     return 0
 
 
+def _schedule(args: argparse.Namespace) -> int:
+    from fpl.config import CURRENT_SEASON, TRAIN_SEASONS
+    from fpl.data.schedule import fetch_schedule, schedule_path
+
+    seasons = (*TRAIN_SEASONS, CURRENT_SEASON) if args.all else (CURRENT_SEASON,)
+    for season in seasons:
+        frame = fetch_schedule(season, domestic=not args.no_domestic)
+        by = frame.groupby("competition").size().to_dict() if not frame.empty else {}
+        print(f"{season}: {len(frame)} matches {by} -> {schedule_path(season).name}")
+    return 0
+
+
+def _check(args: argparse.Namespace) -> int:
+    from fpl.report.check import check_file
+    from fpl.report.live import LIVE_PATH
+
+    problems = check_file(LIVE_PATH)
+    if problems:
+        for p in problems:
+            print(f"FAIL {p}")
+        return 1
+    print(f"ok {LIVE_PATH}")
+    return 0
+
+
 def _live(args: argparse.Namespace) -> int:
     from fpl.report.live import build_live, write_live
 
@@ -187,6 +212,8 @@ def main(argv: list[str] | None = None) -> int:
     )
     back.add_argument("--season", default="2024-25", help="season to test on")
     back.add_argument("--refit-every", type=int, default=1, help="gameweeks between refits")
+    back.add_argument("--from-gw", type=int, default=6, help="first gameweek to score")
+    back.add_argument("--to-gw", type=int, default=None, help="last gameweek to score")
     back.add_argument("models", nargs="*", help="models to run (default: all)")
     back.set_defaults(func=_backtest)
 
@@ -220,6 +247,20 @@ def main(argv: list[str] | None = None) -> int:
     )
     live.add_argument("--no-explain", action="store_true", help="skip rationale generation")
     live.set_defaults(func=_live)
+
+    sch = sub.add_parser(
+        "schedule",
+        parents=[common],
+        help="fetch cup and European fixtures for PL clubs (fixture congestion)",
+    )
+    sch.add_argument("--all", action="store_true", help="every training season, not just this one")
+    sch.add_argument("--no-domestic", action="store_true", help="skip the FA Cup / League Cup")
+    sch.set_defaults(func=_schedule)
+
+    chk = sub.add_parser(
+        "check", parents=[common], help="validate site/data/live.json before it is deployed"
+    )
+    chk.set_defaults(func=_check)
 
     sim = sub.add_parser(
         "simulate",

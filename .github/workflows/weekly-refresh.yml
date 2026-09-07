@@ -4,6 +4,10 @@ name: refresh
 # projections are rebuilt every morning and again just before the usual Saturday
 # deadline. Each run snapshots the live API (immutable, timestamped), refits the
 # model on everything up to the next gameweek, and publishes the dashboard.
+#
+# Failure policy: the site must never go blank or show broken numbers. Every step
+# that can fail falls back to the last good artefact -- the previous snapshot, the
+# previously published live.json -- and the deploy is gated on `fpl check`.
 on:
   schedule:
     - cron: "0 6 * * *"    # daily 06:00 UTC
@@ -11,7 +15,7 @@ on:
   workflow_dispatch:
 
 permissions:
-  contents: read
+  contents: write   # commits the refreshed live.json back so the last good copy advances
   pages: write
   id-token: write
 
@@ -22,6 +26,7 @@ concurrency:
 jobs:
   build:
     runs-on: ubuntu-latest
+    timeout-minutes: 45
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
@@ -30,21 +35,65 @@ jobs:
           cache: pip
       - run: pip install -e ".[dev,llm]"
 
-      - name: Historical seasons
+      - name: Tests (a refresh from broken code is not a refresh)
+        run: pytest -q -p no:warnings
+
+      # The historical archive only changes when a season is added; cache it so a
+      # flaky archive host cannot stop a refresh.
+      - name: Historical seasons (cached)
+        id: archive
+        uses: actions/cache@v4
+        with:
+          path: |
+            data/bronze/archive_*.parquet
+            data/bronze/players_*.parquet
+            data/silver
+          key: archive-${{ hashFiles('src/fpl/config.py', 'src/fpl/data/archive.py', 'src/fpl/data/silver.py', 'src/fpl/entity/**') }}
+      - name: Build historical seasons
+        if: steps.archive.outputs.cache-hit != 'true'
         run: |
           fpl bootstrap
           fpl silver
 
-      - name: Live snapshot
+      - name: Live snapshot (retries inside)
+        id: snapshot
         run: fpl snapshot
 
+      - name: Cup and European fixtures (congestion; non-fatal)
+        continue-on-error: true
+        run: fpl schedule --all
+
       - name: Season replay (from GW1, one free transfer a week, real points)
+        continue-on-error: true   # slow and cosmetic: the page keeps the last one if it fails
         run: fpl simulate --from-gw 1 --to-gw 3
 
       - name: Project the next five gameweeks and build dashboard data
+        id: live
+        continue-on-error: true
         env:
           ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
         run: fpl live
+
+      - name: Validate, or restore the last published data
+        id: gate
+        run: |
+          if [ "${{ steps.live.outcome }}" = "success" ] && fpl check; then
+            echo "fresh=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "::warning::live build failed validation; publishing the previous live.json"
+            git checkout -- site/data/live.json
+            fpl check || echo "::error::previous live.json also fails validation"
+            echo "fresh=false" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Commit refreshed data (keeps the last good copy in git)
+        if: steps.gate.outputs.fresh == 'true'
+        run: |
+          git config user.name "refresh-bot"
+          git config user.email "refresh-bot@users.noreply.github.com"
+          git add site/data/live.json data/external/*.csv
+          git diff --cached --quiet || git commit -m "data: refresh $(date -u +%Y-%m-%dT%H:%MZ) [skip ci]"
+          git push
 
       - uses: actions/upload-pages-artifact@v3
         with:

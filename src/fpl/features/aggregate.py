@@ -18,8 +18,9 @@ log = logging.getLogger(__name__)
 
 # Summed across fixtures within a gameweek.
 SUM_COLUMNS = [
-    # FPL publishes its own expected-points figure. Not a feature -- it is the
-    # baseline we have to beat, and beating it is a checkable claim.
+    # FPL publishes its own expected-points figure before each deadline. It is the
+    # baseline the backtest scores against, and also a legitimate pre-match input
+    # (see ``fpl_xp_now`` in features.build).
     "xP",
     "minutes",
     "total_points",
@@ -51,6 +52,8 @@ FIRST_COLUMNS = [
     "full_name", "position", "team", "value", "selected", "element",
     # present only on live upcoming rows
     "web_name", "status", "chance_of_playing", "news", "availability", "fpl_ep_next",
+    "penalties_order", "corners_order", "freekicks_order", "transfers_in_event",
+    "transfers_out_event", "cost_change_start", "value_season",
     "is_upcoming", "selected_by_percent",
 ]  # fmt: skip
 

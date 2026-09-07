@@ -6,8 +6,10 @@ most. Live for 2026-27, refreshed every morning.
 
 ```
 fpl snapshot     # pull the live FPL API into an immutable, timestamped snapshot
+fpl schedule     # cup and European fixtures for PL clubs (fixture congestion)
 fpl simulate     # replay GW1-3 from scratch with real transfer rules, scored on real points
 fpl live         # project the next five gameweeks and write site/data/live.json
+fpl check        # validate live.json before it is deployed
 ```
 
 The page (`site/`) is static: it loads that one JSON file and does the rating in the
@@ -16,9 +18,22 @@ browser, so it runs on GitHub Pages with nothing behind it.
 ## What the live page does
 
 **Rate my team.** Search and pick your fifteen (quotas and the three-per-club rule are
-enforced as you go), enter your bank, and the page picks your best legal eleven and
-captain by projection, scores it, and rates it against the best £100m squad the model
-can build this week. Flagged players are called out with FPL's own news text.
+enforced as you go), enter your team value, bank and free transfers, and the page
+scores the squad and rates it against the best £100m squad the model can build over
+the same horizon. Flagged players are called out with FPL's own news text.
+
+**How a squad is scored.** For each gameweek in the horizon the best legal eleven is
+picked on *that* week's projections (your formation is honoured for the next gameweek
+only — you can change it later), the top projection is doubled as captain, and
+expected bench cover is added: the chance that at least one, two or three starters
+miss out, times what the first, second or third sub would bring on. So a cheap bench
+that would actually play is worth something, an expensive one that never plays is
+not, and a player who is benched this week but starts next week against a kinder
+opponent is credited for that. The weeks are weighted 100/85/70/55/40%.
+
+**Best lineup.** Under the rating, the recommended eleven for the next gameweek:
+formation, captain and vice, bench in order, each fixture coloured by difficulty for
+that position, and the formation and captain the model would use in the weeks after.
 
 **Five moves, ranked.** For every player you own, every same-position replacement you
 can afford is tried, and the resulting fifteen is re-solved for its best eleven. The
@@ -32,6 +47,30 @@ pair fits under the cap (£100m, or your own team value plus bank if you enter i
 **Free transfers and hits.** Enter how many free transfers you hold. Any transfer
 beyond them is charged FPL's 4-point hit, moves are ranked by gain *net* of the hit,
 and each says plainly whether it is still worth it.
+
+**Budget.** The cap is £100m, or your own team value plus bank when you enter them —
+a team value above what your fifteen cost is headroom the moves may spend; one below
+it means the squad is over budget, in which case only moves that bring it back under
+are offered, ranked by how little they cost you, even if they cost points. The Best
+squad tab is solved at £100m, £105m … £130m and shows the one nearest your budget.
+
+**Teams & fixtures.** Every club's attack and defence on current form — expected goals
+for and against per match, exponentially weighted so the last two or three matches
+carry most of the weight, blended 70/30 with the last 38 matches — ranked and banded
+1 (easy) to 5 (hard) from a defender's point of view (how much they score) and an
+attacker's (how little they concede). Fixture chips on the pitch, in the lineup, in
+the moves and in the per-gameweek columns of the player table use the same bands.
+Each club's full schedule, league and European, is listed.
+
+**Fixtures & insights.** Under the moves, this gameweek's fixtures with both sides'
+bands and, on tap, the head-to-head record (last six meetings, clean sheets, both
+scored, recent scorelines) and each side's form line.
+
+**All players.** The whole data set in one sideways-scrolling table: projections per
+horizon and per gameweek (coloured by fixture difficulty), FPL's own xP, price and
+price change, ownership and this week's transfers in and out, start probability,
+minutes share, set-piece duties (penalties, corners, free kicks), club attack and
+defence ranks, and the full season stat sheet.
 
 **The next five gameweeks, weighted.** Every player is projected for each of the next
 five gameweeks against that gameweek's actual opponent: a defender's clean-sheet odds
@@ -184,15 +223,59 @@ clones it.
 
 ## Refresh schedule
 
+The page's **Refresh data** button re-fetches the published file (bypassing any cached
+copy) and says whether anything newer landed; there is nothing to run by hand.
+
 `.github/workflows/weekly-refresh.yml` runs every day at 06:00 UTC and again on
-Saturday at 10:00 UTC ahead of the usual deadline. Each run snapshots the live API
-(never overwriting an earlier snapshot), refits the model on everything up to the next
-gameweek, rebuilds `site/data/live.json` and deploys the page. The page shows when the
-data was captured and how long remains to the deadline.
+Saturday at 10:00 UTC ahead of the usual deadline. Each run:
+
+1. runs the test suite -- a refresh from broken code is not a refresh;
+2. restores the historical archive from cache (it only changes when a season ends);
+3. snapshots the live API (never overwriting an earlier snapshot; retried with
+   backoff because the API rate-limits around deadlines);
+4. fetches the cup and European fixture lists (`fpl schedule --all`);
+5. replays the season from GW1 for the Backtest tab;
+6. refits the model on everything up to the next gameweek and writes
+   `site/data/live.json`;
+7. validates the file (`fpl check`: player count, clubs, sane optimum, no NaNs,
+   snapshot age); if the build or the check fails, the previously published file is
+   restored and deployed instead, and the run is flagged;
+8. commits the refreshed data back to the repository so the last good copy advances,
+   then deploys the site.
+
+The page shows when the data was captured and how long remains to the deadline, and
+says so plainly when the file is more than 36 hours old or the deadline has passed.
 
 The historical archive this trains on stopped weekly updates after 2024-25, so the
 snapshots are also the in-season history: each one carries every finished fixture of
 the current season from `element-summary/`.
+
+## Serving many users
+
+The site is static: one HTML file and one JSON file on GitHub Pages, served by a CDN
+with no server of ours to overload. Every rating and transfer search runs in the
+visitor's browser (a full five-move search over the five-week horizon takes well
+under a second on a laptop; the picker renders its 650 rows in chunks so a tap is
+never blocked). The JSON is about 2 MB raw, roughly 300 KB compressed, and is
+revalidated against the CDN's ETag on each visit. Each
+browser keeps the last good copy it saw, so a failed fetch shows that copy with a
+banner rather than a blank page, and a page error shows a notice instead of dying
+silently. Squads are stored per device in `localStorage`; nothing is sent anywhere.
+
+## Fixture congestion
+
+FPL only knows about league fixtures, but a Wednesday in Munich is why a full-back is
+benched on Saturday. `fpl schedule` pulls every Champions League, Europa League and
+Conference League fixture from fixturedownload.com (2022-23 to 2026-27, so the model
+can learn the effect as well as see it), keeps the matches involving Premier League
+clubs, and stores them in `data/external/` (committed, so a source that is down keeps
+its last copy). The FA Cup and League Cup come from TheSportsDB, whose free feed is
+too patchy to rely on yet, so domestic cups are a known gap. From them
+each fixture row gets: matches in any other competition in the seven days before
+kick-off, whether a European tie fell within four days before (rotation after), whether
+a cup or European tie follows within four days (rotation before), and rest counted
+across every competition. The same features are computed for the opponent, and for
+every gameweek in the five-week horizon. The Why panel flags them on each fixture.
 
 ## Data sources
 
@@ -204,6 +287,8 @@ the current season from `element-summary/`.
 | [football-data.co.uk](https://www.football-data.co.uk/englandm.php) | Historical closing odds | Static CSV |
 | [ClubElo](http://clubelo.com/API) | Dated team strength | CSV API |
 | [The Odds API](https://the-odds-api.com) | Live pre-deadline odds | REST, free tier |
+| [fixturedownload.com](https://fixturedownload.com) | Champions / Europa / Conference League fixtures, current and past seasons | Public JSON |
+| [TheSportsDB](https://www.thesportsdb.com/documentation) | FA Cup and League Cup fixtures | Public JSON, 15 season requests a month |
 
 All free. FotMob is deliberately excluded: its terms forbid automated retrieval.
 2021-22 is excluded from training because it carries no expected-goals columns at all.

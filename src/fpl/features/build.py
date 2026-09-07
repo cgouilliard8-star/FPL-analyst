@@ -14,6 +14,7 @@ import pandas as pd
 
 from fpl.config import GOLD, TRAIN_SEASONS
 from fpl.data.archive import load_players
+from fpl.data.schedule import congestion_features, load_schedule
 from fpl.data.silver import load_silver
 from fpl.features.aggregate import aggregate_to_gameweek, attach_opponent, build_team_id_map
 from fpl.features.windows import (
@@ -83,12 +84,12 @@ def _add_rate_features(frame: pd.DataFrame) -> pd.DataFrame:
 
 def _add_opponent_features(frame: pd.DataFrame, strength: pd.DataFrame) -> pd.DataFrame:
     """Join each row to its own club's form and its opponent's."""
-    own = strength.rename(columns={c: f"own_{c}" for c in strength.columns if "_r" in c})
+    keys = {"season", "team", "GW"}
+    metrics = [c for c in strength.columns if c not in keys]
+    own = strength.rename(columns={c: f"own_{c}" for c in metrics})
     frame = frame.merge(own, on=["season", "team", "GW"], how="left")
 
-    opponent = strength.rename(
-        columns={"team": "opponent", **{c: f"opp_{c}" for c in strength.columns if "_r" in c}}
-    )
+    opponent = strength.rename(columns={"team": "opponent", **{c: f"opp_{c}" for c in metrics}})
     frame = frame.merge(opponent, on=["season", "opponent", "GW"], how="left")
 
     # Fixture difficulty: how leaky the opponent has been relative to the league so
@@ -99,19 +100,51 @@ def _add_opponent_features(frame: pd.DataFrame, strength: pd.DataFrame) -> pd.Da
     return frame
 
 
+CONGESTION = ("other_games_7d", "euro_midweek", "other_game_next_4d", "days_since_any_match")
+
+
+def attach_congestion(frame: pd.DataFrame, schedule: pd.DataFrame) -> pd.DataFrame:
+    """Cup and European matches around each fixture, for the club and its opponent.
+
+    Computed once per (club, kick-off) and joined, not per player row.
+    """
+    keys = frame[["team", "kickoff_time"]].drop_duplicates().reset_index(drop=True)
+    feats = pd.concat([keys, congestion_features(keys, schedule)], axis=1)
+    frame = frame.merge(feats, on=["team", "kickoff_time"], how="left")
+    opp = feats.rename(
+        columns={"team": "opponent", **{c: f"opp_{c}" for c in ("other_games_7d", "euro_midweek")}}
+    )[["opponent", "kickoff_time", "opp_other_games_7d", "opp_euro_midweek"]]
+    frame = frame.merge(opp, on=["opponent", "kickoff_time"], how="left")
+    for c in (
+        "other_games_7d",
+        "euro_midweek",
+        "other_game_next_4d",
+        "opp_other_games_7d",
+        "opp_euro_midweek",
+    ):
+        frame[c] = frame[c].fillna(0).astype(int)
+    # Rest counting every competition: the league gap, or the cup gap if shorter.
+    frame["days_rest_all"] = frame[["days_rest", "days_since_any_match"]].min(axis=1)
+    return frame
+
+
 def build_features(
     seasons: tuple[str, ...] = TRAIN_SEASONS,
     *,
     write: bool = True,
     silver: pd.DataFrame | None = None,
     players: pd.DataFrame | None = None,
+    schedule: pd.DataFrame | None = None,
 ) -> pd.DataFrame:
     """Produce the gold table: one row per player-gameweek, features plus target.
 
     ``silver`` and ``players`` are injectable so the leakage test can feed in a
     deliberately corrupted future and check that the past is unaffected.
+    ``schedule`` is the clubs' non-league fixture list (cups, Europe); when absent
+    the congestion features are zero.
     """
     silver = load_silver() if silver is None else silver
+    schedule = load_schedule(seasons) if schedule is None else schedule
     silver = silver[silver["season"].isin(seasons)].copy()
     if silver.empty:
         raise ValueError(f"no silver rows for seasons {seasons}")
@@ -130,6 +163,7 @@ def build_features(
 
     frame["games_played"] = frame.groupby("code").cumcount()
     frame["days_rest"] = days_since_last_match(frame)
+    frame = attach_congestion(frame, schedule)
     frame["minutes_share_r5"] = (frame["minutes_mean5"] / 90.0).clip(0, 1)
     frame["started_share_r5"] = frame["starts_mean5"].clip(0, 1)
 
@@ -138,6 +172,11 @@ def build_features(
     frame = _add_opponent_features(frame, strength)
 
     # --- context -----------------------------------------------------------
+    # FPL publishes its own expected points before every deadline; the archive keeps
+    # it as ``xP`` and the live API as ``ep_next``. It is pre-match information a
+    # manager can see, so the model may lean on it (it knows set-piece duties and
+    # press-conference news no rolling window can).
+    frame["fpl_xp_now"] = frame["xP"].astype(float)
     frame["is_home"] = frame["was_home"].astype(int)
     frame["price"] = frame["value"] / 10.0
     frame["ownership"] = frame["selected"]
@@ -169,9 +208,16 @@ def feature_columns(frame: pd.DataFrame) -> list[str]:
     allowed_exact = {
         "games_played",
         "days_rest",
+        "days_rest_all",
+        "other_games_7d",
+        "euro_midweek",
+        "other_game_next_4d",
+        "opp_other_games_7d",
+        "opp_euro_midweek",
         "minutes_share_r5",
         "started_share_r5",
         "is_home",
+        "fpl_xp_now",
         "price",
         "ownership",
         "fixtures_this_gw",

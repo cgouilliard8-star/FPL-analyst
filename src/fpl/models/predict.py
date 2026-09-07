@@ -33,24 +33,30 @@ from datetime import datetime, timezone
 import numpy as np
 import pandas as pd
 
-from fpl.config import CURRENT_SEASON, TRAIN_SEASONS
+from fpl.config import CURRENT_SEASON, HORIZON_WEIGHTS, MAX_HORIZON, TRAIN_SEASONS
 from fpl.data.archive import load_players
 from fpl.data.fpl_api import next_gameweek, snapshot_to_gameweeks, snapshot_to_upcoming
+from fpl.data.schedule import load_schedule
 from fpl.data.silver import load_silver
 from fpl.entity.resolve import canonical_team, load_team_aliases
-from fpl.features.build import build_features, feature_columns
+from fpl.features.build import attach_congestion, build_features, feature_columns
 from fpl.models.combine import CONTRIBUTIONS, fit_component_model
 
 log = logging.getLogger(__name__)
 
 # Nearer gameweeks matter more: a transfer can be undone next week, and the fixture
 # context is better known. Index 0 is the next gameweek.
-HORIZON_WEIGHTS: tuple[float, ...] = (1.0, 0.85, 0.7, 0.55, 0.4)
-MAX_HORIZON = len(HORIZON_WEIGHTS)
+CONGESTION_COLUMNS = (
+    "other_games_7d", "euro_midweek", "other_game_next_4d", "days_since_any_match",
+    "opp_other_games_7d", "opp_euro_midweek", "days_rest_all",
+)  # fmt: skip
+
 
 TEAM_METRICS = (
     "team_goals_r5", "team_xg_r5", "team_conceded_r5", "team_xgc_r5",
     "team_goals_r10", "team_xg_r10", "team_conceded_r10", "team_xgc_r10",
+    "team_goals_r38", "team_xg_r38", "team_conceded_r38", "team_xgc_r38",
+    "team_goals_ew", "team_xg_ew", "team_conceded_ew", "team_xgc_ew",
 )  # fmt: skip
 
 _RETURN = re.compile(r"(?:expected back|suspended until|until)\s+(\d{1,2})\s+([A-Za-z]{3})", re.I)
@@ -163,8 +169,15 @@ def _team_strength_now(features: pd.DataFrame, season: str, gameweek: int) -> pd
     # A club with no recent history (promoted, first gameweek) is treated as average
     # rather than dropped: it still has to be ranked and faced.
     table = table.fillna(table.mean()).fillna(0.0)
-    table["att_rank"] = table["team_xg_r5"].rank(ascending=False, method="min").astype(int)
-    table["def_rank"] = table["team_xgc_r5"].rank(ascending=True, method="min").astype(int)
+    # Ranks follow current form: the exponentially weighted numbers, in which the last
+    # two or three matches carry most of the weight, blended 70/30 with the season-long
+    # window so one freak scoreline does not rewrite a club's standing.
+    att = 0.7 * table["team_xg_ew"] + 0.3 * table["team_xg_r38"]
+    dfn = 0.7 * table["team_xgc_ew"] + 0.3 * table["team_xgc_r38"]
+    table["att_score"] = att
+    table["def_score"] = dfn
+    table["att_rank"] = att.rank(ascending=False, method="min").astype(int)
+    table["def_rank"] = dfn.rank(ascending=True, method="min").astype(int)
     return table
 
 
@@ -220,6 +233,41 @@ def _future_rows(
     return pd.DataFrame(rows) if rows else pd.DataFrame(columns=base.columns)
 
 
+UNKNOWN_MINUTES = 90  # fewer league minutes on record than this: no evidence of our own
+UNKNOWN_CAP = 1.25  # ...so defer to FPL's own number, allowing it this much upside
+
+
+def _cap_unknowns(breakdown: pd.DataFrame, rows: pd.DataFrame) -> pd.DataFrame:
+    """Rein in projections for players the data has never really seen.
+
+    A summer signing with twenty league minutes has price, ownership and club
+    strength but no record, and the trees extrapolate from whoever else looked like
+    that -- sometimes wildly. FPL's own expected points know the pre-season and the
+    press conference, so for such players every component is scaled so the total
+    does not exceed FPL's figure by more than ``UNKNOWN_CAP``. Past deadlines
+    (backtests) have no FPL figure and are left alone.
+    """
+    minutes = rows["minutes_todate"].fillna(0.0).to_numpy()
+    fpl = rows.get("fpl_ep_next")
+    if fpl is None:
+        return breakdown
+    fpl = pd.to_numeric(fpl, errors="coerce").fillna(0.0).to_numpy()
+    total = breakdown["expected_points"].to_numpy()
+    unknown = (minutes < UNKNOWN_MINUTES) & (fpl > 0) & (total > UNKNOWN_CAP * fpl)
+    if not unknown.any():
+        return breakdown
+    scale = np.where(unknown, UNKNOWN_CAP * fpl / np.where(total > 0, total, 1.0), 1.0)
+    out = breakdown.copy()
+    for column in (*CONTRIBUTIONS, "expected_points"):
+        out[column] = out[column].to_numpy() * scale
+    log.info(
+        "capped %d projections for players with under %d minutes on record",
+        int(unknown.sum()),
+        UNKNOWN_MINUTES,
+    )
+    return out
+
+
 def project_horizon(
     snapshot: dict,
     season: str = CURRENT_SEASON,
@@ -262,6 +310,11 @@ def project_horizon(
     strength = _team_strength_now(features, season, first)
     league_xgc = float(features.loc[is_target, "opp_team_xgc_r10"].mean())
     future = _future_rows(base, snapshot, first, horizon, strength, league_xgc)
+    if not future.empty:
+        # The clones carry the first gameweek's cup/European context; recompute it
+        # for each later kick-off from the same schedule the features were built on.
+        drop = [c for c in future.columns if c in CONGESTION_COLUMNS]
+        future = attach_congestion(future.drop(columns=drop), load_schedule((season,)))
     every = (
         pd.concat([base, future], ignore_index=True)
         if not future.empty
@@ -270,6 +323,7 @@ def project_horizon(
 
     breakdown = model.explain(every).reset_index(drop=True)
     every = every.reset_index(drop=True)
+    breakdown = _cap_unknowns(breakdown, every)
 
     reference = (
         datetime.now(timezone.utc)
@@ -292,6 +346,9 @@ def project_horizon(
             "is_home",
             "fixtures_this_gw",
             "kickoff_time",
+            "other_games_7d",
+            "euro_midweek",
+            "other_game_next_4d",
         ]  # fmt: skip
     ].copy()
     fixtures["raw_expected_points"] = breakdown["expected_points"].to_numpy()
@@ -317,9 +374,11 @@ def project_horizon(
     for col in (
         "element", "web_name", "full_name", "position", "team", "price", "selected",
         "selected_by_percent", "status", "chance_of_playing", "news", "availability",
-        "fpl_ep_next", "minutes_share_r5",
+        "fpl_ep_next", "minutes_share_r5", "minutes_todate", "penalties_order",
+        "corners_order", "freekicks_order", "transfers_in_event", "transfers_out_event",
+        "cost_change_start", "value_season",
     ):  # fmt: skip
-        players[col] = ident[col]
+        players[col] = ident[col] if col in ident.columns else None
     players["opponent"] = nxt["all_opponents"]
     players["is_home"] = nxt["is_home"]
     players["fixtures_this_gw"] = nxt["fixtures_this_gw"]

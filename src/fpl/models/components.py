@@ -81,8 +81,22 @@ def _fit_one(spec: ComponentSpec, train: pd.DataFrame, features: list[str]):
         model = lgb.LGBMRegressor(objective="poisson", **_COMMON)
         y = y.clip(lower=0)
 
+    if float(y.sum()) == 0.0:
+        # An event that has never happened in the training window (defensive
+        # contribution before the 2025-26 rules, in an early-season backtest) has
+        # nothing to learn: predict zero rather than fail the whole ensemble.
+        return _Zero()
+
     model.fit(train[features], y)
     return model
+
+
+class _Zero:
+    def predict(self, X):
+        return np.zeros(len(X))
+
+    def predict_proba(self, X):
+        return np.column_stack([np.ones(len(X)), np.zeros(len(X))])
 
 
 class ComponentEnsemble:
@@ -112,8 +126,14 @@ class ComponentEnsemble:
             else:
                 out[spec.name] = np.clip(model.predict(X), 0.0, None)
 
+        # A player cannot appear more often than his club plays, nor play 60 minutes
+        # more often than he appears; the Poisson models do not know that, so clip.
+        fixtures = frame["fixtures_this_gw"].clip(lower=1).to_numpy()
+        out["e_appearances"] = np.minimum(out["e_appearances"].to_numpy(), fixtures)
+        out["e_full"] = np.minimum(out["e_full"].to_numpy(), out["e_appearances"].to_numpy())
+        out["e_cs"] = np.minimum(out["e_cs"].to_numpy(), out["e_full"].to_numpy())
+
         # Rotation risk for the reader: expected 60-minute appearances per fixture,
         # which for a single-fixture week is simply the probability of starting.
-        fixtures = frame["fixtures_this_gw"].clip(lower=1).to_numpy()
         out["p_60"] = np.clip(out["e_full"].to_numpy() / fixtures, 0.0, 1.0)
         return out

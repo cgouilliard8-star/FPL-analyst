@@ -152,38 +152,57 @@ def days_since_last_match(frame: pd.DataFrame, group: str = GROUP) -> pd.Series:
 
 
 def build_team_strength(
-    gameweeks: pd.DataFrame, windows: tuple[int, ...] = (5, 10)
+    gameweeks: pd.DataFrame,
+    windows: tuple[int, ...] = (5, 10, 38),
+    form_halflife: float = 2.0,
 ) -> pd.DataFrame:
     """Rolling attacking and defensive strength per club, lagged.
 
     Derived from the squad's own returns rather than an external ratings feed, so the
-    pipeline stays self-contained. ``fpl.data.elo`` can layer ClubElo on top where the
-    network allows it.
+    pipeline stays self-contained. The windows run *across* seasons: at gameweek 1 a
+    club's form is last season's closing run, not an empty window, and the 38-match
+    window is the "big club" prior -- a season of underlying quality that a bad
+    fortnight does not erase. A promoted club has no history and is left NaN for the
+    model (and filled with the league mean where a rank is needed).
+
+    ``form_halflife`` produces an exponentially weighted version (``_ew``) in which
+    the last two or three matches carry most of the weight: current form, for the
+    fixture-difficulty tables.
     """
     team_gw = (
         gameweeks.groupby(["season", "team", "GW"], as_index=False)
         .agg(
+            kickoff=("kickoff_time", "min"),
             team_goals=("goals_scored", "sum"),
             team_xg=("expected_goals", "sum"),
             team_conceded=("goals_conceded", "max"),
             team_xgc=("expected_goals_conceded", "max"),
         )
-        .sort_values(["season", "team", "GW"])
+        .sort_values(["team", "kickoff", "season", "GW"])
+        .reset_index(drop=True)
     )
 
     metrics = ["team_goals", "team_xg", "team_conceded", "team_xgc"]
-    shifted = team_gw.groupby(["season", "team"], sort=False)[metrics].shift(1)
-    shifted[["season", "team"]] = team_gw[["season", "team"]].to_numpy()
+    shifted = team_gw.groupby("team", sort=False)[metrics].shift(1)
+    shifted["team"] = team_gw["team"].to_numpy()
+    grouped = shifted.groupby("team", sort=False)[metrics]
 
     for window in windows:
         rolled = (
-            shifted.groupby(["season", "team"], sort=False)[metrics]
-            .rolling(window, min_periods=1)
+            grouped.rolling(window, min_periods=1)
             .mean()
-            .reset_index(level=[0, 1], drop=True)
+            .reset_index(level=0, drop=True)
             .reindex(team_gw.index)
         )
         for metric in metrics:
             team_gw[f"{metric}_r{window}"] = rolled[metric].to_numpy()
 
-    return team_gw.drop(columns=metrics)
+    weighted = grouped.transform(lambda s: s.ewm(halflife=form_halflife, min_periods=1).mean())
+    for metric in metrics:
+        team_gw[f"{metric}_ew"] = weighted[metric].to_numpy()
+
+    return (
+        team_gw.drop(columns=[*metrics, "kickoff"])
+        .sort_values(["season", "team", "GW"])
+        .reset_index(drop=True)
+    )

@@ -100,3 +100,20 @@ def test_save_snapshot_never_overwrites(snapshot, tmp_path, monkeypatch):
     with pytest.raises(FileExistsError):
         fpl_api.save_snapshot(snapshot)
     assert fpl_api.load_latest_snapshot()["captured_at"] == snapshot["captured_at"]
+
+
+def test_unknown_players_are_capped_at_fpls_view():
+    import numpy as np
+    import pandas as pd
+
+    from fpl.models.combine import CONTRIBUTIONS
+    from fpl.models.predict import UNKNOWN_CAP, _cap_unknowns
+
+    rows = pd.DataFrame({"minutes_todate": [0.0, 2000.0, 0.0], "fpl_ep_next": [2.0, 2.0, 0.0]})
+    parts = {term: [1.0, 1.0, 1.0] for term in CONTRIBUTIONS}
+    breakdown = pd.DataFrame({**parts, "expected_points": [6.0, 6.0, 6.0], "p_60": [0.5] * 3})
+    out = _cap_unknowns(breakdown, rows)
+    assert out["expected_points"].iloc[0] == pytest.approx(UNKNOWN_CAP * 2.0)  # unknown: capped
+    assert out["expected_points"].iloc[1] == 6.0  # a known player is left alone
+    assert out["expected_points"].iloc[2] == 6.0  # no FPL figure: nothing to defer to
+    assert np.isclose(out[list(CONTRIBUTIONS)].iloc[0].sum(), out["expected_points"].iloc[0])

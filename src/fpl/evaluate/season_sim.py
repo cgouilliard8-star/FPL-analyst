@@ -146,7 +146,7 @@ def simulate_season(
     prices: dict[int, float] = {}
 
     for gw in gameweeks:
-        players, _, _ = project_horizon(snapshot, season, horizon=horizon, as_of_gameweek=gw)
+        players, fixtures, _ = project_horizon(snapshot, season, horizon=horizon, as_of_gameweek=gw)
         players = players[players["price"] > 0].reset_index(drop=True)
         transfers: list[dict] = []
         if not squad:
@@ -174,6 +174,7 @@ def simulate_season(
                 metric=metric,
                 team_value=value,
                 free_transfers=free,
+                fixtures=fixtures,
             )
             moves = [m for m in moves if m["transfers"] <= free and m["gain"] >= min_gain]
             if moves:

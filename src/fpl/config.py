@@ -64,3 +64,9 @@ XI_SIZE = 11
 MAX_PER_CLUB = 3
 BUDGET_TENTHS = 1000  # £100.0m, stored in tenths as the API does
 TRANSFER_HIT = 4  # points cost of an extra transfer
+
+# How much each of the next gameweeks counts when a squad is rated over a horizon:
+# the next deadline in full, then less as the future gets less certain.
+HORIZON_WEIGHTS: tuple[float, ...] = (1.0, 0.85, 0.7, 0.55, 0.4)
+MAX_HORIZON = len(HORIZON_WEIGHTS)
+METRIC_HORIZON = {"expected_points": 1, "ep1": 1, "ep3": 3, "ep5": 5}
