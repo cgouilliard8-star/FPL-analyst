@@ -15,9 +15,14 @@ GOLD = DATA_DIR / "gold"  # leak-free feature store
 for _d in (BRONZE, SILVER, GOLD):
     _d.mkdir(parents=True, exist_ok=True)
 
-# Seasons used for training. The archive covers 2016-17 onward, but expected-goals
-# columns only become reliable from 2021-22, so we start there.
-TRAIN_SEASONS: tuple[str, ...] = ("2021-22", "2022-23", "2023-24", "2024-25")
+# Seasons used for training.
+#
+# 2021-22 is deliberately excluded: it carries no expected_goals, expected_assists,
+# expected_goals_conceded or starts columns at all (measured: 0% non-null). Including
+# it would mean a quarter of the training set has none of the features the attacking
+# model is built on. The archive goes back to 2016-17 with the same limitation.
+TRAIN_SEASONS: tuple[str, ...] = ("2022-23", "2023-24", "2024-25")
+ARCHIVE_SEASONS: tuple[str, ...] = ("2021-22", *TRAIN_SEASONS)
 CURRENT_SEASON = "2026-27"
 
 FPL_API_BASE = "https://fantasy.premierleague.com/api"
@@ -32,7 +37,10 @@ ASSIST_POINTS = 3
 APPEARANCE_POINTS = 1  # for playing at all
 SIXTY_MINUTE_POINTS = 1  # additional, for 60+ minutes
 DEFENSIVE_CONTRIBUTION_POINTS = 2
-# defensive-contribution thresholds (CBIT for defenders, CBIRT for others)
+# Defensive-contribution thresholds (CBIT for defenders, CBIRT for others).
+# NOTE: this rule arrived in 2025-26, so the column does not exist in any season we
+# train on. The component is implemented and wired into the combiner, but contributes
+# zero until 2025-26+ data is present. See models/defensive.py.
 DC_THRESHOLD = {"GK": None, "DEF": 10, "MID": 12, "FWD": 12}
 SAVES_PER_POINT = 3
 CONCEDED_PER_MINUS_ONE = 2  # GK/DEF only

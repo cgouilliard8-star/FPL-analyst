@@ -34,6 +34,18 @@ def _silver(args: argparse.Namespace) -> int:
     return 0
 
 
+def _features(args: argparse.Namespace) -> int:
+    from fpl.features.build import build_features, feature_columns
+
+    seasons = tuple(args.seasons) if args.seasons else TRAIN_SEASONS
+    frame = build_features(seasons)
+    print(
+        f"{len(frame):,} player-gameweeks | {len(feature_columns(frame))} features | "
+        f"{frame['code'].nunique():,} players"
+    )
+    return 0
+
+
 def main(argv: list[str] | None = None) -> int:
     # Shared flags live on a parent parser so they work either side of the
     # subcommand: both "fpl -v bootstrap" and "fpl bootstrap -v" are accepted.
@@ -59,6 +71,10 @@ def main(argv: list[str] | None = None) -> int:
     )
     silver.add_argument("--seasons", nargs="*", help=f"default: {' '.join(TRAIN_SEASONS)}")
     silver.set_defaults(func=_silver)
+
+    feats = sub.add_parser("features", parents=[common], help="build the leak-free feature table")
+    feats.add_argument("--seasons", nargs="*", help=f"default: {' '.join(TRAIN_SEASONS)}")
+    feats.set_defaults(func=_features)
 
     args = parser.parse_args(argv)
     logging.basicConfig(

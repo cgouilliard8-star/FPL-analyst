@@ -1,0 +1,111 @@
+"""Collapse per-fixture rows to one row per player per gameweek.
+
+Double gameweeks are real: 5,122 player-gameweeks in the archive contain two
+fixtures. Taking one row would throw away half a player's return; the target for
+gameweek *t* must be the sum across every fixture played in it.
+"""
+
+from __future__ import annotations
+
+import logging
+
+import pandas as pd
+
+log = logging.getLogger(__name__)
+
+# Summed across fixtures within a gameweek.
+SUM_COLUMNS = [
+    "minutes",
+    "total_points",
+    "goals_scored",
+    "assists",
+    "clean_sheets",
+    "goals_conceded",
+    "own_goals",
+    "penalties_saved",
+    "penalties_missed",
+    "yellow_cards",
+    "red_cards",
+    "saves",
+    "bonus",
+    "bps",
+    "influence",
+    "creativity",
+    "threat",
+    "ict_index",
+    "starts",
+    "expected_goals",
+    "expected_assists",
+    "expected_goal_involvements",
+    "expected_goals_conceded",
+]
+
+# Taken from the first fixture of the gameweek (they describe the player, not the match).
+FIRST_COLUMNS = ["full_name", "position", "team", "value", "selected", "element"]
+
+
+def aggregate_to_gameweek(silver: pd.DataFrame) -> pd.DataFrame:
+    """One row per (code, season, GW), summing returns across fixtures."""
+    present_sum = [c for c in SUM_COLUMNS if c in silver.columns]
+    present_first = [c for c in FIRST_COLUMNS if c in silver.columns]
+
+    frame = silver.sort_values(["code", "season", "GW", "kickoff_time"])
+    grouped = frame.groupby(["code", "season", "GW"], sort=False)
+
+    aggregated = grouped.agg(
+        **{col: (col, "sum") for col in present_sum},
+        **{col: (col, "first") for col in present_first},
+        fixtures_this_gw=("fixture", "nunique"),
+        kickoff_time=("kickoff_time", "min"),
+        was_home=("was_home", "first"),
+        opponent_team=("opponent_team", "first"),
+    ).reset_index()
+
+    doubles = int((aggregated["fixtures_this_gw"] > 1).sum())
+    log.info(
+        "aggregated to %d player-gameweeks (%d were double gameweeks)",
+        len(aggregated),
+        doubles,
+    )
+    return aggregated.sort_values(["code", "kickoff_time"]).reset_index(drop=True)
+
+
+def build_team_id_map(players: pd.DataFrame, silver: pd.DataFrame) -> pd.DataFrame:
+    """Map the season-local numeric team id to a canonical club name.
+
+    ``opponent_team`` in the gameweek data is an integer 1-20 that is only meaningful
+    within its season. The player registry carries the same integer, so joining on
+    (season, element) recovers the club name.
+    """
+    registry = players.rename(columns={"id": "element", "team": "team_id"})[
+        ["season", "element", "team_id"]
+    ]
+    joined = (
+        silver[["season", "element", "team"]]
+        .drop_duplicates()
+        .merge(registry, on=["season", "element"], how="inner")
+    )
+    mapping = (
+        joined.groupby(["season", "team_id"])["team"]
+        .agg(lambda s: s.value_counts().idxmax())
+        .reset_index()
+        .rename(columns={"team": "team_name"})
+    )
+
+    per_season = mapping.groupby("season").size()
+    if (per_season != 20).any():
+        raise ValueError(f"expected 20 clubs per season, got {per_season.to_dict()}")
+    return mapping
+
+
+def attach_opponent(frame: pd.DataFrame, team_map: pd.DataFrame) -> pd.DataFrame:
+    """Resolve ``opponent_team`` to a club name."""
+    merged = frame.merge(
+        team_map.rename(columns={"team_id": "opponent_team", "team_name": "opponent"}),
+        on=["season", "opponent_team"],
+        how="left",
+    )
+    unresolved = merged["opponent"].isna().sum()
+    if unresolved:
+        raise ValueError(f"{unresolved} rows have an unresolvable opponent_team id")
+    return merged
