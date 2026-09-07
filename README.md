@@ -120,8 +120,8 @@ folds for all of them.
 
 | Model | Spearman | Precision@10 | RMSE | Haulers RMSE | Squad pts / GW |
 | --- | ---: | ---: | ---: | ---: | ---: |
-| FPL's own `xP` | **0.756** | **0.642** | **1.844** | **4.975** | **91.3** |
-| Component model (this project) | 0.716 | 0.506 | 1.916 | 5.559 | 69.1 |
+| FPL's own `xP` (as archived — see caveat) | *0.756* | *0.642* | *1.844* | *4.975* | *91.3* |
+| Component model (this project) | **0.716** | **0.521** | 1.918 | 5.568 | 69.1 |
 | LightGBM, one regressor | 0.709 | 0.479 | 1.934 | 5.524 | 61.7 |
 | Rolling 3-gameweek mean | 0.703 | 0.373 | 2.182 | 5.790 | 52.6 |
 | Constant (training mean) | — | 0.073 | 2.354 | 7.172 | — |
@@ -137,13 +137,21 @@ and reports what that eleven actually scored. Haulers RMSE follows
 
 **The honest reading.** The component model beats every baseline it was designed to
 beat, by a clear margin in the metric that matters most for squad selection
-(precision@10: 0.506 against 0.479), and by 7.4 points a gameweek when the projections
-are turned into a squad. It does not beat FPL's own published expected-points figure.
-`xP` is produced with information this project does not have — confirmed team news,
-press-conference availability, and whatever Opta feeds sit behind it — and the gap is
-real. The next section says what would close it.
+(precision@10: 0.521 against 0.479), and by 7.4 points a gameweek when the projections
+are turned into a squad. The club-strength, form and congestion features added later
+moved precision@10 from 0.506 to 0.521 and left the other metrics flat: the model
+already knew most of what those features say.
 
-## Why the component model, and why it lost to `xP`
+**The `xP` caveat.** The archived `xP` row is not a fair baseline. It was scraped
+after each gameweek, and FPL folds the gameweek's real points into the "form" its
+figure is built from: hauls in the archive carry `xP` values of 20, 30, even 49.6,
+which FPL never publishes before a deadline. The tell was that stacking it as a
+feature lifted precision@10 to 0.90 — the leak was caught and the feature removed.
+FPL's live `ep_next` is legitimate pre-deadline information and is used only to rein
+in players with no league record. The real pre-match `xP` is certainly weaker than
+the row above; how much weaker cannot be measured from this archive.
+
+## Why the component model
 
 Most FPL projects fit one regressor to `total_points`. This one predicts each way of
 scoring separately and sums them using FPL's actual rules:
@@ -168,7 +176,7 @@ The decomposition is also what makes the explanation layer possible. A projectio
 6.2 arrives as 1.8 appearance + 2.9 attacking + 0.9 clean sheet + 0.6 bonus, and the
 written rationale narrates those figures rather than inventing its own.
 
-What would close the gap to `xP`, in order of expected value:
+What would lift it further, in order of expected value:
 
 1. **Bookmaker odds.** Closing lines absorb team news and rotation that no rolling
    window can see. [football-data.co.uk](https://www.football-data.co.uk/englandm.php)
