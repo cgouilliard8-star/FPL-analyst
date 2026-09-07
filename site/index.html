@@ -557,7 +557,7 @@ function buildSlots(formation, existing=[]){
   [["DEF",SQUAD_QUOTA.DEF-f.DEF],["MID",SQUAD_QUOTA.MID-f.MID],["FWD",SQUAD_QUOTA.FWD-f.FWD]].forEach(([pos,n]) => { for (let i=0;i<n;i++) slots.push({pos, area:"bench", code:null}); });
   const byPos = {GK:[],DEF:[],MID:[],FWD:[]};
   existing.map(c=>BY[c]).filter(Boolean).forEach(p => byPos[p.position].push(p));
-  POSITIONS.forEach(k => byPos[k].sort((a,b)=>b.ep-a.ep));
+  POSITIONS.forEach(k => byPos[k].sort((a,b)=>epk(b,0)-epk(a,0)));
   slots.forEach(s => { const p = byPos[s.pos].shift(); if (p) s.code = p.code; });
   return slots;
 }
@@ -1124,10 +1124,15 @@ async function loadData(){
   return {data:null, why};
 }
 window.addEventListener("error", e => { try { notice("crit", "Something went wrong on the page: " + (e.message||"unknown error") + ". Reload to try again."); } catch(_){} });
-function applyData(data, got){
+function indexData(data){
   DATA = data; BY = {};
   DATA.players.forEach(p => { BY[p.code] = p; if (p.ep1==null) p.ep1 = p.ep; if (p.ep3==null) p.ep3 = p.ep; if (p.ep5==null) p.ep5 = p.ep; if (!p.fixtures) p.fixtures = []; if (!p.season) p.season = {}; });
   DATA.players.forEach(prepPlayer);
+}
+function applyData(data, got){
+  indexData(data);
+  // a saved squad may name players who have since left the game: drop them, keep the rest
+  state.slots = buildSlots(state.formation, state.slots.map(s=>s.code).filter(c => c && BY[c]));
   document.getElementById("notices").replaceChildren();
   renderStatus(); renderHorizon();
   update(); renderBest(); renderAll(); renderTeams(); renderBacktest();
@@ -1147,6 +1152,7 @@ function applyData(data, got){
       : "The projections file could not be fetched (" + (got.why||"no data") + ") and there is no saved copy on this device yet. Check your connection and press Refresh.");
     return;
   }
+  indexData(got.data);
   if (!load()) state.slots = buildSlots(state.formation, []);
   applyData(got.data, got);
 })();
