@@ -172,11 +172,12 @@ def build_features(
     frame = _add_opponent_features(frame, strength)
 
     # --- context -----------------------------------------------------------
-    # FPL publishes its own expected points before every deadline; the archive keeps
-    # it as ``xP`` and the live API as ``ep_next``. It is pre-match information a
-    # manager can see, so the model may lean on it (it knows set-piece duties and
-    # press-conference news no rolling window can).
-    frame["fpl_xp_now"] = frame["xP"].astype(float)
+    # FPL's own expected points (``xP`` in the archive) is NOT a feature. It looks
+    # like pre-match information, but the archive's copy was scraped after each
+    # gameweek and FPL's figure folds the gameweek's real points into "form" by
+    # then: a haul that "predicted" 49.6 points is a giveaway. Stacking it lifted
+    # precision@10 to 0.90, which is how the leak was caught. It stays as the
+    # baseline the backtest scores against, with that caveat.
     frame["is_home"] = frame["was_home"].astype(int)
     frame["price"] = frame["value"] / 10.0
     frame["ownership"] = frame["selected"]
@@ -217,7 +218,6 @@ def feature_columns(frame: pd.DataFrame) -> list[str]:
         "minutes_share_r5",
         "started_share_r5",
         "is_home",
-        "fpl_xp_now",
         "price",
         "ownership",
         "fixtures_this_gw",
