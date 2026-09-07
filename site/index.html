@@ -70,8 +70,11 @@
   .num{font-family:var(--m);font-variant-numeric:tabular-nums}
 
   /* ---- builder ---- */
-  .builder{display:grid;grid-template-columns:minmax(0,1.1fr) minmax(0,.9fr);gap:1.25rem;align-items:start}
-  @media(max-width:880px){.builder{grid-template-columns:1fr}}
+  .builder{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:1.25rem;align-items:start}
+  .builder > .left{position:sticky;top:var(--stick,.75rem)}
+  @media(max-width:880px){.builder{grid-template-columns:1fr} .builder > .left{position:static}}
+  .move .pair{font-size:.9rem}
+  .move .who .hint{flex-basis:100%}
   .money{display:grid;grid-template-columns:1fr 1fr 1fr;gap:.5rem;margin-bottom:.75rem}
   @media(max-width:480px){.money{grid-template-columns:1fr 1fr}}
   .mbox{background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:.5rem .7rem;display:flex;flex-direction:column;gap:.2rem}
@@ -304,7 +307,7 @@
   <main>
     <section id="tab-rate">
       <div class="builder">
-        <div>
+        <div class="left">
           <div class="money">
             <div class="mbox"><label for="tv">Team value £m</label><input type="number" id="tv" step="0.1" min="0" placeholder="100.0" inputmode="decimal"></div>
             <div class="mbox"><label for="bank">In the bank £m</label><input type="number" id="bank" step="0.1" min="0" value="0.0" inputmode="decimal"></div>
@@ -863,7 +866,13 @@ function renderRating(){
   mc.appendChild(list); mv.appendChild(mc);
 }
 
-function update(){ renderPitch(); renderRating(); save(); }
+function pinLeft(){
+  const left = document.querySelector(".builder > .left"); if (!left) return;
+  const spare = window.innerHeight - left.offsetHeight - 12;
+  left.style.setProperty("--stick", (spare >= 12 ? 12 : spare) + "px");
+}
+window.addEventListener("resize", debounce(pinLeft, 100));
+function update(){ renderPitch(); renderRating(); save(); pinLeft(); }
 
 // Fill whatever slots are empty, keeping the players already picked. ``rank`` orders
 // the candidates (ownership for the template team, projection for auto-pick); a
