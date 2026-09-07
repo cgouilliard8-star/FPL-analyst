@@ -88,6 +88,8 @@
   .slot .posl{font-family:var(--m);font-size:.62rem;letter-spacing:.14em;font-weight:700;color:var(--card-sub)}
   .slot .nm{font-size:.78rem;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-top:.15rem}
   .slot .pr{font-family:var(--m);font-size:.66rem;color:var(--card-sub);font-variant-numeric:tabular-nums}
+  .slot .fx1{font-family:var(--m);font-size:.72rem;font-weight:700;background:rgba(255,255,255,.92);color:#0B3D2A;border-radius:5px;margin-top:.3rem;padding:.1rem 0}
+  .bench .slot .fx1{background:var(--accent-soft);color:var(--accent)}
   .slot .ep{font-family:var(--m);font-size:.8rem;font-weight:700;background:rgba(255,255,255,.92);color:#0B3D2A;border-radius:5px;margin-top:.3rem;padding:.1rem 0;font-variant-numeric:tabular-nums}
   .slot .badges{display:flex;justify-content:center;gap:.25rem;margin-top:.25rem;min-height:1rem}
   .slot .c{font-family:var(--m);font-size:.6rem;font-weight:800;background:#fff;color:#0B3D2A;border-radius:50%;width:16px;height:16px;display:grid;place-items:center}
@@ -236,7 +238,7 @@
             <div class="mbox"><label for="ft">Free transfers</label><input type="number" id="ft" step="1" min="0" max="5" value="1" inputmode="numeric"></div>
             <div class="mbox"><label>Budget left</label><div class="big" id="left">£0.0m</div></div>
           </div>
-          <div class="hzrow"><span class="lbl">Rate over</span><div class="forms" id="hz" role="group" aria-label="Horizon" style="margin:0"></div><span class="hint" id="hzhint"></span></div>
+          <div class="hzrow"><span class="lbl">Rate over</span><div class="forms" id="hz" role="group" aria-label="Horizon" style="margin:0"></div></div>
           <div class="forms" id="forms" role="group" aria-label="Formation"></div>
           <div class="pitchwrap">
             <div class="banner"><span id="bnr-left">SQUAD 0 / 15</span><span id="bnr-right">BUDGET £100.0m</span></div>
@@ -273,7 +275,7 @@
   </main>
 
   <footer>
-    Projections come from a component model (appearance, attacking, clean sheet, bonus, goalkeeping, defensive contribution) trained on 2022-23 to 2025-26 and this season's fixtures, then scaled by FPL's own availability flag and news (return dates, loans, departures) so injuries and suspensions are reflected the day they're announced. Each of the next five gameweeks is projected with its own opponent's attack and defence strength (rolling xG and xG conceded) and weighted 100/85/70/55/40% by distance from the next deadline. Ratings are relative to the best £100m squad over the same horizon. Transfers beyond your free ones are charged the 4-point hit before a move is called worth it. Refreshed daily.
+    Projections come from a component model (appearance, attacking, clean sheet, bonus, goalkeeping, defensive contribution) trained on 2022-23 to 2025-26 and this season's fixtures, then scaled by FPL's own availability flag and news (return dates, loans, departures) so injuries and suspensions are reflected the day they're announced. Each of the next five gameweeks is projected with its own opponent's attack and defence strength (rolling xG and xG conceded) with nearer gameweeks counting more than distant ones. Ratings are relative to the best £100m squad over the same horizon. Transfers beyond your free ones are charged the 4-point hit before a move is called worth it. Refreshed daily.
   </footer>
 </div>
 
@@ -296,6 +298,7 @@ const HORIZONS = {ep1:{label:"Next GW", long:"next gameweek", n:1, short:"GW"}, 
 let metric = "ep5";
 const OPT = () => (DATA.meta.optimal_by && DATA.meta.optimal_by[metric]) || DATA.meta.optimal_points;
 const HIT = () => DATA.meta.transfer_hit ?? 4;
+const bankDelta = cost => { const d = -cost; return `${d>=0?"+":"−"}£${fmt(Math.abs(d),1)}m`; };
 const ftVal = () => { const v = parseInt(document.getElementById("ft").value, 10); return isFinite(v) && v >= 0 ? Math.min(5, v) : 1; };
 // Opponent strings come as "Sunderland (A)" or "Arsenal (H) + Spurs (A)" for a double.
 const oppParts = opp => String(opp||"").split(" + ").map(x => { const m = x.match(/^(.*) \((H|A)\)$/); return m ? {name:m[1], home:m[2]==="H"} : {name:x, home:true}; });
@@ -445,8 +448,7 @@ function slotEl(slot, index, captain){
   if (!p){ b.appendChild(el("div","ic","+")); b.appendChild(el("div","posl",slot.pos)); b.appendChild(el("div","nm","Add")); b.title=`Add a ${slot.pos}`; }
   else {
     b.appendChild(el("div","posl",p.position)); b.appendChild(el("div","nm",p.web_name));
-    b.appendChild(el("div","pr",`£${fmt(p.price,1)}m · ${oppShort(p.opponent)}`));
-    b.appendChild(el("div","ep",fmt(p.ep,1)+" pts"));
+    b.appendChild(el("div","pr",`£${fmt(p.price,1)}m`)); b.appendChild(el("div","fx1",oppShort(p.opponent)));
     const badges = el("div","badges");
     if (captain===p.code) badges.appendChild(el("span","c","C"));
     if (p.availability<1) badges.appendChild(el("span","fl "+(p.availability===0?"out":"d"), p.availability===0?"OUT":(p.chance!=null?p.chance+"%":"DOUBT")));
@@ -575,8 +577,6 @@ function openPicker(index){
 function renderHorizon(){
   const hz = document.getElementById("hz"); hz.replaceChildren();
   Object.entries(HORIZONS).forEach(([k,h]) => { const b=el("button",null,h.label); b.type="button"; b.setAttribute("aria-pressed", k===metric); b.onclick=()=>setHorizon(k); hz.appendChild(b); });
-  const w = (DATA.meta.horizon_weights||[1,.85,.7,.55,.4]).slice(0, HORIZONS[metric].n).map(x=>Math.round(x*100)+"%").join(" / ");
-  document.getElementById("hzhint").textContent = HORIZONS[metric].n===1 ? "Next deadline only." : `Gameweeks weighted ${w}.`;
 }
 function setHorizon(k){ metric = k; DATA.players.forEach(p => p.ep = p[k] ?? p.ep1 ?? p.ep); renderHorizon(); update(); renderAll(); }
 
@@ -605,7 +605,7 @@ function whyPanel(m, free, budget){
     const teamCtx = c => defensive ? `the league's #${c.own_def??"?"} defence` : `the league's #${c.own_att??"?"} attack`;
     // Lead sentence
     const lead = el("p","lead");
-    lead.textContent = `${n.web_name} projects ${fmt(n.ep,1)} ${h.n===1?"points":"weighted points"} over the ${h.long} against ${o.web_name}'s ${fmt(o.ep,1)}. `
+    lead.textContent = `${n.web_name} projects ${fmt(n.ep,1)} points over the ${h.long} against ${o.web_name}'s ${fmt(o.ep,1)}. `
       + `${n.web_name} plays for ${teamCtx(n)} and faces ${kind(n)} kind and ${tough(n)} tough fixture${fn.length===1?"":"s"} out of ${fn.length}; `
       + `${o.web_name} (${teamCtx(o)}) faces ${kind(o)} kind and ${tough(o)} tough out of ${fo.length}.`
       + (n.availability<1 ? ` Note ${n.web_name} is flagged (${Math.round(n.availability*100)}% available${n.news?": "+n.news:""}).` : "")
@@ -613,7 +613,7 @@ function whyPanel(m, free, budget){
     box.appendChild(lead);
     // Fixture-by-fixture table
     box.appendChild(el("h4",null,`Fixture run · ${defensive ? "opponent attack rank (1 = scores most)" : "opponent defence rank (20 = concedes most)"}`));
-    const t = el("table","fx"); const th = el("tr"); ["GW","Out: "+o.web_name,"pts","In: "+n.web_name,"pts","w"].forEach(x=>th.appendChild(el("th",null,x))); t.appendChild(th);
+    const t = el("table","fx"); const th = el("tr"); ["GW","Out: "+o.web_name,"pts","In: "+n.web_name,"pts"].forEach(x=>th.appendChild(el("th",null,x))); t.appendChild(th);
     const gws = [...new Set([...fo.map(f=>f.gw), ...fn.map(f=>f.gw)])].sort((a,b)=>a-b);
     gws.forEach(gw => {
       const a = fo.find(f=>f.gw===gw), b = fn.find(f=>f.gw===gw); const r = el("tr");
@@ -621,7 +621,6 @@ function whyPanel(m, free, budget){
       const cell = (f, pos, cls) => { const td = el("td", cls); if (!f){ td.textContent = "blank"; return td; } td.appendChild(document.createTextNode(oppLong(f.opp))); const d = difficulty(pos, f); if (d){ const c = el("span","dif "+d.cls, d.label); c.title = `${d.text} fixture: ${defensive ? "they score "+fmt(f.opp_xg??0,2)+" xG a game" : "they concede "+fmt(f.opp_xgc??0,2)+" xG a game"} (last 5)`; td.appendChild(c); } if (f.avail!=null && f.avail<1) td.appendChild(el("span","dif hard",Math.round(f.avail*100)+"% fit")); return td; };
       r.appendChild(cell(a, o.position)); r.appendChild(el("td","n", a ? fmt(a.ep,1) : "0.0"));
       r.appendChild(cell(b, n.position, "in")); r.appendChild(el("td","n in", b ? fmt(b.ep,1) : "0.0"));
-      r.appendChild(el("td","n", Math.round(((b||a)||{w:0}).w*100)+"%"));
       t.appendChild(r);
     });
     box.appendChild(t);
@@ -629,7 +628,7 @@ function whyPanel(m, free, budget){
     const wo = weightedBreakdown(o), wn = weightedBreakdown(n);
     const keys = Object.keys(LABELS).filter(k => Math.abs((wn[k]||0)-(wo[k]||0)) > 0.05);
     if (keys.length){
-      box.appendChild(el("h4",null,"Where the points come from (weighted, in minus out)"));
+      box.appendChild(el("h4",null,"Where the points come from (in minus out)"));
       const d = el("div","delta");
       keys.sort((a,b)=>Math.abs((wn[b]||0)-(wo[b]||0))-Math.abs((wn[a]||0)-(wo[a]||0))).forEach(k => { const v=(wn[k]||0)-(wo[k]||0); const sp=el("span", v>0?"up":"down"); sp.appendChild(document.createTextNode(LABELS[k]+" ")); sp.appendChild(el("b",null,(v>0?"+":"")+fmt(v,1))); d.appendChild(sp); });
       box.appendChild(d);
@@ -637,7 +636,7 @@ function whyPanel(m, free, budget){
   });
   // Money + hit
   const money = el("p");
-  money.textContent = `${m.transfers===2 ? "Two transfers: the second one funds the first. " : ""}Price change ${m.cost_change>=0?"+":""}£${fmt(m.cost_change,1)}m, squad £${fmt(m.value_after,1)}m of £${fmt(budget,1)}m. `
+  money.textContent = `${m.transfers===2 ? "Two transfers: the second one funds the first. " : ""}Bank ${bankDelta(m.cost_change)} (${m.cost_change>0?"the signing costs more than the sale":m.cost_change<0?"the sale brings in more than the signing":"prices match"}), squad £${fmt(m.value_after,1)}m of £${fmt(budget,1)}m. `
     + (free==null ? "" : m.hit>0 ? `You have ${free} free transfer${free===1?"":"s"}, so this costs a ${m.hit}-point hit: +${fmt(m.gain,1)} gross becomes ${m.net>=0?"+":""}${fmt(m.net,1)} net${m.worth_it?" — still worth it.":" — not worth it unless you bank a transfer first."}` : `Covered by your ${free} free transfer${free===1?"":"s"}: no hit.`);
   box.appendChild(money);
   const whole = el("p","hint");
@@ -687,7 +686,7 @@ function renderRating(){
       if (idx===0 && m.transfers===2) pair.appendChild(el("span","two","2 TRANSFERS"));
       who.appendChild(pair);
     });
-    who.appendChild(el("div","why",`${m.cost_change>=0?"+":""}£${fmt(m.cost_change,1)}m · squad £${fmt(m.value_after,1)}m of £${fmt(budget,1)}m · rating after ${fmt(100*m.points_after/opt,1)}/100${m.in.some(p=>p.news)?" · "+m.in.filter(p=>p.news).map(p=>p.news).join(" · "):""}`));
+    who.appendChild(el("div","why",`bank ${bankDelta(m.cost_change)} · squad £${fmt(m.value_after,1)}m of £${fmt(budget,1)}m · rating after ${fmt(100*m.points_after/opt,1)}/100${m.in.some(p=>p.news)?" · "+m.in.filter(p=>p.news).map(p=>p.news).join(" · "):""}`));
     row.appendChild(who);
     const g = el("div","gain"); g.appendChild(el("b",null,"+"+fmt(m.gain))); g.appendChild(el("small",null,"team pts · "+h.short));
     if (m.hit>0) g.appendChild(el("span","net "+(m.worth_it?"good":"bad"), `−${m.hit} hit → ${m.net>=0?"+":""}${fmt(m.net,1)} net${m.worth_it?"":" · not worth it"}`));
@@ -780,7 +779,7 @@ function renderBacktest(){
   box.appendChild(el("h2",null,"How the model would have done from GW1"));
   if (!bt){ box.appendChild(el("p","hint","The season replay has not been run yet (fpl simulate).")); return; }
   const gws = bt.gameweeks;
-  box.appendChild(el("p","hint",`A squad built from scratch at the GW${gws[0].gameweek} deadline with £100m, using only what was knowable then, then played with FPL's rules: one free transfer a week from GW${gws[0].gameweek+1}, bankable, never a points hit. The lineup and captain each week are the model's best eleven on that gameweek's projection; transfers are chosen on the weighted ${HORIZONS["ep"+bt.rules.horizon]?.long||"next 5 gameweeks"} and only made when worth at least ${bt.rules.min_gain} weighted points. Scored on real points with FPL's automatic substitutions.`));
+  box.appendChild(el("p","hint",`A squad built from scratch at the GW${gws[0].gameweek} deadline with £100m, using only what was knowable then, then played with FPL's rules: one free transfer a week from GW${gws[0].gameweek+1}, bankable, never a points hit. The lineup and captain each week are the model's best eleven on that gameweek's projection; transfers are chosen on the ${HORIZONS["ep"+bt.rules.horizon]?.long||"next 5 gameweeks"} and only made when worth at least ${bt.rules.min_gain} points over that horizon. Scored on real points with FPL's automatic substitutions.`));
   const k = el("dl","kpis");
   const beat = bt.total - bt.average_total;
   [["model total",bt.total],["average manager",bt.average_total],["vs average",(beat>=0?"+":"")+beat],["best score each week",bt.highest_total]].forEach(([t,v])=>{ const d=el("div","kpi"); d.appendChild(el("dt",null,t)); d.appendChild(el("dd",null,v)); k.appendChild(d); });
@@ -793,7 +792,7 @@ function renderBacktest(){
     side.appendChild(el("div","meta",`average ${g.average ?? "–"} · highest ${g.highest ?? "–"} · projected ${fmt(g.projected,1)} · £${fmt(g.value,1)}m + £${fmt(g.bank,1)}m bank · ${g.free_transfers} free transfer${g.free_transfers===1?"":"s"} banked after`));
     const name = code => (BY[code] && BY[code].web_name) || ("#"+code);
     const tr = el("div","tr");
-    if (g.transfers.length) g.transfers.forEach(t => { tr.appendChild(document.createTextNode(`Transfer: ${t.out_names.join(" + ")} → ${t.in_names.join(" + ")} (+${fmt(t.gain,1)} weighted pts, ${t.cost_change>=0?"+":""}£${fmt(t.cost_change,1)}m)`)); });
+    if (g.transfers.length) g.transfers.forEach(t => { tr.appendChild(document.createTextNode(`Transfer: ${t.out_names.join(" + ")} → ${t.in_names.join(" + ")} (+${fmt(t.gain,1)} pts over the horizon, bank ${bankDelta(t.cost_change)})`)); });
     else tr.textContent = gws[0]===g ? "Squad built." : "Rolled the transfer.";
     side.appendChild(tr);
     side.appendChild(el("div","meta",`Captain ${name(g.captain)}. XI: ${g.starters.map(name).join(", ")}. Bench: ${g.bench.map(name).join(", ")}.`));
