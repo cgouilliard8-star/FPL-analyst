@@ -1139,7 +1139,14 @@ function applyData(data, got){
 }
 (async function init(){
   const got = await loadData();
-  if (!got.data){ document.getElementById("status").textContent = "Could not load the projections (" + (got.why||"no data") + "). Try again in a minute."; return; }
+  if (!got.data){
+    const here = location.protocol === "file:";
+    document.getElementById("status").textContent = here ? "This page needs its data file." : "Could not load the projections (" + (got.why||"no data") + "). Try again in a minute.";
+    notice("crit", here
+      ? "You opened index.html straight from a folder, so it cannot read data/live.json next to it. Either open the site from its folder with a local server (cd site && python3 -m http.server 8000, then http://localhost:8000) or use the standalone file, which has the data built in."
+      : "The projections file could not be fetched (" + (got.why||"no data") + ") and there is no saved copy on this device yet. Check your connection and press Refresh.");
+    return;
+  }
   if (!load()) state.slots = buildSlots(state.formation, []);
   applyData(got.data, got);
 })();
