@@ -240,6 +240,7 @@
   .band{background:var(--bc);color:#fff;text-shadow:0 1px 1px rgba(0,0,0,.25)}
   .band.b2{color:#173300;text-shadow:none} .band.b3{color:#2B1A00;text-shadow:none}
   td.band{font-weight:700;color:#fff;background:var(--bc)} td.band.b2,td.band.b3{color:#1B1400}
+  .wide td .oppc{display:block;font-family:var(--m);font-size:.58rem;font-weight:600;opacity:.85;letter-spacing:.04em}
   .slot .fx1.b1,.slot .fx1.b2,.slot .fx1.b3,.slot .fx1.b4,.slot .fx1.b5{background:var(--bc);color:#fff;text-shadow:0 1px 1px rgba(0,0,0,.25)}
   .slot .fx1.b2,.slot .fx1.b3{color:#1B1400;text-shadow:none}
   .bandkey{display:flex;gap:.35rem;align-items:center;flex-wrap:wrap;font-family:var(--m);font-size:.62rem;color:var(--ink-3);margin:.4rem 0 .8rem}
@@ -934,27 +935,28 @@ let allFilters = {q:"", position:"", maxPrice:Infinity, club:""};
 let wideSort = {key:"ep", dir:-1};
 const WIDE = () => {
   const gws = [...Array(HORIZONS.ep5.n).keys()].map(k => DATA.meta.gameweek + k);
+  const n = v => v.toFixed(1), i = v => String(Math.round(v)), pct = v => Math.round(v*100)+"%", ord = v => v===99?"–":String(v);
   const cols = [
-    ["ep",   "Proj. "+HORIZONS[metric].short, p=>p.ep, v=>v.toFixed(1)],
-    ["ep1",  "Next GW", p=>p.ep1, v=>v.toFixed(1)], ["ep3","Next 3",p=>p.ep3,v=>v.toFixed(1)], ["ep5","Next 5",p=>p.ep5,v=>v.toFixed(1)],
-    ["fpl_ep","FPL xP", p=>p.fpl_ep, v=>v.toFixed(1)],
-    ["price","Price", p=>p.price, v=>"£"+v.toFixed(1)], ["price_change","Δ price", p=>p.price_change??0, v=>(v>0?"+":"")+v.toFixed(1)],
-    ["owned","Sel %", p=>p.owned_pct, v=>v.toFixed(1)], ["tin","In (GW)", p=>p.transfers_in??0, v=>String(v)], ["tout","Out (GW)", p=>p.transfers_out??0, v=>String(v)],
-    ["p60","Start %", p=>p.p60, v=>Math.round(v*100)+"%"], ["avail","Avail", p=>p.availability, v=>Math.round(v*100)+"%"], ["mins_share","Mins share", p=>p.minutes_share??0, v=>Math.round(v*100)+"%"],
-    ["pens","Pens", p=>p.pens??99, v=>v===99?"–":String(v)], ["corners","Corners", p=>p.corners??99, v=>v===99?"–":String(v)], ["fk","Free kicks", p=>p.freekicks??99, v=>v===99?"–":String(v)],
-    ...gws.map((gw,k) => [`gw${gw}`, `GW${gw}`, p=>(p.eps&&p.eps[k])||0, v=>v.toFixed(1)]),
-    ["own_att","Club att #", p=>p.own_att??99, v=>v===99?"–":String(v)], ["own_def","Club def #", p=>p.own_def??99, v=>v===99?"–":String(v)],
-    ["total","Total pts", p=>p.season.total_points??0, v=>String(Math.round(v))], ["last_gw","GW"+DATA.meta.last_gameweek, p=>p.season.last_gw_points??0, v=>String(v)],
-    ["form","Form", p=>p.season.form??0, v=>v.toFixed(1)], ["ppg","Pts/game", p=>p.season.points_per_game??0, v=>v.toFixed(1)], ["value_season","Value", p=>p.value_season??0, v=>v.toFixed(1)],
-    ["minutes","Mins", p=>p.season.minutes??0, v=>String(Math.round(v))], ["starts","Starts", p=>p.season.starts??0, v=>String(Math.round(v))],
-    ["goals","G", p=>p.season.goals_scored??0, v=>String(Math.round(v))], ["assists","A", p=>p.season.assists??0, v=>String(Math.round(v))],
-    ["xg","xG", p=>p.season.expected_goals??0, v=>v.toFixed(2)], ["xa","xA", p=>p.season.expected_assists??0, v=>v.toFixed(2)], ["xgc","xGC", p=>p.season.expected_goals_conceded??0, v=>v.toFixed(2)],
-    ["cs","CS", p=>p.season.clean_sheets??0, v=>String(Math.round(v))], ["gc","GC", p=>p.season.goals_conceded??0, v=>String(Math.round(v))], ["saves","Saves", p=>p.season.saves??0, v=>String(Math.round(v))],
-    ["bonus","Bonus", p=>p.season.bonus??0, v=>String(Math.round(v))], ["bps","BPS", p=>p.season.bps??0, v=>String(Math.round(v))], ["dc","Def. con.", p=>p.season.defensive_contribution??0, v=>String(Math.round(v))],
-    ["ict","ICT", p=>p.season.ict_index??0, v=>v.toFixed(1)], ["inf","Influence", p=>p.season.influence??0, v=>v.toFixed(0)], ["cre","Creativity", p=>p.season.creativity??0, v=>v.toFixed(0)], ["thr","Threat", p=>p.season.threat??0, v=>v.toFixed(0)],
-    ["yc","YC", p=>p.season.yellow_cards??0, v=>String(Math.round(v))], ["rc","RC", p=>p.season.red_cards??0, v=>String(Math.round(v))],
+    ["ep",   "Proj. "+HORIZONS[metric].short, p=>p.ep, n, "Projected points over the horizon you chose on My team"],
+    ["ep1",  "Next GW pts", p=>p.ep1, n, "Projected points next gameweek"], ["ep3","Next 3 pts",p=>p.ep3,n,"Projected points over the next 3 gameweeks (nearer weeks count more)"], ["ep5","Next 5 pts",p=>p.ep5,n,"Projected points over the next 5 gameweeks (nearer weeks count more)"],
+    ["fpl_ep","FPL's xP", p=>p.fpl_ep, n, "FPL's own expected points for next gameweek"],
+    ["price","Price", p=>p.price, v=>"£"+n(v), "Current price"], ["price_change","Price Δ", p=>p.price_change??0, v=>(v>0?"+":"")+n(v), "Price change since the season started (£m)"],
+    ["owned","Owned %", p=>p.owned_pct, n, "Share of all managers who own him"], ["tin","In this GW", p=>p.transfers_in??0, i, "Managers who transferred him in this gameweek"], ["tout","Out this GW", p=>p.transfers_out??0, i, "Managers who transferred him out this gameweek"],
+    ["p60","Starts %", p=>p.p60, pct, "Chance he plays 60+ minutes next gameweek"], ["avail","Fit %", p=>p.availability, pct, "FPL availability flag: 100% fit, lower if doubtful, 0% out"], ["mins_share","Mins %", p=>p.minutes_share??0, pct, "Share of his club's minutes he has played over the last 5 matches"],
+    ["pens","Pens", p=>p.pens??99, ord, "Penalty-taker order: 1 = first choice"], ["corners","Corners", p=>p.corners??99, ord, "Corner-taker order: 1 = first choice"], ["fk","Free kicks", p=>p.freekicks??99, ord, "Direct free-kick order: 1 = first choice"],
+    ...gws.map((gw,k) => [`gw${gw}`, `GW${gw} pts`, p=>(p.eps&&p.eps[k])||0, n, `Projected points in GW${gw}; colour = how tough that opponent is for his position (green easy, red hard)`]),
+    ["own_att","Club attack rank", p=>p.own_att??99, v=>v===99?"–":"#"+v, "His club's attack on current form, 1 = scores most"], ["own_def","Club defence rank", p=>p.own_def??99, v=>v===99?"–":"#"+v, "His club's defence on current form, 1 = concedes least"],
+    ["total","Season pts", p=>p.season.total_points??0, i, "FPL points so far this season"], ["last_gw","GW"+DATA.meta.last_gameweek+" pts", p=>p.season.last_gw_points??0, v=>String(v), "Points in the last gameweek"],
+    ["form","Form", p=>p.season.form??0, n, "FPL form: average points per match over the last 30 days"], ["ppg","Pts/game", p=>p.season.points_per_game??0, n, "Points per match played this season"], ["value_season","Pts per £m", p=>p.value_season??0, n, "Season points divided by price: value for money"],
+    ["minutes","Minutes", p=>p.season.minutes??0, i, "Minutes played this season"], ["starts","Starts", p=>p.season.starts??0, i, "Matches started this season"],
+    ["goals","Goals", p=>p.season.goals_scored??0, i, "Goals this season"], ["assists","Assists", p=>p.season.assists??0, i, "Assists this season"],
+    ["xg","xG", p=>p.season.expected_goals??0, v=>v.toFixed(2), "Expected goals this season (quality of chances he had)"], ["xa","xA", p=>p.season.expected_assists??0, v=>v.toFixed(2), "Expected assists this season"], ["xgc","xGC", p=>p.season.expected_goals_conceded??0, v=>v.toFixed(2), "Expected goals conceded while he was on the pitch"],
+    ["cs","Clean sheets", p=>p.season.clean_sheets??0, i, "Clean sheets this season"], ["gc","Conceded", p=>p.season.goals_conceded??0, i, "Goals conceded while on the pitch"], ["saves","Saves", p=>p.season.saves??0, i, "Saves this season (keepers)"],
+    ["bonus","Bonus", p=>p.season.bonus??0, i, "Bonus points this season"], ["bps","BPS", p=>p.season.bps??0, i, "Bonus point system score this season"], ["dc","Def. con.", p=>p.season.defensive_contribution??0, i, "Defensive contributions (tackles, blocks, interceptions, recoveries)"],
+    ["ict","ICT", p=>p.season.ict_index??0, n, "FPL's influence + creativity + threat index"], ["inf","Influence", p=>p.season.influence??0, v=>v.toFixed(0), "FPL influence score"], ["cre","Creativity", p=>p.season.creativity??0, v=>v.toFixed(0), "FPL creativity score"], ["thr","Threat", p=>p.season.threat??0, v=>v.toFixed(0), "FPL threat score"],
+    ["yc","Yellows", p=>p.season.yellow_cards??0, i, "Yellow cards this season"], ["rc","Reds", p=>p.season.red_cards??0, i, "Red cards this season"],
   ];
-  return cols.map(([key,label,get,fmtv]) => ({key,label,get,fmt:fmtv}));
+  return cols.map(([key,label,get,fmtv,help]) => ({key,label,get,fmt:fmtv,help}));
 };
 function wideTable(){
   const box = el("div","wide");
@@ -967,7 +969,7 @@ function wideTable(){
   rows.sort((a,b) => { const x=sc.get(a), y=sc.get(b); return (x>y?1:x<y?-1:0)*wideSort.dir || a.web_name.localeCompare(b.web_name); });
   const t = el("table"), th = el("thead"), tr = el("tr");
   const first = el("th","sticky","Player"); tr.appendChild(first);
-  cols.forEach(c => { const h = el("th"); const b = el("button","sort"+(wideSort.key===c.key?" on":""), c.label+(wideSort.key===c.key?(wideSort.dir<0?" ▼":" ▲"):"")); b.type="button"; b.onclick=()=>{ if (wideSort.key===c.key) wideSort.dir*=-1; else { wideSort.key=c.key; wideSort.dir=-1; } renderAll(); }; h.appendChild(b); tr.appendChild(h); });
+  cols.forEach(c => { const h = el("th"); h.title = c.help + " · click to sort"; const b = el("button","sort"+(wideSort.key===c.key?" on":""), c.label+(wideSort.key===c.key?(wideSort.dir<0?" ▼":" ▲"):"")); b.type="button"; b.onclick=()=>{ if (wideSort.key===c.key) wideSort.dir*=-1; else { wideSort.key=c.key; wideSort.dir=-1; } renderAll(); }; h.appendChild(b); tr.appendChild(h); });
   th.appendChild(tr); t.appendChild(th);
   const tb = el("tbody");
   rows.forEach(p => {
@@ -975,11 +977,11 @@ function wideTable(){
     cell.appendChild(el("div","kit "+p.position,p.position)); const who = el("div","who"); who.appendChild(el("b",null,p.web_name)); who.appendChild(el("small",null,`${short(p.team)} · ${oppShort(p.opponent)}`)); cell.appendChild(who);
     if (p.availability<1) cell.appendChild(el("span","flag "+(p.availability===0?"out":"d"), p.availability===0?"OUT":(p.chance!=null?p.chance+"%":"DOUBT")));
     c1.appendChild(cell); r.appendChild(c1); r.title = p.name + (p.news ? " · " + p.news : "");
-    cols.forEach(c => { const v = c.get(p); const td = el("td",null,c.fmt(v)); if (c.key.startsWith("gw")){ const k = parseInt(c.key.slice(2),10) - DATA.meta.gameweek; const f = (p.fixtures||[]).find(x => x.gw - DATA.meta.gameweek === k); if (f){ const band = bandFor(p.position, oppParts(f.opp)[0]?.name); if (band) td.className = "band "+BANDS[band]; td.title = oppLong(f.opp); } else td.textContent = "–"; } r.appendChild(td); });
+    cols.forEach(c => { const v = c.get(p); const td = el("td",null,c.fmt(v)); if (c.key.startsWith("gw")){ const k = parseInt(c.key.slice(2),10) - DATA.meta.gameweek; const f = (p.fixtures||[]).find(x => x.gw - DATA.meta.gameweek === k); if (f){ const band = bandFor(p.position, oppParts(f.opp)[0]?.name); if (band) td.className = "band "+BANDS[band]; td.appendChild(el("small","oppc", oppShort(f.opp))); td.title = `${c.fmt(v)} points projected ${oppLong(f.opp)} — ${band?BAND_WORD[band]:"unknown"} fixture for a ${p.position}`; } else { td.textContent = "–"; td.title = "No match that gameweek"; } } r.appendChild(td); });
     tb.appendChild(r);
   });
   t.appendChild(tb); box.appendChild(t);
-  box.appendChild(el("div","count",`${rows.length} player${rows.length===1?"":"s"} · scroll sideways for every column · per-gameweek columns are coloured by fixture difficulty for that position`));
+  box.appendChild(el("div","count",`${rows.length} player${rows.length===1?"":"s"} · scroll sideways for every column · hover a column heading for what it means`));
   return box;
 }
 function renderAll(){
@@ -990,6 +992,10 @@ function renderAll(){
   const price = priceSelect(); price.value = allFilters.maxPrice===Infinity ? "" : String(allFilters.maxPrice); price.onchange=()=>{ allFilters.maxPrice = price.value?parseFloat(price.value):Infinity; renderAll(); };
   const clubs = clubSelect(); clubs.value = allFilters.club; clubs.onchange=()=>{ allFilters.club=clubs.value; renderAll(); };
   [q,pos,price,clubs].forEach(n=>bar.appendChild(n)); box.appendChild(bar);
+  const key = el("div","bandkey"); key.appendChild(document.createTextNode("GW columns = projected points that week, with the opponent; colour = how tough that opponent is for his position:"));
+  [1,2,3,4,5].forEach(b => key.appendChild(bandChip(b, BAND_WORD[b])));
+  key.appendChild(document.createTextNode("Hover any column heading for what it means. Click to sort."));
+  box.appendChild(key);
   box.appendChild(wideTable());
 }
 
@@ -1037,7 +1043,7 @@ function renderTeams(){
   const h2 = el("h2",null,"Club toughness on current form"); h2.style.marginTop="1.4rem"; box.appendChild(h2);
   teams.sort((a,b)=> teamsView==="def" ? a.att_rank-b.att_rank : a.def_rank-b.def_rank);
   const wrap = el("div","wide"); const t = el("table"); const th = el("tr");
-  ["Club","Toughness","Attack xG/game","Defence xGC/game","Europe","Next 6 (all competitions)"].forEach(x=>th.appendChild(el("th",null,x))); const thead = el("thead"); thead.appendChild(th); t.appendChild(thead);
+  [["Club",""],["Toughness","How hard this club is to face for the view selected above"],["Attack","Expected goals scored per match on current form (#rank: 1 = scores most)"],["Defence","Expected goals conceded per match on current form (#rank: 1 = concedes least)"],["Europe","European competition this season"],["Next 6 (all competitions)","Coloured by how tough each opponent is for the selected view"]].forEach(([x,help])=>{ const h = el("th",null,x); if (help) h.title = help; th.appendChild(h); }); const thead = el("thead"); thead.appendChild(th); t.appendChild(thead);
   const tb = el("tbody");
   teams.forEach(tm => {
     const r = el("tr");
