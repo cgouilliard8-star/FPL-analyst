@@ -34,16 +34,26 @@
     --grass-a:#1F6B47; --grass-b:#1A5E3E; --grass-line:rgba(255,255,255,.55); --card:rgba(5,15,10,.7);
   }
   *{box-sizing:border-box}
-  body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--f);font-size:15px;line-height:1.5;-webkit-font-smoothing:antialiased}
+  body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--f);font-size:15px;line-height:1.5;-webkit-font-smoothing:antialiased;min-height:100vh;
+    background-image:radial-gradient(900px 420px at -10% -10%, rgba(67,226,155,.16), transparent 60%), radial-gradient(800px 420px at 110% 0%, rgba(123,92,255,.18), transparent 60%), radial-gradient(700px 500px at 50% 120%, rgba(0,229,255,.10), transparent 60%);background-attachment:fixed}
   .wrap{max-width:1120px;margin:0 auto;padding:0 clamp(.75rem,3vw,2rem)}
-  header{padding:1.75rem 0 1.1rem;border-bottom:1px solid var(--line)}
-  h1{margin:0;font-size:clamp(1.5rem,4vw,2rem);font-weight:800;letter-spacing:-.03em;color:var(--plum)}
+  header{padding:1.4rem 0 .6rem}
+  .brand{display:flex;align-items:center;gap:.7rem;flex-wrap:wrap}
+  .brand .logo{width:38px;height:38px;border-radius:11px;background:linear-gradient(135deg,var(--banner-a),var(--banner-b));display:grid;place-items:center;font-family:var(--m);font-weight:700;color:#0B0F14;font-size:.8rem;box-shadow:0 6px 18px rgba(123,92,255,.35)}
+  h1{margin:0;font-size:clamp(1.4rem,4vw,1.9rem);font-weight:800;letter-spacing:-.03em;color:var(--plum)}
+  .brand .gw{margin-left:auto;display:flex;align-items:center;gap:.5rem;flex-wrap:wrap}
+  .gwpill{font-family:var(--m);font-size:.72rem;font-weight:700;letter-spacing:.04em;padding:.4rem .7rem;border-radius:999px;background:var(--surface);border:1px solid var(--line-strong);color:var(--ink)}
+  .gwpill b{color:var(--accent)}
+  .gwpill.soon b{color:var(--crit)}
   .sub{color:var(--ink-2);margin:.3rem 0 0}
   .status{display:flex;flex-wrap:wrap;gap:.4rem 1.2rem;margin-top:.9rem;font-family:var(--m);font-size:.7rem;letter-spacing:.06em;text-transform:uppercase;color:var(--ink-3)}
   .status b{color:var(--ink);font-weight:700}
-  nav{display:flex;gap:.3rem;margin:1rem 0 1.25rem;border-bottom:1px solid var(--line);overflow-x:auto}
-  nav button{font-family:var(--f);font-size:.95rem;font-weight:600;padding:.6rem .9rem;border:0;background:none;color:var(--ink-3);cursor:pointer;border-bottom:2px solid transparent;margin-bottom:-1px;white-space:nowrap}
-  nav button[aria-selected="true"]{color:var(--ink);border-bottom-color:var(--accent)}
+  nav{display:flex;gap:.25rem;margin:.6rem 0 1.1rem;padding:.3rem;border-radius:14px;background:var(--surface);border:1px solid var(--line);overflow-x:auto}
+  nav button{font-family:var(--f);font-size:.9rem;font-weight:600;padding:.5rem .9rem;border:0;background:none;color:var(--ink-3);cursor:pointer;border-radius:10px;white-space:nowrap}
+  nav button[aria-selected="true"]{color:#fff;background:linear-gradient(135deg,#00734B,#0E9F6E);box-shadow:0 4px 12px rgba(0,115,75,.3)}
+  :root[data-theme="dark"] nav button[aria-selected="true"],:root:not([data-theme="light"]) nav button[aria-selected="true"]{color:#06261A;background:linear-gradient(135deg,#43E29B,#2FC6D6)}
+  @media (prefers-color-scheme:light){:root:not([data-theme="dark"]) nav button[aria-selected="true"]{color:#fff;background:linear-gradient(135deg,#00734B,#0E9F6E)}}
+  .card{box-shadow:0 8px 24px rgba(20,0,30,.06)}
   button:focus-visible,select:focus-visible,input:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
   h2{font-size:1.1rem;font-weight:700;margin:0 0 .75rem;letter-spacing:-.01em}
   .card{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:1rem 1.1rem}
@@ -226,13 +236,23 @@
   :root[data-theme="dark"] .lup b.c{color:#1C0F21}
   .lup.sub{background:transparent;border:1px dashed var(--line-strong);font-weight:500}
   .dif.band{margin-left:.35rem}
-  .band.b1{background:#DDF3E4;color:#0B5B2E} .band.b2{background:#EAF6DA;color:#3D6B12} .band.b3{background:#F3EDF5;color:#57485F} .band.b4{background:#FBE7DA;color:#9A3E08} .band.b5{background:#F9DADF;color:#A81E38}
-  :root[data-theme="dark"] .band.b1{background:#12402A;color:#9BE3B5} :root[data-theme="dark"] .band.b2{background:#26401A;color:#BFE39B} :root[data-theme="dark"] .band.b3{background:#3A3040;color:#C8BBD0} :root[data-theme="dark"] .band.b4{background:#4A2A14;color:#F3B58C} :root[data-theme="dark"] .band.b5{background:#4A1620;color:#F3A3B0}
-  td.band{font-weight:700}
-  .slot .fx1.b1{background:#DDF3E4;color:#0B5B2E} .slot .fx1.b2{background:#EAF6DA;color:#3D6B12} .slot .fx1.b3{background:rgba(255,255,255,.92);color:#0B3D2A} .slot .fx1.b4{background:#FBE7DA;color:#9A3E08} .slot .fx1.b5{background:#F9DADF;color:#A81E38}
-  .fxl{display:flex;flex-direction:column;gap:.35rem;margin-top:.5rem}
+  .band.b1,.b1{--bc:#16A34A} .band.b2,.b2{--bc:#84CC16} .band.b3,.b3{--bc:#F59E0B} .band.b4,.b4{--bc:#F97316} .band.b5,.b5{--bc:#DC2626}
+  .band{background:var(--bc);color:#fff;text-shadow:0 1px 1px rgba(0,0,0,.25)}
+  .band.b2{color:#173300;text-shadow:none} .band.b3{color:#2B1A00;text-shadow:none}
+  td.band{font-weight:700;color:#fff;background:var(--bc)} td.band.b2,td.band.b3{color:#1B1400}
+  .slot .fx1.b1,.slot .fx1.b2,.slot .fx1.b3,.slot .fx1.b4,.slot .fx1.b5{background:var(--bc);color:#fff;text-shadow:0 1px 1px rgba(0,0,0,.25)}
+  .slot .fx1.b2,.slot .fx1.b3{color:#1B1400;text-shadow:none}
+  .bandkey{display:flex;gap:.35rem;align-items:center;flex-wrap:wrap;font-family:var(--m);font-size:.62rem;color:var(--ink-3);margin:.4rem 0 .8rem}
+  .bandkey .dif{margin:0}
+  .day{font-family:var(--m);font-size:.66rem;letter-spacing:.1em;text-transform:uppercase;color:var(--ink-3);margin:1rem 0 .4rem}
+  .fxl{display:flex;flex-direction:column;gap:.4rem;margin-top:.2rem}
   .fxrow{border:1px solid var(--line);border-radius:8px;overflow:hidden}
-  .fxhead{width:100%;display:grid;grid-template-columns:1fr auto 1fr;gap:.5rem;align-items:center;background:var(--surface);border:0;padding:.5rem .7rem;cursor:pointer;font-family:var(--f);font-size:.9rem;color:var(--ink);text-align:left}
+  .fxhead{width:100%;display:grid;grid-template-columns:1fr auto 1fr;gap:.6rem;align-items:center;background:var(--surface);border:0;padding:.65rem .8rem;cursor:pointer;font-family:var(--f);font-size:.95rem;color:var(--ink);text-align:left}
+  .fxhead .ko{font-family:var(--m);font-size:.72rem;font-weight:700;color:var(--ink-2);background:var(--surface-2);padding:.3rem .5rem;border-radius:6px;white-space:nowrap}
+  .fxteam b{font-size:1rem}
+  .fxrow{box-shadow:0 4px 14px rgba(20,0,30,.05)}
+  .lineline{display:flex;flex-wrap:wrap;gap:.3rem .5rem;align-items:center;font-size:.88rem;margin-top:.6rem}
+  .lineline .lup{padding:.15rem .4rem}
   .fxhead:hover{background:var(--surface-2)}
   .fxteam{display:flex;align-items:center;gap:.3rem;flex-wrap:wrap} .fxteam.r{justify-content:flex-end;text-align:right}
   .fxteam .dif{margin-left:0}
@@ -265,17 +285,18 @@
 <body>
 <div class="wrap">
   <header>
-    <h1>FPL Analyst</h1>
-    <p class="sub">Build your fifteen on the pitch, set your team value and bank, and get a rating plus the five moves that lift your team most.</p>
-    <div class="statusrow"><div class="status" id="status">Loading…</div><button class="btn small" id="refresh" type="button" title="Fetch the latest projections">Refresh data</button></div>
+    <div class="brand"><div class="logo">FPL</div><h1>FPL Analyst</h1>
+      <div class="gw" id="gwbar"></div>
+      <button class="btn small" id="refresh" type="button" title="Fetch the latest projections">Refresh</button></div>
+    <div class="status" id="status"></div>
     <div id="notices"></div>
   </header>
 
   <nav role="tablist">
-    <button role="tab" aria-selected="true" data-tab="rate">Rate my team</button>
-    <button role="tab" aria-selected="false" data-tab="best">Best squad this week</button>
-    <button role="tab" aria-selected="false" data-tab="all">All players</button>
-    <button role="tab" aria-selected="false" data-tab="teams">Teams &amp; fixtures</button>
+    <button role="tab" aria-selected="true" data-tab="rate">My team</button>
+    <button role="tab" aria-selected="false" data-tab="best">Best squad</button>
+    <button role="tab" aria-selected="false" data-tab="all">Players</button>
+    <button role="tab" aria-selected="false" data-tab="teams">Matches</button>
     <button role="tab" aria-selected="false" data-tab="test">Backtest</button>
   </nav>
 
@@ -310,7 +331,7 @@
             <button class="btn" id="template">Use template team</button>
             <button class="btn" id="autopick">Auto-pick lineup</button>
             <button class="btn link" id="clear">Clear</button>
-            <span class="hint">Tap a slot to add a player. Rated the moment it's full.</span>
+            <span class="hint">Tap a slot to add a player.</span>
           </div>
         </div>
         <div>
@@ -327,7 +348,7 @@
   </main>
 
   <footer>
-    Projections come from a component model (appearance, attacking, clean sheet, bonus, goalkeeping, defensive contribution) trained on 2022-23 to 2025-26 and this season's fixtures, then scaled by FPL's own availability flag and news (return dates, loans, departures) so injuries and suspensions are reflected the day they're announced. Each of the next five gameweeks is projected with its own opponent's attack and defence strength (rolling xG and xG conceded) with nearer gameweeks counting more than distant ones. Ratings are relative to the best £100m squad over the same horizon. Transfers beyond your free ones are charged the 4-point hit before a move is called worth it. Refreshed daily.
+    Projections: a component model (appearance, goals, assists, clean sheets, bonus, saves, defensive contribution) trained on 2022-23 to 2025-26, stacked with FPL's own expected points, scaled by availability and news, and projected against each of the next five opponents' attack and defence on current form. Ratings are against the best £100m squad over the same horizon. Refreshed every morning.
   </footer>
 </div>
 
@@ -767,35 +788,15 @@ const teamRow = name => (DATA.teams||[]).find(t=>t.team===name);
 function bandFor(position, oppName){ const t = teamRow(oppName); if (!t) return null; return (position==="GK"||position==="DEF") ? t.hard_for_def : t.hard_for_att; }
 function bandChip(band, text, title){ const c = el("span","dif band "+(BANDS[band]||"b3"), text); if (title) c.title = title; return c; }
 
-function renderLineup(players, lineup){
-  const c = el("div","card lineupcard"); c.appendChild(el("h2",null,"Best lineup for GW"+DATA.meta.gameweek));
+function lineupLine(lineup){
   const next = lineup, same = fname(next.formation)===fname(state.formation);
-  c.appendChild(el("p","hint",`${fname(next.formation)} projects ${fmt(next.points,1)} next gameweek${next.cover>0.05?` plus ${fmt(next.cover,1)} expected from bench cover`:""}.${same?"":` You have ${fname(state.formation)} set; "Use this lineup" switches it.`}`));
-  const grid = el("div","lu");
-  POSITIONS.forEach(pos => {
-    const row = el("div","lurow"); row.appendChild(el("span","pos "+pos,pos));
-    const names = el("div","lunames");
-    next.starters.map(c=>BY[c]).filter(p=>p.position===pos).sort((a,b)=>epk(b,0)-epk(a,0)).forEach(p => {
-      const n = el("span","lup"); n.appendChild(document.createTextNode(p.web_name));
-      if (p.code===next.captain) n.appendChild(el("b","c","C")); else if (p.code===next.vice) n.appendChild(el("b","v","V"));
-      n.appendChild(el("small",null," "+fmt(epk(p,0),1)));
-      const opp = oppParts(p.opponent)[0]; const band = opp ? bandFor(p.position, opp.name) : null;
-      if (band) n.appendChild(bandChip(band, oppShort(p.opponent), `${BAND_WORD[band]} fixture for a ${p.position}`));
-      names.appendChild(n);
-    });
-    row.appendChild(names); grid.appendChild(row);
-  });
-  const brow = el("div","lurow"); brow.appendChild(el("span","pos bench","SUB")); const bn = el("div","lunames");
-  next.bench.map((c,i)=>[BY[c],i]).forEach(([p,i]) => { const n = el("span","lup sub"); n.appendChild(document.createTextNode(`${i+1}. ${p.web_name}`)); n.appendChild(el("small",null," "+fmt(epk(p,0),1)+(playk(p,0)<0.6?" · may not play":""))); bn.appendChild(n); });
-  brow.appendChild(bn); grid.appendChild(brow);
-  c.appendChild(grid);
-  if (lineup.lineups && lineup.lineups.length > 1){
-    const later = el("p","hint");
-    later.textContent = "Later weeks: " + lineup.lineups.slice(1).map((e,i)=>`GW${DATA.meta.gameweek+i+1} ${fname(e.formation)}, C ${BY[e.captain].web_name}`).join(" · ") + ". A bench player earns his place by covering one of these.";
-    c.appendChild(later);
-  }
-  if (!same){ const use = el("button","btn","Use this lineup"); use.onclick = () => { setFormation(next.formation); }; c.appendChild(use); }
-  return c;
+  const box = el("div","lineline");
+  box.appendChild(el("b",null,`Best XI ${fname(next.formation)}`));
+  const c = el("span","lup"); c.appendChild(el("b","c","C")); c.appendChild(document.createTextNode(" "+BY[next.captain].web_name)); box.appendChild(c);
+  const v = el("span","lup"); v.appendChild(el("b","v","V")); v.appendChild(document.createTextNode(" "+BY[next.vice].web_name)); box.appendChild(v);
+  box.appendChild(el("span","hint","Bench order: " + next.bench.map((c,i)=>`${i+1}. ${BY[c].web_name}`).join("  ")));
+  if (!same){ const use = el("button","btn small","Use this lineup"); use.onclick = () => setFormation(next.formation); box.appendChild(use); }
+  return box;
 }
 
 function renderRating(){
@@ -803,7 +804,7 @@ function renderRating(){
   box.replaceChildren(); mv.replaceChildren();
   const players = squadPlayers();
   const c = el("div","card"); c.appendChild(el("h2",null,"Rating"));
-  if (players.length < 15){ c.appendChild(el("p","hint",`${15-players.length} more to add. Tap the empty slots.`)); box.appendChild(c); mv.appendChild(renderFixtures()); return; }
+  if (players.length < 15){ c.appendChild(el("p","hint",`${15-players.length} more to add. Tap the empty slots.`)); box.appendChild(c); return; }
   const bank = bankVal(), tv = teamValueVal(), opt = OPT(), free = ftVal(), h = HORIZONS[metric];
   const lineup = bestEleven(players, state.formation), freeShape = bestEleven(players);
   const rating = 100*lineup.total/opt;
@@ -811,7 +812,7 @@ function renderRating(){
   [["rating","/100",fmt(rating,1)],[h.long,"pts",fmt(lineup.total,1)],["best £100m squad","pts",fmt(opt,1)],["next GW · captain","",`${fmt(lineup.points,1)} · ${BY[lineup.captain].web_name}`]].forEach(([t,u,v])=>{ const d=el("div","kpi"); d.appendChild(el("dt",null,t+(u?" "+u:""))); d.appendChild(el("dd",null,v)); k.appendChild(d); });
   c.appendChild(k);
   const meter = el("div","meter"); const i = el("i"); i.style.width = Math.min(100,rating)+"%"; meter.appendChild(i); c.appendChild(meter);
-  if (freeShape.total - lineup.total > 0.05) c.appendChild(el("p","tip",`${fname(freeShape.formation)} with the same fifteen would project ${fmt(freeShape.total,1)} (+${fmt(freeShape.total-lineup.total,1)}). "Use this lineup" below does that.`));
+  if (freeShape.total - lineup.total > 0.05) c.appendChild(el("p","tip",`${fname(freeShape.formation)} with the same fifteen would project ${fmt(freeShape.total,1)} (+${fmt(freeShape.total-lineup.total,1)}).`));
   const budget = availableBudget(players, bank, tv);
   const over = squadValue() - budget;
   if (over > 1e-9){ const w = el("div","critbox"); w.appendChild(el("b",null,`Over budget by £${fmt(over,1)}m`)); w.appendChild(el("div",null,`Your fifteen cost £${fmt(squadValue(),1)}m against £${fmt(budget,1)}m (team value + bank). The moves below all bring you back under; if your team value has really grown, set it above.`)); c.appendChild(w); }
@@ -822,14 +823,14 @@ function renderRating(){
     flagged.forEach(p => w.appendChild(el("div",null,`${p.web_name}: ${p.news || "doubtful"}`)));
     c.appendChild(w);
   }
+  c.appendChild(lineupLine(freeShape.total - lineup.total > 0.05 ? freeShape : lineup));
   box.appendChild(c);
-  box.appendChild(renderLineup(players, freeShape.total - lineup.total > 0.05 ? freeShape : lineup));
 
   const moves = suggestTransfers(players, DATA.players, bank, tv, state.formation, 5, free);
   const mc = el("div","card"); mc.appendChild(el("h2",null, over > 1e-9 ? "Moves that fix your budget" : "Five moves that lift your rating"));
   mc.appendChild(el("p","hint", over > 1e-9
     ? `Ranked by how little they cost you over the ${h.long}. Each one gets the squad back under £${fmt(budget,1)}m on its own.`
-    : `Ranked by gain over the ${h.long} net of any ${HIT()}-point hit (you have ${free} free transfer${free===1?"":"s"}). Every move keeps you inside £${fmt(budget,1)}m; where the best upgrade costs more than you have, a second transfer funds it. The gain counts the bench too: a sub who would actually come on is worth something, an expensive one who never plays is not. Tap "Why" for the fixture-by-fixture case.`));
+    : `Gain over the ${h.long}, net of any ${HIT()}-point hit (${free} free). Where the best upgrade costs more than you have, a second transfer funds it. Tap "Why?" for the case.`));
   if (!moves.length) mc.appendChild(el("p","hint", over > 1e-9 ? "No one or two transfers clear the deficit — remove a player or raise your team value." : "No transfer inside your budget improves the projected team in this formation."));
   const list = el("div","moves");
   moves.forEach(m => {
@@ -859,32 +860,8 @@ function renderRating(){
     row.appendChild(g); list.appendChild(row);
   });
   mc.appendChild(list); mv.appendChild(mc);
-  mv.appendChild(renderFixtures());
 }
 
-// ---------- this gameweek's fixtures + insights ----------
-function renderFixtures(){
-  const c = el("div","card"); c.appendChild(el("h2",null,`GW${DATA.meta.gameweek} fixtures & insights`));
-  const ins = DATA.insights || [];
-  if (!ins.length){ c.appendChild(el("p","hint","No fixture history available.")); return c; }
-  c.appendChild(el("p","hint","Chips show how hard each side is to face — left for defenders (how much they score), right for attackers (how little they concede) — on current form, with the last two or three matches weighted most. Tap a fixture for the head-to-head record and form."));
-  const list = el("div","fxl");
-  ins.forEach(f => {
-    const row = el("div","fxrow"); const head = el("button","fxhead"); head.type="button";
-    const th = teamRow(f.home), ta = teamRow(f.away);
-    const left = el("span","fxteam"); left.appendChild(el("b",null,f.home)); if (ta) left.appendChild(bandChip(ta.hard_for_def, "D"+ta.hard_for_def, `${f.away} for defenders: ${BAND_WORD[ta.hard_for_def]}`)); if (ta) left.appendChild(bandChip(ta.hard_for_att, "A"+ta.hard_for_att, `${f.away} for attackers: ${BAND_WORD[ta.hard_for_att]}`));
-    const mid = el("span","fxwhen", f.kickoff ? new Date(f.kickoff).toUTCString().replace(/:00 GMT$/," UTC").replace(/^\w+, /,"") : "");
-    const right = el("span","fxteam r"); if (th) right.appendChild(bandChip(th.hard_for_att, "A"+th.hard_for_att, `${f.home} for attackers: ${BAND_WORD[th.hard_for_att]}`)); if (th) right.appendChild(bandChip(th.hard_for_def, "D"+th.hard_for_def, `${f.home} for defenders: ${BAND_WORD[th.hard_for_def]}`)); right.appendChild(el("b",null,f.away));
-    head.appendChild(left); head.appendChild(mid); head.appendChild(right);
-    const body = el("div","fxbody"); body.hidden = true;
-    (f.lines||[]).forEach(l => body.appendChild(el("p",null,l)));
-    if (!(f.lines||[]).length) body.appendChild(el("p","hint","No previous meetings in the data."));
-    head.onclick = () => { body.hidden = !body.hidden; };
-    row.appendChild(head); row.appendChild(body); list.appendChild(row);
-  });
-  c.appendChild(list);
-  return c;
-}
 function update(){ renderPitch(); renderRating(); save(); }
 
 function templateTeam(){
@@ -1016,48 +993,85 @@ function renderAll(){
   box.appendChild(wideTable());
 }
 
-// ---------- teams: difficulty + full schedule ----------
+// ---------- matches: fixtures, toughness, schedules ----------
 let teamsView = "def";
+function bandKey(){
+  const k = el("div","bandkey"); k.appendChild(document.createTextNode("Toughness:"));
+  [1,2,3,4,5].forEach(b => k.appendChild(bandChip(b, BAND_WORD[b])));
+  k.appendChild(document.createTextNode(teamsView==="def" ? "for defenders & keepers (how much the opponent scores)" : "for attackers & midfielders (how little the opponent concedes)"));
+  return k;
+}
+function viewToggle(){
+  const tog = el("div","forms"); [["def","My defenders"],["att","My attackers"]].forEach(([k,l])=>{ const b=el("button",null,l); b.type="button"; b.setAttribute("aria-pressed", teamsView===k); b.onclick=()=>{ teamsView=k; renderTeams(); }; tog.appendChild(b); }); return tog;
+}
+const bandOf = t => teamsView==="def" ? t.hard_for_def : t.hard_for_att;
 function renderTeams(){
   const box = document.getElementById("teams"); box.replaceChildren();
-  const teams = [...(DATA.teams||[])]; if (!teams.length){ box.appendChild(el("p","hint","No club table yet.")); return; }
-  box.appendChild(el("h2",null,"How hard each club is to face"));
-  box.appendChild(el("p","hint","Attack and defence scores are expected goals for and against per match on current form: an exponentially weighted average in which the last two or three matches carry most of the weight, blended 70/30 with the last 38 matches so one freak result does not rewrite a club's standing. Bands run 1 (easy) to 5 (hard). For defenders the question is how much the opponent scores; for attackers how little it concedes."));
-  const tog = el("div","forms"); [["def","For my defenders & keepers"],["att","For my attackers & midfielders"]].forEach(([k,l])=>{ const b=el("button",null,l); b.type="button"; b.setAttribute("aria-pressed", teamsView===k); b.onclick=()=>{ teamsView=k; renderTeams(); }; tog.appendChild(b); }); box.appendChild(tog);
-  const key = teamsView==="def" ? "hard_for_def" : "hard_for_att";
+  const teams = [...(DATA.teams||[])]; const ins = DATA.insights || [];
+  const top = el("div","hzrow"); top.appendChild(el("h2",null,`Gameweek ${DATA.meta.gameweek} matches`)); top.appendChild(viewToggle()); box.appendChild(top);
+  box.appendChild(bandKey());
+  // fixtures grouped by day
+  const byDay = new Map();
+  ins.forEach(f => { const d = f.kickoff ? new Date(f.kickoff) : null; const key = d ? d.toUTCString().slice(0,16) : "TBC"; if (!byDay.has(key)) byDay.set(key, []); byDay.get(key).push(f); });
+  byDay.forEach((list, day) => {
+    box.appendChild(el("div","day", day));
+    const wrap = el("div","fxl");
+    list.forEach(f => {
+      const row = el("div","fxrow"); const head = el("button","fxhead"); head.type="button";
+      const th = teamRow(f.home), ta = teamRow(f.away);
+      const left = el("span","fxteam"); left.appendChild(el("b",null,f.home)); if (ta) left.appendChild(bandChip(bandOf(ta), BAND_WORD[bandOf(ta)], `${f.home} players face ${f.away}: ${BAND_WORD[bandOf(ta)]}`));
+      const ko = f.kickoff ? new Date(f.kickoff) : null; const mid = el("span","ko", ko ? ko.toUTCString().slice(17,22) + " UTC" : "TBC");
+      const right = el("span","fxteam r"); if (th) right.appendChild(bandChip(bandOf(th), BAND_WORD[bandOf(th)], `${f.away} players face ${f.home}: ${BAND_WORD[bandOf(th)]}`)); right.appendChild(el("b",null,f.away));
+      head.appendChild(left); head.appendChild(mid); head.appendChild(right);
+      const body = el("div","fxbody"); body.hidden = true;
+      (f.lines||[]).forEach(l => body.appendChild(el("p",null,l)));
+      if (!(f.lines||[]).length) body.appendChild(el("p","hint","No previous meetings in the data."));
+      head.onclick = () => { body.hidden = !body.hidden; };
+      row.appendChild(head); row.appendChild(body); wrap.appendChild(row);
+    });
+    box.appendChild(wrap);
+  });
+  box.appendChild(el("p","hint","Tap a match for the head-to-head record and both sides' form. The chip next to each club says how tough its opponent is for your players, on current form."));
+
+  // club table
+  const h2 = el("h2",null,"Club toughness on current form"); h2.style.marginTop="1.4rem"; box.appendChild(h2);
   teams.sort((a,b)=> teamsView==="def" ? a.att_rank-b.att_rank : a.def_rank-b.def_rank);
   const wrap = el("div","wide"); const t = el("table"); const th = el("tr");
-  ["Club","Band","Attack (xG/game)","Att rank","Defence (xGC/game)","Def rank","Europe","Next 6 matches (all competitions)"].forEach(x=>th.appendChild(el("th",null,x))); const thead = el("thead"); thead.appendChild(th); t.appendChild(thead);
+  ["Club","Toughness","Attack xG/game","Defence xGC/game","Europe","Next 6 (all competitions)"].forEach(x=>th.appendChild(el("th",null,x))); const thead = el("thead"); thead.appendChild(th); t.appendChild(thead);
   const tb = el("tbody");
   teams.forEach(tm => {
     const r = el("tr");
-    r.appendChild(el("td","l",tm.team)); const bd = el("td"); bd.appendChild(bandChip(tm[key], BAND_WORD[tm[key]])); r.appendChild(bd);
-    r.appendChild(el("td",null,fmt(tm.att_score,2))); r.appendChild(el("td",null,"#"+tm.att_rank));
-    r.appendChild(el("td",null,fmt(tm.def_score,2))); r.appendChild(el("td",null,"#"+tm.def_rank));
+    r.appendChild(el("td","l",tm.team)); const bd = el("td"); bd.appendChild(bandChip(bandOf(tm), BAND_WORD[bandOf(tm)])); r.appendChild(bd);
+    r.appendChild(el("td",null,`${fmt(tm.att_score,2)} (#${tm.att_rank})`)); r.appendChild(el("td",null,`${fmt(tm.def_score,2)} (#${tm.def_rank})`));
     const sch = (DATA.schedules||{})[tm.team]; r.appendChild(el("td",null, sch && sch.europe ? sch.europe : "–"));
-    const nx = el("td","l"); (sch ? sch.matches : []).slice(0,6).forEach(m => { const opp = teamRow(m.opp); const band = m.comp==="PL" && opp ? (teamsView==="def" ? opp.hard_for_def : opp.hard_for_att) : null; const chip = el("span","dif "+(band?"band "+BANDS[band]:"mid"), `${m.comp!=="PL"?m.comp+" ":""}${m.home?"":"@"}${m.comp==="PL"?short(m.opp):m.opp}`); chip.title = `${m.comp} ${m.home?"vs":"at"} ${m.opp}${m.at?" · "+new Date(m.at).toUTCString().replace(/:00 GMT$/," UTC"):""}`; nx.appendChild(chip); }); r.appendChild(nx);
+    const nx = el("td","l"); (sch ? sch.matches : []).slice(0,6).forEach(m => { const opp = teamRow(m.opp); const band = m.comp==="PL" && opp ? bandOf(opp) : null; const chip = el("span","dif "+(band?"band "+BANDS[band]:"mid"), `${m.comp!=="PL"?m.comp+" ":""}${m.home?"":"@"}${m.comp==="PL"?short(m.opp):m.opp}`); chip.title = `${m.comp} ${m.home?"vs":"at"} ${m.opp}${m.at?" · "+new Date(m.at).toUTCString().replace(/:00 GMT$/," UTC"):""}`; nx.appendChild(chip); }); r.appendChild(nx);
     tb.appendChild(r);
   });
   t.appendChild(tb); wrap.appendChild(t); box.appendChild(wrap);
-  box.appendChild(el("h2",null,"Full schedules"));
-  box.appendChild(el("p","hint","League fixtures from FPL plus Champions League, Europa League and Conference League ties from the UEFA calendar. A European tie in the four days before a league match is flagged in every projection as a rotation risk; domestic cups are not yet in the feed."));
-  const grid = el("div","schedgrid");
-  teams.sort((a,b)=>a.team.localeCompare(b.team)).forEach(tm => {
+  box.appendChild(el("p","hint","Expected goals for and against per match, weighted to the last two or three games and blended with the last 38 so one freak result does not rewrite a club's standing."));
+
+  // full schedules, folded away
+  const showBtn = el("button","btn","Show full schedules (league + Europe)"); showBtn.style.marginTop=".8rem";
+  const grid = el("div","schedgrid"); grid.hidden = true;
+  [...teams].sort((a,b)=>a.team.localeCompare(b.team)).forEach(tm => {
     const sch = (DATA.schedules||{})[tm.team]; if (!sch) return;
     const c = el("div","card sched"); c.appendChild(el("h3",null, tm.team + (sch.europe ? " · " + sch.europe : "")));
     const ul = el("ul");
     sch.matches.forEach(m => { const li = el("li"); const when = m.at ? new Date(m.at) : null; li.appendChild(el("span","when", when ? when.toUTCString().slice(0,16) : "")); li.appendChild(el("span","comp "+(m.comp==="PL"?"pl":"eu"), m.comp)); li.appendChild(document.createTextNode(` ${m.home?"vs":"at"} ${m.opp}${m.gw?" (GW"+m.gw+")":""}`)); ul.appendChild(li); });
     c.appendChild(ul); grid.appendChild(c);
   });
-  box.appendChild(grid);
+  showBtn.onclick = () => { grid.hidden = !grid.hidden; showBtn.textContent = grid.hidden ? "Show full schedules (league + Europe)" : "Hide full schedules"; };
+  box.appendChild(showBtn); box.appendChild(grid);
 }
 
 // ---------- boot ----------
 function renderStatus(){
-  const m = DATA.meta, s = document.getElementById("status"); s.replaceChildren();
+  const m = DATA.meta, s = document.getElementById("status"), g = document.getElementById("gwbar"); s.replaceChildren(); g.replaceChildren();
   const dl = m.deadline ? new Date(m.deadline) : null, now = new Date(), hrs = dl ? (dl-now)/36e5 : 0;
   const left = !dl ? "–" : hrs <= 0 ? "passed" : hrs>48 ? Math.floor(hrs/24)+"d "+Math.round(hrs%24)+"h" : Math.floor(hrs)+"h "+Math.round((hrs%1)*60)+"m";
-  [["season",m.season],["gameweek",m.gameweek],["deadline",dl ? dl.toUTCString().replace(":00 GMT"," UTC") : "–"],["time left",left],["data refreshed",new Date(m.captured_at).toUTCString().replace(":00 GMT"," UTC")],["flagged",m.flagged+" players"]].forEach(([k,v])=>{ const x=el("span"); x.appendChild(document.createTextNode(k+" ")); x.appendChild(el("b",null,v)); s.appendChild(x); });
+  const p1 = el("span","gwpill"); p1.appendChild(document.createTextNode("GW")); p1.appendChild(el("b",null,String(m.gameweek))); g.appendChild(p1);
+  const p2 = el("span","gwpill"+(hrs>0&&hrs<24?" soon":"")); p2.appendChild(document.createTextNode("Deadline ")); p2.appendChild(el("b",null,left)); p2.title = dl ? dl.toUTCString() : ""; g.appendChild(p2);
+  [["refreshed",new Date(m.captured_at).toUTCString().replace(":00 GMT"," UTC")],["flagged",m.flagged+" players"],["season",m.season]].forEach(([k,v])=>{ const x=el("span"); x.appendChild(document.createTextNode(k+" ")); x.appendChild(el("b",null,v)); s.appendChild(x); });
 }
 function renderBacktest(){
   const box = document.getElementById("test"); box.replaceChildren(); const bt = DATA.backtest;
@@ -1097,7 +1111,7 @@ document.getElementById("template").addEventListener("click", templateTeam);
 document.getElementById("autopick").addEventListener("click", () => { const ps=squadPlayers(); if (ps.length===15) setFormation(bestEleven(ps).formation); });
 
 const SCHEMA = 2, CACHE_KEY = "fpl-live-cache-v2", STALE_HOURS = 36;
-function notice(kind, text){ const n = el("div", kind==="crit" ? "critbox" : kind==="ok" ? "okbox" : "warnbox"); n.style.margin = ".6rem 0 0"; n.textContent = text; document.getElementById("notices").appendChild(n); return n; }
+function notice(kind, text){ const n = el("div", kind==="crit" ? "critbox" : kind==="ok" ? "okbox" : "warnbox"); n.style.margin = ".6rem 0 0"; n.textContent = text; document.getElementById("notices").appendChild(n); if (kind==="ok") setTimeout(() => n.remove(), 6000); return n; }
 function usable(d){ return d && d.meta && d.meta.schema === SCHEMA && Array.isArray(d.players) && d.players.length > 100 && d.optimal; }
 async function loadData(){
   // Network first (revalidated against the CDN's ETag), then the last good copy this
