@@ -63,6 +63,10 @@ jobs:
         continue-on-error: true
         run: fpl schedule --all
 
+      - name: Bookmaker odds (football-data.co.uk; non-fatal)
+        continue-on-error: true
+        run: fpl odds --all
+
       - name: Season replay (from GW1, one free transfer a week, real points)
         continue-on-error: true   # slow and cosmetic: the page keeps the last one if it fails
         run: fpl simulate --from-gw 1 --to-gw 3

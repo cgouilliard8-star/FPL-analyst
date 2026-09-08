@@ -29,7 +29,7 @@ from pathlib import Path
 import pandas as pd
 import requests
 
-from fpl.config import BRONZE, CURRENT_SEASON, FPL_API_BASE, ensure_data_dirs
+from fpl.config import BRONZE, CURRENT_SEASON, FPL_API_BASE, PROJECT_ROOT, ensure_data_dirs
 from fpl.entity.resolve import ELEMENT_TYPE_TO_POSITION
 
 log = logging.getLogger(__name__)
@@ -173,6 +173,42 @@ def save_snapshot(snapshot: dict, season: str = CURRENT_SEASON) -> Path:
         raise FileExistsError(f"{path} already exists; snapshots are immutable")
     path.write_text(json.dumps(snapshot))
     log.info("saved %s", path.name)
+    log_availability(snapshot, season)
+    return path
+
+
+AVAILABILITY_LOG = PROJECT_ROOT / "data" / "external" / "availability_log.csv"
+
+
+def log_availability(
+    snapshot: dict, season: str = CURRENT_SEASON, path: Path | None = None
+) -> Path:
+    """Append every player's flag as of this snapshot to a small committed log.
+
+    FPL keeps no history of injury flags, which is why the season replay has to treat
+    everyone as fit at past deadlines. This log fixes that going forward: one row per
+    player per snapshot, so a later backtest can rebuild what was known at each
+    deadline. A few hundred kilobytes a season.
+    """
+    path = AVAILABILITY_LOG if path is None else path
+    path.parent.mkdir(parents=True, exist_ok=True)
+    gameweek = next_gameweek(snapshot)["id"]
+    rows = [
+        {
+            "captured_at": snapshot["captured_at"],
+            "season": season,
+            "gameweek": gameweek,
+            "code": e["code"],
+            "status": e["status"],
+            "chance": e.get("chance_of_playing_next_round"),
+            "news": (e.get("news") or "").replace("\n", " ").strip(),
+            "price": e["now_cost"] / 10,
+        }
+        for e in snapshot["elements"]
+    ]
+    frame = pd.DataFrame(rows)
+    frame.to_csv(path, mode="a", header=not path.exists(), index=False)
+    log.info("availability log: +%d rows -> %s", len(frame), path.name)
     return path
 
 

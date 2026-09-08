@@ -26,8 +26,12 @@ def ensure_data_dirs() -> None:
 # expected_goals_conceded or starts columns at all (measured: 0% non-null). Including
 # it would mean a quarter of the training set has none of the features the attacking
 # model is built on. The archive goes back to 2016-17 with the same limitation.
-TRAIN_SEASONS: tuple[str, ...] = ("2022-23", "2023-24", "2024-25", "2025-26")
-ARCHIVE_SEASONS: tuple[str, ...] = ("2021-22", *TRAIN_SEASONS)
+# The set can be widened for an experiment with FPL_TRAIN_SEASONS="2020-21,2021-22,...";
+# the backtest is the judge of whether the extra seasons help.
+TRAIN_SEASONS: tuple[str, ...] = tuple(
+    s.strip() for s in os.environ.get("FPL_TRAIN_SEASONS", "").split(",") if s.strip()
+) or ("2022-23", "2023-24", "2024-25", "2025-26")
+ARCHIVE_SEASONS: tuple[str, ...] = tuple(dict.fromkeys(("2021-22", *TRAIN_SEASONS)))
 CURRENT_SEASON = "2026-27"  # live, via fpl.data.fpl_api snapshots
 
 FPL_API_BASE = "https://fantasy.premierleague.com/api"

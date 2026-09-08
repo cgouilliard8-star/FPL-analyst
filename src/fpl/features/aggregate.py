@@ -18,6 +18,15 @@ log = logging.getLogger(__name__)
 
 # Summed across fixtures within a gameweek.
 SUM_COLUMNS = [
+    # Bookmaker-implied expectations per fixture (fpl.data.odds); summed so a double
+    # gameweek carries two matches' worth, like every other count here.
+    "odds_win",
+    "odds_draw",
+    "odds_lose",
+    "odds_xg",
+    "odds_xgc",
+    "odds_cs",
+    "odds_over25",
     # FPL publishes its own expected-points figure before each deadline. It is the
     # baseline the backtest scores against, and also a legitimate pre-match input
     # (see ``fpl_xp_now`` in features.build).

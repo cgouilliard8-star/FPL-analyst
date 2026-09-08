@@ -36,6 +36,7 @@ import pandas as pd
 from fpl.config import CURRENT_SEASON, HORIZON_WEIGHTS, MAX_HORIZON, TRAIN_SEASONS
 from fpl.data.archive import load_players
 from fpl.data.fpl_api import next_gameweek, snapshot_to_gameweeks, snapshot_to_upcoming
+from fpl.data.odds import ODDS_FEATURES, load_odds
 from fpl.data.schedule import load_schedule
 from fpl.data.silver import load_silver
 from fpl.entity.resolve import canonical_team, load_team_aliases
@@ -188,9 +189,15 @@ def _future_rows(
     horizon: int,
     strength: pd.DataFrame,
     league_xgc: float,
+    odds: pd.DataFrame | None = None,
 ) -> pd.DataFrame:
     """Clone each player's frozen feature row for each later gameweek, swapping in
-    that gameweek's fixture context."""
+    that gameweek's fixture context (opponent strength, congestion, and the market's
+    prices for that match where they are already quoted)."""
+    market: dict[tuple[str, str, str], dict] = {}
+    if odds is not None and not odds.empty:
+        for r in odds.itertuples(index=False):
+            market[(r.home, r.away, r.team)] = {f: getattr(r, f) for f in ODDS_FEATURES}
     aliases = load_team_aliases()
     names = {t["id"]: canonical_team(t["name"], aliases) for t in snapshot["teams"]}
     fixtures = [
@@ -226,6 +233,11 @@ def _future_rows(
             clone["fixture_ease"] = (
                 (clone["opp_team_xgc_r10"] / league_xgc) if league_xgc else np.nan
             )
+            home_name = row["team"] if g["home"] else g["opponent"]
+            away_name = g["opponent"] if g["home"] else row["team"]
+            quoted = market.get((home_name, away_name, row["team"]))
+            for f in ODDS_FEATURES:
+                clone[f] = quoted[f] if quoted else np.nan
             clone["all_opponents"] = " + ".join(
                 f"{x['opponent']} ({'H' if x['home'] else 'A'})" for x in games
             )
@@ -309,7 +321,9 @@ def project_horizon(
 
     strength = _team_strength_now(features, season, first)
     league_xgc = float(features.loc[is_target, "opp_team_xgc_r10"].mean())
-    future = _future_rows(base, snapshot, first, horizon, strength, league_xgc)
+    future = _future_rows(
+        base, snapshot, first, horizon, strength, league_xgc, load_odds((season,))
+    )
     if not future.empty:
         # The clones carry the first gameweek's cup/European context; recompute it
         # for each later kick-off from the same schedule the features were built on.

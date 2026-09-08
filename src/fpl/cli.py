@@ -151,6 +151,17 @@ def _schedule(args: argparse.Namespace) -> int:
     return 0
 
 
+def _odds(args: argparse.Namespace) -> int:
+    from fpl.config import CURRENT_SEASON, TRAIN_SEASONS
+    from fpl.data.odds import fetch_odds, load_odds
+
+    seasons = (*TRAIN_SEASONS, CURRENT_SEASON) if args.all else (CURRENT_SEASON,)
+    stored = fetch_odds(seasons)
+    table = load_odds((*TRAIN_SEASONS, CURRENT_SEASON))
+    print(f"fetched {stored}; {len(table) // 2} matches with odds on disk")
+    return 0
+
+
 def _check(args: argparse.Namespace) -> int:
     from fpl.report.check import check_file
     from fpl.report.live import LIVE_PATH
@@ -256,6 +267,16 @@ def main(argv: list[str] | None = None) -> int:
     sch.add_argument("--all", action="store_true", help="every training season, not just this one")
     sch.add_argument("--no-domestic", action="store_true", help="skip the FA Cup / League Cup")
     sch.set_defaults(func=_schedule)
+
+    od = sub.add_parser(
+        "odds",
+        parents=[common],
+        help="fetch bookmaker odds (football-data.co.uk) for results and upcoming fixtures",
+    )
+    od.add_argument(
+        "--all", action="store_true", help="every training season, not just the current one"
+    )
+    od.set_defaults(func=_odds)
 
     chk = sub.add_parser(
         "check", parents=[common], help="validate site/data/live.json before it is deployed"

@@ -178,15 +178,17 @@ written rationale narrates those figures rather than inventing its own.
 
 What would lift it further, in order of expected value:
 
-1. **Bookmaker odds.** Closing lines absorb team news and rotation that no rolling
-   window can see. [football-data.co.uk](https://www.football-data.co.uk/englandm.php)
-   publishes them free back to 1993 for training; The Odds API's free tier covers the
-   live week. This is the single largest missing signal.
-2. **Availability flags.** Now applied to every live projection (see above). They are
-   absent from the historical archive, so their effect cannot be backtested until the
-   daily snapshots have accumulated a season of them.
+1. **Bookmaker odds.** Wired in (see below) but not yet measured: football-data.co.uk
+   was returning 503s the day the pipeline was built, so the results files and the
+   first backtest with odds land with the next refresh that can reach it.
+2. **Availability flags.** Applied to every live projection, and logged from every
+   snapshot from now on, so the replay becomes a fair test as the season goes.
 3. **Shot-level xG** from Understat, to separate a striker taking six weak shots from
    one taking a single big chance.
+4. **More seasons.** 2020-21 and 2021-22 carry no expected-goals columns at all, so
+   adding them means a third of the training set lacks the attacking model's core
+   inputs. Whether they help anyway is an empirical question the backtest answers
+   (`FPL_TRAIN_SEASONS="2020-21,2021-22,2022-23,2023-24,2024-25,2025-26"`); see Results.
 
 ## Two design decisions worth reading
 
@@ -269,6 +271,27 @@ revalidated against the CDN's ETag on each visit. Each
 browser keeps the last good copy it saw, so a failed fetch shows that copy with a
 banner rather than a blank page, and a page error shows a notice instead of dying
 silently. Squads are stored per device in `localStorage`; nothing is sent anywhere.
+
+## Bookmaker odds
+
+`fpl odds --all` pulls football-data.co.uk's results files (one per season, a dozen
+bookmakers' prices per match) and its `fixtures.csv` (the same prices for matches not
+yet played), and stores them in `data/external/`. From the 1X2 and over/under 2.5
+prices each match yields, per side: the chance of winning, drawing and losing, and —
+by solving a two-team Poisson model so that the win probability and the over-2.5
+probability both match the market — an implied expected goals for and against, and a
+clean-sheet probability. Those join every fixture row by (season, home, away), so a
+double gameweek carries two markets, and the same lookup fills the four later
+gameweeks of the horizon where the market has already quoted them. Closing prices
+are pre-match information, so they are legitimate for training; a season the site
+cannot serve is simply NaN and the model falls back to what it knows.
+
+## Availability history
+
+FPL keeps no history of injury flags, which is why the season replay has to treat
+everyone as fit at past deadlines. `fpl snapshot` now appends every player's flag,
+chance, news and price to `data/external/availability_log.csv` (committed by the
+refresh), so from this point on a backtest can rebuild what was known at each deadline.
 
 ## Fixture congestion
 

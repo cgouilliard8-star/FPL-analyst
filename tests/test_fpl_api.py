@@ -94,12 +94,17 @@ def test_double_gameweek_yields_two_upcoming_rows(snapshot):
 
 def test_save_snapshot_never_overwrites(snapshot, tmp_path, monkeypatch):
     monkeypatch.setattr(fpl_api, "LIVE_DIR", tmp_path)
+    monkeypatch.setattr(fpl_api, "AVAILABILITY_LOG", tmp_path / "availability_log.csv")
     monkeypatch.setattr(fpl_api, "ensure_data_dirs", lambda: None)
     path = fpl_api.save_snapshot(snapshot)
     assert path.exists()
     with pytest.raises(FileExistsError):
         fpl_api.save_snapshot(snapshot)
     assert fpl_api.load_latest_snapshot()["captured_at"] == snapshot["captured_at"]
+    # every snapshot appends one row per player to the availability log
+    log = pd.read_csv(tmp_path / "availability_log.csv")
+    assert len(log) == len(snapshot["elements"])
+    assert {"captured_at", "gameweek", "code", "status", "chance", "news", "price"} <= set(log.columns)
 
 
 def test_unknown_players_are_capped_at_fpls_view():

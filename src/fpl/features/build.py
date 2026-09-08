@@ -14,6 +14,7 @@ import pandas as pd
 
 from fpl.config import GOLD, TRAIN_SEASONS
 from fpl.data.archive import load_players
+from fpl.data.odds import ODDS_FEATURES, attach_odds, load_odds
 from fpl.data.schedule import congestion_features, load_schedule
 from fpl.data.silver import load_silver
 from fpl.features.aggregate import aggregate_to_gameweek, attach_opponent, build_team_id_map
@@ -135,6 +136,7 @@ def build_features(
     silver: pd.DataFrame | None = None,
     players: pd.DataFrame | None = None,
     schedule: pd.DataFrame | None = None,
+    odds: pd.DataFrame | None = None,
 ) -> pd.DataFrame:
     """Produce the gold table: one row per player-gameweek, features plus target.
 
@@ -151,6 +153,11 @@ def build_features(
 
     players = load_players(seasons) if players is None else players
     team_map = build_team_id_map(players, silver)
+
+    # Bookmaker odds join per fixture (a double gameweek has two markets), so they
+    # go on before aggregation; the opponent name is needed for the key.
+    odds = load_odds(seasons) if odds is None else odds
+    silver = attach_odds(attach_opponent(silver, team_map), odds).drop(columns=["opponent"])
 
     frame = aggregate_to_gameweek(silver)
     frame = attach_opponent(frame, team_map)
@@ -234,6 +241,7 @@ def feature_columns(frame: pd.DataFrame) -> list[str]:
         if c.endswith(allowed_suffixes)
         or c in allowed_exact
         or c.startswith(("own_team_", "opp_team_"))
+        or c in ODDS_FEATURES
     ]
     return sorted(columns)
 
