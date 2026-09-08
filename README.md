@@ -121,7 +121,9 @@ folds for all of them.
 | Model | Spearman | Precision@10 | RMSE | Haulers RMSE | Squad pts / GW |
 | --- | ---: | ---: | ---: | ---: | ---: |
 | FPL's own `xP` (as archived — see caveat) | *0.756* | *0.642* | *1.844* | *4.975* | *91.3* |
-| Component model (this project) | **0.716** | **0.521** | 1.918 | 5.568 | 69.1 |
+| Component model (this project, tuned) | **0.715** | **0.521** | 1.914 | 5.485 | 69.1 |
+| Component model, earlier defaults | 0.716 | 0.521 | 1.918 | 5.568 | 69.1 |
+| Component model, trained on six seasons (2020-26) | 0.716 | 0.524 | 1.914 | 5.533 | — |
 | LightGBM, one regressor | 0.709 | 0.479 | 1.934 | 5.524 | 61.7 |
 | Rolling 3-gameweek mean | 0.703 | 0.373 | 2.182 | 5.790 | 52.6 |
 | Constant (training mean) | — | 0.073 | 2.354 | 7.172 | — |
@@ -140,7 +142,20 @@ beat, by a clear margin in the metric that matters most for squad selection
 (precision@10: 0.521 against 0.479), and by 7.4 points a gameweek when the projections
 are turned into a squad. The club-strength, form and congestion features added later
 moved precision@10 from 0.506 to 0.521 and left the other metrics flat: the model
-already knew most of what those features say.
+already knew most of what those features say. Two more experiments, both measured
+on the same 33 folds, say the same thing from the other side: training on six seasons
+instead of four (adding 2020-21 and 2021-22, which have no expected-goals data)
+changes nothing that matters, and a hyper-parameter search (`scripts/tune.py`:
+shallower trees, half the features per tree, slower learning) improves the error on
+big scores a little and nothing else. The model is saturated on the information it
+has. What moves it now is information it does not have — bookmaker prices and the
+availability history, both wired in above and both waiting on data.
+
+The GW1–3 season replay is a three-gameweek sample and behaves like one: the same
+model with the earlier defaults scored 181 points (43 / 88 / 50) and with the tuned
+parameters 166 (27 / 99 / 40) — a fifteen-point swing between two models the 33-fold
+backtest cannot tell apart, driven by which fringe player happened to blank. Read it
+as a demonstration of the pipeline, not as a measurement.
 
 **The `xP` caveat.** The archived `xP` row is not a fair baseline. It was scraped
 after each gameweek, and FPL folds the gameweek's real points into the "form" its

@@ -19,14 +19,18 @@ log = logging.getLogger(__name__)
 
 # Shared tree settings. Deliberately conservative: the signal here is weak and the
 # class balance brutal (60% of player-gameweeks score nothing).
+# Chosen by scripts/tune.py on walk-forward folds of 2024-25: shallower trees, half
+# the features per tree and a slower learning rate beat the earlier defaults on
+# precision@10 (0.476 -> 0.515 on the coarse folds) with equal rank correlation --
+# the sub-models were overfitting the noisy count targets.
 _COMMON = {
-    "n_estimators": 300,
-    "learning_rate": 0.05,
-    "num_leaves": 31,
-    "min_child_samples": 40,
+    "n_estimators": 500,
+    "learning_rate": 0.03,
+    "num_leaves": 15,
+    "min_child_samples": 60,
     "subsample": 0.8,
     "subsample_freq": 1,
-    "colsample_bytree": 0.7,
+    "colsample_bytree": 0.5,
     "reg_lambda": 1.0,
     "n_jobs": -1,
     "verbose": -1,

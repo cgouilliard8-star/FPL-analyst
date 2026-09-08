@@ -25,7 +25,13 @@ GRID = [
     {"n_estimators": 600, "learning_rate": 0.03},
     {"num_leaves": 15, "min_child_samples": 80},
     {"num_leaves": 63, "min_child_samples": 20},
-    {"n_estimators": 500, "learning_rate": 0.03, "num_leaves": 15, "min_child_samples": 60, "colsample_bytree": 0.5},
+    {
+        "n_estimators": 500,
+        "learning_rate": 0.03,
+        "num_leaves": 15,
+        "min_child_samples": 60,
+        "colsample_bytree": 0.5,
+    },
     {"reg_lambda": 5.0, "colsample_bytree": 0.5},
 ]
 
