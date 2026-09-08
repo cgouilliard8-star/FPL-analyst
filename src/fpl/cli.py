@@ -151,6 +151,22 @@ def _schedule(args: argparse.Namespace) -> int:
     return 0
 
 
+def _replay(args: argparse.Namespace) -> int:
+    import json
+
+    from fpl.evaluate.replay import replay_season
+    from fpl.report.live import REPLAY_PATH
+
+    out = {m: replay_season(args.season, manager=m) for m in ("model", "crowd")}
+    REPLAY_PATH.parent.mkdir(parents=True, exist_ok=True)
+    REPLAY_PATH.write_text(json.dumps(out, indent=1))
+    for m, r in out.items():
+        print(
+            f"{m}: {r['total']} points over {len(r['gameweeks'])} gameweeks ({r['per_gameweek']} a week)"
+        )
+    return 0
+
+
 def _odds(args: argparse.Namespace) -> int:
     from fpl.config import CURRENT_SEASON, TRAIN_SEASONS
     from fpl.data.odds import fetch_odds, load_odds
@@ -267,6 +283,14 @@ def main(argv: list[str] | None = None) -> int:
     sch.add_argument("--all", action="store_true", help="every training season, not just this one")
     sch.add_argument("--no-domestic", action="store_true", help="skip the FA Cup / League Cup")
     sch.set_defaults(func=_schedule)
+
+    rp = sub.add_parser(
+        "replay",
+        parents=[common],
+        help="replay an archived season with transfer rules: model vs crowd",
+    )
+    rp.add_argument("--season", default="2024-25")
+    rp.set_defaults(func=_replay)
 
     od = sub.add_parser(
         "odds",

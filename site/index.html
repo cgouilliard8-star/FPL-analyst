@@ -362,7 +362,7 @@
   </main>
 
   <footer>
-    Projections: a component model (appearance, goals, assists, clean sheets, bonus, saves, defensive contribution) trained on 2022-23 to 2025-26, stacked with FPL's own expected points, scaled by availability and news, and projected against each of the next five opponents' attack and defence on current form. Ratings are against the best £100m squad over the same horizon. Refreshed every morning.
+    Projections: a component model (appearance, goals, assists, clean sheets, bonus, saves, defensive contribution) trained on 2022-23 to 2025-26, scaled by availability and news, and projected against each of the next five opponents' attack and defence on current form. Ratings are against the best £100m squad over the same horizon. Refreshed every morning.
   </footer>
 </div>
 
@@ -1148,6 +1148,21 @@ function renderBacktest(){
   });
   box.appendChild(list);
   if (bt.note) box.appendChild(el("p","tip",bt.note));
+  renderReplay(box);
+}
+function renderReplay(box){
+  const rp = DATA.replay; if (!rp || !rp.model || !rp.crowd) return;
+  const m = rp.model, c = rp.crowd, n = m.gameweeks.length;
+  const h = el("h2",null,`A whole season: ${m.season}, gameweeks ${m.gameweeks[0].gameweek}–${m.gameweeks[n-1].gameweek}`); h.style.marginTop="1.6rem"; box.appendChild(h);
+  box.appendChild(el("p","hint",`The same rules over ${n} gameweeks of last season, using projections made before each deadline. The model manager picks by projection; the crowd manager picks by ownership at each deadline — the template team, which is what the average manager owns. Neither can see injury flags (they are not archived), so both are handicapped the same way.`));
+  const k = el("dl","kpis");
+  [["model manager",m.total+" pts"],["crowd manager",c.total+" pts"],["edge",(m.total-c.total>=0?"+":"")+(m.total-c.total)+" pts"],["per gameweek",`${m.per_gameweek} vs ${c.per_gameweek}`]].forEach(([t,v])=>{ const d=el("div","kpi"); d.appendChild(el("dt",null,t)); d.appendChild(el("dd",null,v)); k.appendChild(d); });
+  box.appendChild(k);
+  const wrap = el("div","wide"); const t = el("table"); const th = el("tr"); ["GW", ...m.gameweeks.map(w=>w.gameweek)].forEach(x=>th.appendChild(el("th",null,String(x)))); const thead = el("thead"); thead.appendChild(th); t.appendChild(thead);
+  const tb = el("tbody");
+  [["Model",m],["Crowd",c]].forEach(([label,r]) => { const tr = el("tr"); tr.appendChild(el("td","l",label)); r.gameweeks.forEach((w,i) => { const other = (label==="Model"?c:m).gameweeks[i].points; const td = el("td", w.points>other?"band b1":w.points<other?"band b5":"", String(w.points)); td.title = w.transfers.length ? "Transfer: "+w.transfers.join(", ")+" · captain "+w.captain : "Rolled · captain "+w.captain; tr.appendChild(td); }); tb.appendChild(tr); });
+  t.appendChild(tb); wrap.appendChild(t); box.appendChild(wrap);
+  box.appendChild(el("p","hint","Green: that manager scored more that week. Hover a cell for the transfer and captain."));
 }
 document.querySelectorAll("nav [role=tab]").forEach(b => b.addEventListener("click", () => {
   document.querySelectorAll("nav [role=tab]").forEach(x=>x.setAttribute("aria-selected", x===b));

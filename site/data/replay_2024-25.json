@@ -1,0 +1,532 @@
+{
+ "model": {
+  "season": "2024-25",
+  "manager": "model",
+  "gameweeks": [
+   {
+    "gameweek": 6,
+    "points": 42,
+    "transfers": [],
+    "captain": "Erling Haaland"
+   },
+   {
+    "gameweek": 7,
+    "points": 54,
+    "transfers": [
+     "Eberechi Eze -> Leandro Trossard"
+    ],
+    "captain": "Erling Haaland"
+   },
+   {
+    "gameweek": 8,
+    "points": 23,
+    "transfers": [
+     "Luis D\u00edaz -> Anthony Gordon"
+    ],
+    "captain": "Erling Haaland"
+   },
+   {
+    "gameweek": 9,
+    "points": 45,
+    "transfers": [
+     "Bukayo Saka -> Jarrod Bowen"
+    ],
+    "captain": "Erling Haaland"
+   },
+   {
+    "gameweek": 10,
+    "points": 32,
+    "transfers": [
+     "Anthony Gordon -> Eberechi Eze"
+    ],
+    "captain": "Erling Haaland"
+   },
+   {
+    "gameweek": 11,
+    "points": 49,
+    "transfers": [
+     "Hwang Ui-jo -> Matheus Santos Carneiro Da Cunha"
+    ],
+    "captain": "Matheus Santos Carneiro Da Cunha"
+   },
+   {
+    "gameweek": 12,
+    "points": 52,
+    "transfers": [
+     "Leandro Trossard -> Anthony Gordon"
+    ],
+    "captain": "Erling Haaland"
+   },
+   {
+    "gameweek": 13,
+    "points": 42,
+    "transfers": [
+     "Kai Havertz -> Danny Welbeck"
+    ],
+    "captain": "Bryan Mbeumo"
+   },
+   {
+    "gameweek": 14,
+    "points": 47,
+    "transfers": [
+     "Bryan Mbeumo -> Cole Palmer"
+    ],
+    "captain": "Cole Palmer"
+   },
+   {
+    "gameweek": 15,
+    "points": 72,
+    "transfers": [
+     "Robert S\u00e1nchez -> Mark Flekken"
+    ],
+    "captain": "Cole Palmer"
+   },
+   {
+    "gameweek": 16,
+    "points": 46,
+    "transfers": [
+     "Trent Alexander-Arnold -> William Saliba"
+    ],
+    "captain": "Cole Palmer"
+   },
+   {
+    "gameweek": 17,
+    "points": 49,
+    "transfers": [
+     "Eberechi Eze -> Alex Iwobi"
+    ],
+    "captain": "Cole Palmer"
+   },
+   {
+    "gameweek": 18,
+    "points": 71,
+    "transfers": [
+     "Pedro Porro -> Trent Alexander-Arnold"
+    ],
+    "captain": "Cole Palmer"
+   },
+   {
+    "gameweek": 19,
+    "points": 46,
+    "transfers": [
+     "Mark Flekken -> Dean Henderson"
+    ],
+    "captain": "Cole Palmer"
+   },
+   {
+    "gameweek": 20,
+    "points": 64,
+    "transfers": [
+     "Levi Colwill -> Milos Kerkez"
+    ],
+    "captain": "Erling Haaland"
+   },
+   {
+    "gameweek": 21,
+    "points": 77,
+    "transfers": [
+     "Jarrod Bowen -> Eberechi Eze"
+    ],
+    "captain": "Cole Palmer"
+   },
+   {
+    "gameweek": 22,
+    "points": 59,
+    "transfers": [
+     "Matheus Santos Carneiro Da Cunha -> Chris Wood"
+    ],
+    "captain": "Cole Palmer"
+   },
+   {
+    "gameweek": 23,
+    "points": 69,
+    "transfers": [
+     "Erling Haaland -> Alexander Isak"
+    ],
+    "captain": "Alexander Isak"
+   },
+   {
+    "gameweek": 24,
+    "points": 61,
+    "transfers": [
+     "Scott Carson -> Alisson Ramses Becker"
+    ],
+    "captain": "Alisson Ramses Becker"
+   },
+   {
+    "gameweek": 25,
+    "points": 85,
+    "transfers": [
+     "Cole Palmer -> Mohamed Salah"
+    ],
+    "captain": "Mohamed Salah"
+   },
+   {
+    "gameweek": 26,
+    "points": 81,
+    "transfers": [
+     "Eberechi Eze -> Bryan Mbeumo"
+    ],
+    "captain": "Mohamed Salah"
+   },
+   {
+    "gameweek": 27,
+    "points": 62,
+    "transfers": [
+     "Anthony Gordon -> Bruno Borges Fernandes"
+    ],
+    "captain": "Mohamed Salah"
+   },
+   {
+    "gameweek": 28,
+    "points": 75,
+    "transfers": [
+     "Alex Iwobi -> Isma\u00efla Sarr"
+    ],
+    "captain": "Mohamed Salah"
+   },
+   {
+    "gameweek": 29,
+    "points": 63,
+    "transfers": [
+     "Mohamed Salah -> Morgan Gibbs-White"
+    ],
+    "captain": "Bruno Borges Fernandes"
+   },
+   {
+    "gameweek": 30,
+    "points": 32,
+    "transfers": [
+     "Bryan Mbeumo -> Justin Kluivert"
+    ],
+    "captain": "Alexander Isak"
+   },
+   {
+    "gameweek": 31,
+    "points": 35,
+    "transfers": [
+     "Justin Kluivert -> Mohamed Salah"
+    ],
+    "captain": "Mohamed Salah"
+   },
+   {
+    "gameweek": 32,
+    "points": 77,
+    "transfers": [
+     "Cameron Burgess -> Fabian Sch\u00e4r"
+    ],
+    "captain": "Alexander Isak"
+   },
+   {
+    "gameweek": 33,
+    "points": 70,
+    "transfers": [
+     "Morgan Gibbs-White -> Gabriel Martinelli Silva"
+    ],
+    "captain": "Gabriel Martinelli Silva"
+   },
+   {
+    "gameweek": 34,
+    "points": 60,
+    "transfers": [
+     "Gabriel Martinelli Silva -> Jacob Murphy"
+    ],
+    "captain": "Mohamed Salah"
+   },
+   {
+    "gameweek": 35,
+    "points": 40,
+    "transfers": [
+     "Bruno Borges Fernandes -> Bryan Mbeumo"
+    ],
+    "captain": "Bryan Mbeumo"
+   },
+   {
+    "gameweek": 36,
+    "points": 43,
+    "transfers": [
+     "Danny Welbeck -> Yoane Wissa"
+    ],
+    "captain": "Bryan Mbeumo"
+   },
+   {
+    "gameweek": 37,
+    "points": 35,
+    "transfers": [
+     "Trent Alexander-Arnold -> Daniel Mu\u00f1oz"
+    ],
+    "captain": "Mohamed Salah"
+   },
+   {
+    "gameweek": 38,
+    "points": 65,
+    "transfers": [
+     "Isma\u00efla Sarr -> Leandro Trossard"
+    ],
+    "captain": "Mohamed Salah"
+   }
+  ],
+  "total": 1823,
+  "per_gameweek": 55.2
+ },
+ "crowd": {
+  "season": "2024-25",
+  "manager": "crowd",
+  "gameweeks": [
+   {
+    "gameweek": 6,
+    "points": 34,
+    "transfers": [],
+    "captain": "Erling Haaland"
+   },
+   {
+    "gameweek": 7,
+    "points": 27,
+    "transfers": [],
+    "captain": "Erling Haaland"
+   },
+   {
+    "gameweek": 8,
+    "points": 20,
+    "transfers": [
+     "Hamza Choudhury -> Cole Palmer",
+     "Mohamed Salah -> Harry Winks"
+    ],
+    "captain": "Erling Haaland"
+   },
+   {
+    "gameweek": 9,
+    "points": 49,
+    "transfers": [
+     "Tom Cannon -> Danny Welbeck"
+    ],
+    "captain": "Erling Haaland"
+   },
+   {
+    "gameweek": 10,
+    "points": 36,
+    "transfers": [
+     "Luis D\u00edaz -> Bryan Mbeumo"
+    ],
+    "captain": "Erling Haaland"
+   },
+   {
+    "gameweek": 11,
+    "points": 41,
+    "transfers": [
+     "Gabriel dos Santos Magalh\u00e3es -> Jo\u0161ko Gvardiol"
+    ],
+    "captain": "Erling Haaland"
+   },
+   {
+    "gameweek": 12,
+    "points": 47,
+    "transfers": [
+     "Trent Alexander-Arnold -> Gabriel dos Santos Magalh\u00e3es"
+    ],
+    "captain": "Erling Haaland"
+   },
+   {
+    "gameweek": 13,
+    "points": 54,
+    "transfers": [],
+    "captain": "Cole Palmer"
+   },
+   {
+    "gameweek": 14,
+    "points": 80,
+    "transfers": [
+     "Morgan Rogers -> Mohamed Salah",
+     "Erling Haaland -> Nicolas Jackson"
+    ],
+    "captain": "Mohamed Salah"
+   },
+   {
+    "gameweek": 15,
+    "points": 74,
+    "transfers": [],
+    "captain": "Cole Palmer"
+   },
+   {
+    "gameweek": 16,
+    "points": 69,
+    "transfers": [
+     "Danny Welbeck -> Chris Wood",
+     "Emile Smith Rowe -> Yunus Emre Konak"
+    ],
+    "captain": "Mohamed Salah"
+   },
+   {
+    "gameweek": 17,
+    "points": 43,
+    "transfers": [],
+    "captain": "Cole Palmer"
+   },
+   {
+    "gameweek": 18,
+    "points": 64,
+    "transfers": [
+     "Nicolas Jackson -> Alexander Isak",
+     "Jo\u0161ko Gvardiol -> Antonee Robinson"
+    ],
+    "captain": "Mohamed Salah"
+   },
+   {
+    "gameweek": 19,
+    "points": 58,
+    "transfers": [
+     "Chris Wood -> Matheus Santos Carneiro Da Cunha"
+    ],
+    "captain": "Cole Palmer"
+   },
+   {
+    "gameweek": 20,
+    "points": 79,
+    "transfers": [
+     "Matheus Santos Carneiro Da Cunha -> Chris Wood"
+    ],
+    "captain": "Mohamed Salah"
+   },
+   {
+    "gameweek": 21,
+    "points": 55,
+    "transfers": [],
+    "captain": "Mohamed Salah"
+   },
+   {
+    "gameweek": 22,
+    "points": 41,
+    "transfers": [
+     "Cameron Burgess -> Ola Aina",
+     "Jo\u00e3o Pedro Junqueira de Jesus -> Remy Rees-Dottin"
+    ],
+    "captain": "Mohamed Salah"
+   },
+   {
+    "gameweek": 23,
+    "points": 70,
+    "transfers": [
+     "Pedro Porro -> Lewis Hall"
+    ],
+    "captain": "Mohamed Salah"
+   },
+   {
+    "gameweek": 24,
+    "points": 107,
+    "transfers": [
+     "William Saliba -> Virgil van Dijk"
+    ],
+    "captain": "Mohamed Salah"
+   },
+   {
+    "gameweek": 25,
+    "points": 74,
+    "transfers": [],
+    "captain": "Mohamed Salah"
+   },
+   {
+    "gameweek": 26,
+    "points": 78,
+    "transfers": [
+     "Harry Winks -> Justin Kluivert",
+     "Virgil van Dijk -> James Tarkowski"
+    ],
+    "captain": "Mohamed Salah"
+   },
+   {
+    "gameweek": 27,
+    "points": 54,
+    "transfers": [],
+    "captain": "Mohamed Salah"
+   },
+   {
+    "gameweek": 28,
+    "points": 53,
+    "transfers": [
+     "James Tarkowski -> Trent Alexander-Arnold",
+     "Gabriel dos Santos Magalh\u00e3es -> Cameron Burgess"
+    ],
+    "captain": "Mohamed Salah"
+   },
+   {
+    "gameweek": 29,
+    "points": 37,
+    "transfers": [
+     "Trent Alexander-Arnold -> William Saliba"
+    ],
+    "captain": "Chris Wood"
+   },
+   {
+    "gameweek": 30,
+    "points": 42,
+    "transfers": [
+     "Lewis Hall -> Jo\u0161ko Gvardiol"
+    ],
+    "captain": "Mohamed Salah"
+   },
+   {
+    "gameweek": 31,
+    "points": 25,
+    "transfers": [],
+    "captain": "Mohamed Salah"
+   },
+   {
+    "gameweek": 32,
+    "points": 42,
+    "transfers": [
+     "Antonee Robinson -> Daniel Mu\u00f1oz",
+     "Justin Kluivert -> Morgan Rogers"
+    ],
+    "captain": "Mohamed Salah"
+   },
+   {
+    "gameweek": 33,
+    "points": 75,
+    "transfers": [
+     "Ola Aina -> Pedro Porro"
+    ],
+    "captain": "Mohamed Salah"
+   },
+   {
+    "gameweek": 34,
+    "points": 42,
+    "transfers": [
+     "William Saliba -> Rayan A\u00eft-Nouri"
+    ],
+    "captain": "Mohamed Salah"
+   },
+   {
+    "gameweek": 35,
+    "points": 48,
+    "transfers": [
+     "Rayan A\u00eft-Nouri -> William Saliba"
+    ],
+    "captain": "Mohamed Salah"
+   },
+   {
+    "gameweek": 36,
+    "points": 49,
+    "transfers": [
+     "Pedro Porro -> Nikola Milenkovi\u0107"
+    ],
+    "captain": "Mohamed Salah"
+   },
+   {
+    "gameweek": 37,
+    "points": 38,
+    "transfers": [],
+    "captain": "Mohamed Salah"
+   },
+   {
+    "gameweek": 38,
+    "points": 54,
+    "transfers": [
+     "Nikola Milenkovi\u0107 -> Milos Kerkez"
+    ],
+    "captain": "Mohamed Salah"
+   }
+  ],
+  "total": 1759,
+  "per_gameweek": 53.3
+ }
+}

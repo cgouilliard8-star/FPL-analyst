@@ -263,6 +263,15 @@ def _results_to_date(snapshot: dict, season: str) -> pd.DataFrame:
     return match_results(pd.concat(frames, ignore_index=True, sort=False))
 
 
+REPLAY_PATH = SITE_DATA / "replay_2024-25.json"
+
+
+def _load_replay(path: Path = REPLAY_PATH) -> dict | None:
+    """The archived-season replay (model vs crowd manager over 33 gameweeks), produced
+    by ``fpl.evaluate.replay`` from cached walk-forward predictions and committed."""
+    return json.loads(path.read_text()) if path.exists() else None
+
+
 def load_season_sim(path: Path = SEASON_SIM_PATH) -> dict | None:
     """The cached season replay, if one has been run (it takes minutes, so it is not
     recomputed on every refresh)."""
@@ -339,6 +348,7 @@ def build_live(
         "insights": insights,
         "optimal_squads": optimal_squads,
         "backtest": load_season_sim() if season_sim is None else season_sim,
+        "replay": _load_replay(),
         "optimal": {
             "starters": [int(c) for c in squad.loc[squad["is_starter"], "code"]],
             "bench": [int(c) for c in squad.loc[~squad["is_starter"], "code"]],

@@ -151,6 +151,16 @@ big scores a little and nothing else. The model is saturated on the information 
 has. What moves it now is information it does not have — bookmaker prices and the
 availability history, both wired in above and both waiting on data.
 
+**A whole season, with transfer rules.** `fpl replay` plays 2024-25 from gameweek 6
+to 38 under FPL's rules — a £100m squad, one free transfer a week bankable to five,
+never a hit, lineup and captain re-picked weekly, automatic substitutions — using the
+cached walk-forward projections, each made before its gameweek. Two managers play the
+same season on the same code: the *model* manager ranks by projection, the *crowd*
+manager ranks by ownership at each deadline (the template team, which is what the
+average manager owns). Neither can see injury flags. Result: model **1,823** points,
+crowd **1,759** — a 64-point edge, 55.2 against 53.3 a week, over 33 gameweeks. The
+Backtest tab shows the two week by week.
+
 The GW1–3 season replay is a three-gameweek sample and behaves like one: the same
 model with the earlier defaults scored 181 points (43 / 88 / 50) and with the tuned
 parameters 166 (27 / 99 / 40) — a fifteen-point swing between two models the 33-fold
