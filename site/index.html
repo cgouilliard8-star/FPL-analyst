@@ -1121,9 +1121,41 @@ function renderStatus(){
   const p2 = el("span","gwpill"+(hrs>0&&hrs<24?" soon":"")); p2.appendChild(document.createTextNode("Deadline ")); p2.appendChild(el("b",null,left)); p2.title = dl ? dl.toUTCString() : ""; g.appendChild(p2);
   [["refreshed",new Date(m.captured_at).toUTCString().replace(":00 GMT"," UTC")],["flagged",m.flagged+" players"],["season",m.season]].forEach(([k,v])=>{ const x=el("span"); x.appendChild(document.createTextNode(k+" ")); x.appendChild(el("b",null,v)); s.appendChild(x); });
 }
+function renderForward(box){
+  const f = DATA.forward;
+  const h = el("h2",null,"Live scorecard: this season, as it happens"); box.appendChild(h);
+  box.appendChild(el("p","hint","Every morning the projections for the coming gameweek are written down and committed before the deadline. Once that gameweek finishes they are scored against what actually happened — so unlike the replays below, this measures the real model, injury flags and all. It cannot be revised after the fact."));
+  if (!f || !f.gameweeks || !f.gameweeks.length){
+    const w = el("div","warnbox"); w.textContent = `Nothing scored yet — the log starts at GW${DATA.meta.gameweek}. The first numbers appear here once GW${DATA.meta.gameweek} has been played.`;
+    box.appendChild(w); return;
+  }
+  const k = el("dl","kpis");
+  const cells = [["gameweeks scored", f.n], ["rank correlation", f.mean_spearman], ["top-10 hits a week", f.mean_top10_hits + " / 10"]];
+  if (f.mean_squad_points != null) cells.push(["best squad vs average", `${f.mean_squad_points} vs ${f.mean_average}`]);
+  cells.forEach(([t,v])=>{ const d=el("div","kpi"); d.appendChild(el("dt",null,t)); d.appendChild(el("dd",null,String(v))); k.appendChild(d); });
+  box.appendChild(k);
+  const wrap = el("div","wide"); const t = el("table"); const th = el("tr");
+  [["GW",""],["Rank corr","How well the projection ordered every player that week (1 = perfect)"],["Top 10 pts","What the ten highest-projected players actually scored"],["Hits","How many of those ten returned 5+ points"],["Best squad","What a fresh £100m squad picked on these projections actually scored"],["Average","The average FPL manager that week"],["Edge",""]].forEach(([x,help])=>{ const c = el("th",null,x); if (help) c.title = help; th.appendChild(c); });
+  const thead = el("thead"); thead.appendChild(th); t.appendChild(thead);
+  const tb = el("tbody");
+  f.gameweeks.forEach(w => {
+    const r = el("tr"); r.appendChild(el("td","l","GW"+w.gameweek));
+    r.appendChild(el("td",null,w.spearman==null?"–":w.spearman.toFixed(3)));
+    r.appendChild(el("td",null,String(w.top10_points)));
+    r.appendChild(el("td",null,w.top10_hits+"/10"));
+    r.appendChild(el("td",null,w.squad_points==null?"–":String(Math.round(w.squad_points))));
+    r.appendChild(el("td",null,w.average==null?"–":String(w.average)));
+    const edge = (w.squad_points!=null && w.average) ? Math.round(w.squad_points - w.average) : null;
+    r.appendChild(el("td", edge==null?"":("band "+(edge>=0?"b1":"b5")), edge==null?"–":(edge>=0?"+":"")+edge));
+    tb.appendChild(r);
+  });
+  t.appendChild(tb); wrap.appendChild(t); box.appendChild(wrap);
+}
 function renderBacktest(){
   const box = document.getElementById("test"); box.replaceChildren(); const bt = DATA.backtest;
-  box.appendChild(el("h2",null,"How the model would have done from GW1"));
+  renderForward(box);
+  const sep = el("h2",null,"Replays: how it would have done"); sep.style.marginTop="1.8rem"; box.appendChild(sep);
+  box.appendChild(el("h3",null,"From GW1 of this season"));
   if (!bt){ box.appendChild(el("p","hint","The season replay has not been run yet (fpl simulate).")); return; }
   const gws = bt.gameweeks;
   box.appendChild(el("p","hint",`A squad built from scratch at the GW${gws[0].gameweek} deadline with £100m, using only what was knowable then, then played with FPL's rules: one free transfer a week from GW${gws[0].gameweek+1}, bankable, never a points hit. The lineup and captain each week are the model's best eleven on that gameweek's projection; transfers are chosen on the ${HORIZONS["ep"+bt.rules.horizon]?.long||"next 5 gameweeks"} and only made when worth at least ${bt.rules.min_gain} points over that horizon. Scored on real points with FPL's automatic substitutions.`));

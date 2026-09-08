@@ -191,10 +191,34 @@ def _check(args: argparse.Namespace) -> int:
     return 0
 
 
-def _live(args: argparse.Namespace) -> int:
-    from fpl.report.live import build_live, write_live
+def _projection_frame(payload: dict):
+    """The columns the projection log keeps, read back off the built payload so the
+    model is not run twice."""
+    import pandas as pd
 
-    payload = build_live(explain=not args.no_explain)
+    return pd.DataFrame(
+        [
+            {
+                "code": p["code"], "web_name": p["web_name"], "position": p["position"],
+                "team": p["team"], "price": p["price"], "ep1": p["ep1"], "ep5": p["ep5"],
+                "availability": p["availability"], "p_60": p["p60"],
+                "gameweek": payload["meta"]["gameweek"],
+            }
+            for p in payload["players"]
+        ]
+    )  # fmt: skip
+
+
+def _live(args: argparse.Namespace) -> int:
+    from fpl.data.fpl_api import load_latest_snapshot
+    from fpl.report.live import build_live, write_live
+    from fpl.report.projection_log import save_projections
+
+    snapshot = load_latest_snapshot()
+    payload = build_live(snapshot, explain=not args.no_explain)
+    # Write this gameweek's projections down before the deadline, so the live model
+    # can be scored honestly later (see fpl.report.projection_log).
+    save_projections(_projection_frame(payload), captured_at=snapshot["captured_at"])
     path = write_live(payload)
     meta, optimal = payload["meta"], payload["optimal"]
     print(

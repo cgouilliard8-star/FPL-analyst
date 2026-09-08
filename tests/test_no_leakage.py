@@ -21,7 +21,7 @@ import pandas as pd
 import pytest
 
 from fpl.data.archive import load_players
-from fpl.data.silver import load_silver
+from fpl.data.silver import SILVER_PATH, load_silver
 from fpl.features.build import build_features, feature_columns
 
 CUTOFF_GW = 20
@@ -67,6 +67,10 @@ CORRUPTIBLE = sorted(OUTCOME_COLUMNS - {"played", "started", "appearances", "ful
 
 @pytest.fixture(scope="module")
 def silver() -> pd.DataFrame:
+    # Never build the archive from inside a test: on a fresh checkout that would
+    # download four seasons. If it is not there, this test has nothing to check.
+    if not SILVER_PATH.exists():
+        pytest.skip("silver table not built; run `fpl silver` first")
     frame = load_silver()
     subset = frame[frame["season"].isin(SEASONS)].copy()
     if subset.empty:

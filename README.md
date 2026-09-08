@@ -258,6 +258,9 @@ clones it.
 
 ## Refresh schedule
 
+Publishing it and switching the refresh on is a one-off, documented step by step in
+[PUBLISHING.md](PUBLISHING.md).
+
 The page's **Refresh data** button re-fetches the published file (bypassing any cached
 copy) and says whether anything newer landed; there is nothing to run by hand.
 
@@ -310,6 +313,19 @@ double gameweek carries two markets, and the same lookup fills the four later
 gameweeks of the horizon where the market has already quoted them. Closing prices
 are pre-match information, so they are legitimate for training; a season the site
 cannot serve is simply NaN and the model falls back to what it knows.
+
+## Live scorecard
+
+The walk-forward and the season replays are handicapped in the same way: the archive
+has no injury flags, so every replayed manager has to treat everyone as fit. The live
+model does not -- it reads FPL's flags and news every morning. To measure *that*
+model, every refresh writes the coming gameweek's projections to
+`data/external/projections/<season>_gw<NN>.csv` before the deadline and commits them;
+once the gameweek is played they are scored against what happened. The Backtest tab
+shows rank correlation, what the ten highest-projected players returned, and what a
+fresh £100m squad picked on those projections actually scored next to the average
+manager, gameweek by gameweek. Because the file is committed before kick-off, the
+record cannot be revised afterwards.
 
 ## Availability history
 

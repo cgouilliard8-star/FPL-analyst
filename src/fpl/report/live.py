@@ -26,6 +26,7 @@ from fpl.models.predict import project_horizon
 from fpl.optimise.rate import rate_squad
 from fpl.optimise.squad import pick_squad
 from fpl.report.insights import fixture_insights, match_results
+from fpl.report.projection_log import score_forward
 
 log = logging.getLogger(__name__)
 
@@ -349,6 +350,7 @@ def build_live(
         "optimal_squads": optimal_squads,
         "backtest": load_season_sim() if season_sim is None else season_sim,
         "replay": _load_replay(),
+        "forward": score_forward(snapshot),
         "optimal": {
             "starters": [int(c) for c in squad.loc[squad["is_starter"], "code"]],
             "bench": [int(c) for c in squad.loc[~squad["is_starter"], "code"]],
