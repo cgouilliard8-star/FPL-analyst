@@ -1,4 +1,4 @@
-import json, pathlib, re
+import pathlib, re
 src = pathlib.Path("/root/work/site/index.html").read_text()
 data = pathlib.Path("/root/work/site/data/live.json").read_text()
 body = src.split("<head>", 1)[1]
