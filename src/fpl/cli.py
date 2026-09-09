@@ -178,6 +178,14 @@ def _odds(args: argparse.Namespace) -> int:
     return 0
 
 
+def _due(args: argparse.Namespace) -> int:
+    from fpl.report.due import main as decide_due
+
+    verdict = decide_due(force=args.force)
+    print(f"{'due' if verdict.due else 'not due'}: {verdict.reason}")
+    return 0
+
+
 def _check(args: argparse.Namespace) -> int:
     from fpl.report.check import check_file
     from fpl.report.live import LIVE_PATH
@@ -202,6 +210,7 @@ def _projection_frame(payload: dict):
                 "code": p["code"], "web_name": p["web_name"], "position": p["position"],
                 "team": p["team"], "price": p["price"], "ep1": p["ep1"], "ep5": p["ep5"],
                 "availability": p["availability"], "p_60": p["p60"],
+                "ep1_model": p.get("ep_model", p["ep1"]), "fpl_ep": p.get("fpl_ep", 0.0),
                 "gameweek": payload["meta"]["gameweek"],
             }
             for p in payload["players"]
@@ -325,6 +334,13 @@ def main(argv: list[str] | None = None) -> int:
         "--all", action="store_true", help="every training season, not just the current one"
     )
     od.set_defaults(func=_odds)
+
+    due = sub.add_parser(
+        "due", parents=[common],
+        help="is a refresh worth running now? (near a deadline, or a day since the last)",
+    )  # fmt: skip
+    due.add_argument("--force", action="store_true", help="always due (manual runs)")
+    due.set_defaults(func=_due)
 
     chk = sub.add_parser(
         "check", parents=[common], help="validate site/data/live.json before it is deployed"

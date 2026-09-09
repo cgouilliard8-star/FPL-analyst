@@ -72,5 +72,19 @@ TRANSFER_HIT = 4  # points cost of an extra transfer
 # How much each of the next gameweeks counts when a squad is rated over a horizon:
 # the next deadline in full, then less as the future gets less certain.
 HORIZON_WEIGHTS: tuple[float, ...] = (1.0, 0.85, 0.7, 0.55, 0.4)
+
+# Share of FPL's own expected-points figure blended into the next gameweek's
+# projection (production only: the archive has no honest copy of it). FPL's number
+# knows the press conference and the training ground; ours knows the fixtures and
+# the underlying rates. Two decent, different forecasts averaged usually beat
+# either, and the forward scorecard keeps the three side by side to check that.
+FPL_BLEND = 0.25
+
+# Per-position calibration of the model's expected points, measured on the
+# walk-forward backtest (mean actual / mean predicted, 2024-25 GW6-38). Trees are
+# well calibrated overall; this trims the few-percent lean that remains so that a
+# midfielder's 5.0 and a defender's 5.0 mean the same thing when they compete for
+# the armband. Recomputed whenever the model changes (scripts/calibrate.py).
+CALIBRATION: dict[str, float] = {"GK": 0.972, "DEF": 1.021, "MID": 0.954, "FWD": 0.963}
 MAX_HORIZON = len(HORIZON_WEIGHTS)
 METRIC_HORIZON = {"expected_points": 1, "ep1": 1, "ep3": 3, "ep5": 5}

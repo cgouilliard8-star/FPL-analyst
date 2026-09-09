@@ -28,6 +28,8 @@ from fpl.features.windows import (
     lagged_rolling_mean,
     shrunk_per90,
 )
+from fpl.models.team_strength import FEATURES as TEAM_STRENGTH_FEATURES
+from fpl.models.team_strength import attach_team_strength
 
 log = logging.getLogger(__name__)
 
@@ -103,6 +105,95 @@ def _add_opponent_features(frame: pd.DataFrame, strength: pd.DataFrame) -> pd.Da
 
 CONGESTION = ("other_games_7d", "euro_midweek", "other_game_next_4d", "days_since_any_match")
 
+# Set-piece duties as the player registry records them: archive column name ->
+# the name used here. The live snapshot registry is normalised to the same names.
+DUTY_COLUMNS = {
+    "penalties_order": "pen_order",
+    "corners_and_indirect_freekicks_order": "corner_order",
+    "direct_freekicks_order": "freekick_order",
+}
+DUTY_FEATURES = ("pen_taker", "pen_order_inv", "corner_taker", "freekick_taker", "set_piece_share")
+MINUTES_PATTERN_FEATURES = (
+    "start_streak", "games_since_start", "cameo_share_r5", "minutes_std5",
+    "pos_minutes_rank", "pos_minutes_share", "pos_regulars",
+)  # fmt: skip
+
+
+def _registry_duties(players: pd.DataFrame) -> pd.DataFrame:
+    """Per (season, code): who takes the penalties, corners and free kicks.
+
+    The archive's registry is the end-of-season state, so for past seasons this is
+    known slightly "too early" -- a taker who inherited the duty in March is flagged
+    from August. Duties change rarely enough that the signal is worth that blemish;
+    for the live season the registry is today's, so it is exactly point-in-time.
+    """
+    frame = players.rename(columns=DUTY_COLUMNS).copy()
+    for column in DUTY_COLUMNS.values():
+        if column not in frame.columns:
+            frame[column] = np.nan
+    duties = frame[["season", "code", *DUTY_COLUMNS.values()]].drop_duplicates(["season", "code"])
+    pen = pd.to_numeric(duties["pen_order"], errors="coerce")
+    corner = pd.to_numeric(duties["corner_order"], errors="coerce")
+    fk = pd.to_numeric(duties["freekick_order"], errors="coerce")
+    out = duties[["season", "code"]].copy()
+    out["pen_taker"] = (pen == 1).astype(int)
+    out["pen_order_inv"] = (1.0 / pen).fillna(0.0)
+    out["corner_taker"] = (corner <= 2).astype(int)
+    out["freekick_taker"] = (fk == 1).astype(int)
+    out["set_piece_share"] = (
+        (1.0 / pen).fillna(0.0) + (1.0 / corner).fillna(0.0) + (1.0 / fk).fillna(0.0)
+    )
+    return out
+
+
+def _add_duties(frame: pd.DataFrame, players: pd.DataFrame) -> pd.DataFrame:
+    duties = _registry_duties(players)
+    frame = frame.merge(duties, on=["season", "code"], how="left")
+    for column in DUTY_FEATURES:
+        frame[column] = frame[column].fillna(0.0)
+    return frame
+
+
+def _add_minutes_pattern(frame: pd.DataFrame) -> pd.DataFrame:
+    """How a player has been used, beyond his average minutes.
+
+    A 60-minute average can be a regular starter withdrawn late or a rotation
+    option who starts half the time; the two carry different risk. All windows are
+    lagged (the current gameweek is excluded) like every other form feature.
+    """
+    code = frame["code"]
+    started = pd.Series((frame["starts"].fillna(0) > 0).astype(int).to_numpy(), index=frame.index)
+    played = pd.Series((frame["minutes"].fillna(0) > 0).astype(int).to_numpy(), index=frame.index)
+    cameo = ((played == 1) & (started == 0)).astype(int)
+
+    # Consecutive starts coming into this gameweek, and gameweeks since the last one.
+    prev = started.groupby(code).shift(1).fillna(0).astype(int)
+    blocks = (prev == 0).groupby(code).cumsum()
+    frame["start_streak"] = prev.groupby([code, blocks]).cumsum().clip(upper=38)
+    since = (prev == 1).groupby(code).cumsum()
+    frame["games_since_start"] = (
+        (prev == 0).astype(int).groupby([code, since]).cumsum().clip(upper=20)
+    )
+
+    def _lagged_roll(series: pd.Series, window: int, fn: str, min_periods: int = 1) -> pd.Series:
+        lagged = series.groupby(code).shift(1)
+        rolled = getattr(lagged.groupby(code).rolling(window, min_periods=min_periods), fn)()
+        return rolled.reset_index(level=0, drop=True).reindex(frame.index)
+
+    frame["cameo_share_r5"] = _lagged_roll(cameo, 5, "mean")
+    frame["minutes_std5"] = _lagged_roll(frame["minutes"], 5, "std", min_periods=2)
+
+    # Competition for the shirt: where the player's recent minutes rank among his
+    # club's players in the same position, and how many of them are regular starters.
+    keys = [frame[k] for k in ("season", "GW", "team", "position")]
+    share = frame["minutes_mean5"].fillna(0.0)
+    frame["pos_minutes_rank"] = share.groupby(keys).rank(ascending=False, method="min")
+    total = share.groupby(keys).transform("sum")
+    frame["pos_minutes_share"] = (share / total.replace(0.0, np.nan)).fillna(0.0)
+    regular = (frame["started_share_r5"].fillna(0.0) >= 0.5).astype(int)
+    frame["pos_regulars"] = regular.groupby(keys).transform("sum")
+    return frame
+
 
 def attach_congestion(frame: pd.DataFrame, schedule: pd.DataFrame) -> pd.DataFrame:
     """Cup and European matches around each fixture, for the club and its opponent.
@@ -157,7 +248,10 @@ def build_features(
     # Bookmaker odds join per fixture (a double gameweek has two markets), so they
     # go on before aggregation; the opponent name is needed for the key.
     odds = load_odds(seasons) if odds is None else odds
-    silver = attach_odds(attach_opponent(silver, team_map), odds).drop(columns=["opponent"])
+    silver = attach_odds(attach_opponent(silver, team_map), odds)
+    # Opponent-adjusted club ratings, refitted before each gameweek on the matches
+    # played so far (fpl.models.team_strength); per fixture, like the odds.
+    silver = attach_team_strength(silver).drop(columns=["opponent"])
 
     frame = aggregate_to_gameweek(silver)
     frame = attach_opponent(frame, team_map)
@@ -173,6 +267,8 @@ def build_features(
     frame = attach_congestion(frame, schedule)
     frame["minutes_share_r5"] = (frame["minutes_mean5"] / 90.0).clip(0, 1)
     frame["started_share_r5"] = frame["starts_mean5"].clip(0, 1)
+    frame = _add_minutes_pattern(frame)
+    frame = _add_duties(frame, players)
 
     # --- team and opponent -------------------------------------------------
     strength = build_team_strength(frame)
@@ -234,6 +330,8 @@ def feature_columns(frame: pd.DataFrame) -> list[str]:
         "is_mid",
         "is_fwd",
         "GW",
+        *DUTY_FEATURES,
+        *MINUTES_PATTERN_FEATURES,
     }
     columns = [
         c
@@ -242,6 +340,7 @@ def feature_columns(frame: pd.DataFrame) -> list[str]:
         or c in allowed_exact
         or c.startswith(("own_team_", "opp_team_"))
         or c in ODDS_FEATURES
+        or c in TEAM_STRENGTH_FEATURES
     ]
     return sorted(columns)
 

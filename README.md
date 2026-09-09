@@ -1,8 +1,10 @@
 # FPL Analyst
 
 Rate your Fantasy Premier League squad against this week's projections, see who's
-flagged by injury or transfer news, and get the five transfers that lift your team
-most. Live for 2026-27, refreshed every morning.
+flagged by injury or transfer news, get the five transfers that lift your team most,
+a three-gameweek plan, and the week each chip is worth playing. Import your squad
+with your FPL team ID. Live for 2026-27, refreshed daily and every six hours in the
+last day and a half before a deadline.
 
 ```
 fpl snapshot     # pull the live FPL API into an immutable, timestamped snapshot
@@ -121,7 +123,8 @@ folds for all of them.
 | Model | Spearman | Precision@10 | RMSE | Haulers RMSE | Squad pts / GW |
 | --- | ---: | ---: | ---: | ---: | ---: |
 | FPL's own `xP` (as archived — see caveat) | *0.756* | *0.642* | *1.844* | *4.975* | *91.3* |
-| Component model (this project, tuned) | **0.715** | **0.521** | 1.914 | 5.485 | 69.1 |
+| Component model, round two (this project) | **0.717** | 0.518 | **1.909** | **5.475** | — |
+| Component model, round one (tuned) | 0.715 | **0.521** | 1.914 | 5.485 | 69.1 |
 | Component model, earlier defaults | 0.716 | 0.521 | 1.918 | 5.568 | 69.1 |
 | Component model, trained on six seasons (2020-26) | 0.716 | 0.524 | 1.914 | 5.533 | — |
 | LightGBM, one regressor | 0.709 | 0.479 | 1.934 | 5.524 | 61.7 |
@@ -151,15 +154,33 @@ big scores a little and nothing else. The model is saturated on the information 
 has. What moves it now is information it does not have — bookmaker prices and the
 availability history, both wired in above and both waiting on data.
 
+**Round two.** The minutes model, the club ratings, the set-piece duties and the
+minutes-pattern features (all described below) were added together and judged the
+same way, first on coarse folds (refit at gameweeks 6, 14, 22 and 30) to choose
+between variants, then on the full 33 refits above. They move every error metric
+the right way by a small, consistent amount -- RMSE 1.914 to 1.909, the big-score
+RMSE 5.485 to 5.475, rank correlation 0.715 to 0.717 -- and leave precision@10 where
+it was (0.518 against 0.521 is one pick in three hundred and thirty). Fitting the
+appearance components as rates rather than counts was worth more than the new
+features were. Two further ideas were measured on the same folds and rejected:
+weighting recent seasons more heavily (a 365-day half-life) cost precision@10 seven
+picks and made big scores worse, and averaging three differently seeded fits changed
+nothing and took five times as long. The per-position calibration measured on this
+run (`CALIBRATION` in `config.py`: midfielders 0.95, forwards 0.96, keepers 0.97,
+defenders 1.02) is applied to the live projections so a midfielder's five and a
+defender's five mean the same thing. The archive cannot measure the live-only
+changes -- FPL's figure blended in, the deadline-aware refresh -- which is what the
+live scorecard is for.
+
 **A whole season, with transfer rules.** `fpl replay` plays 2024-25 from gameweek 6
 to 38 under FPL's rules — a £100m squad, one free transfer a week bankable to five,
 never a hit, lineup and captain re-picked weekly, automatic substitutions — using the
 cached walk-forward projections, each made before its gameweek. Two managers play the
 same season on the same code: the *model* manager ranks by projection, the *crowd*
 manager ranks by ownership at each deadline (the template team, which is what the
-average manager owns). Neither can see injury flags. Result: model **1,823** points,
-crowd **1,759** — a 64-point edge, 55.2 against 53.3 a week, over 33 gameweeks. The
-Backtest tab shows the two week by week.
+average manager owns). Neither can see injury flags. Result: model **1,840** points,
+crowd **1,759** — an 81-point edge, 55.8 against 53.3 a week, over 33 gameweeks
+(round one of the model scored 1,823). The Backtest tab shows the two week by week.
 
 The GW1–3 season replay is a three-gameweek sample and behaves like one: the same
 model with the earlier defaults scored 181 points (43 / 88 / 50) and with the tuned
@@ -264,8 +285,12 @@ Publishing it and switching the refresh on is a one-off, documented step by step
 The page's **Refresh data** button re-fetches the published file (bypassing any cached
 copy) and says whether anything newer landed; there is nothing to run by hand.
 
-`.github/workflows/weekly-refresh.yml` runs every day at 06:00 UTC and again on
-Saturday at 10:00 UTC ahead of the usual deadline. Each run:
+`.github/workflows/weekly-refresh.yml` wakes every six hours. Its first step, `fpl
+due`, is one request to the FPL API and a look at the last published file: the run
+goes on only within 36 hours of the next deadline (when press conferences and injury
+news land), or if nothing has been published for 20 hours (a daily heartbeat, so the
+availability log keeps its record and a stalled site is noticed), or when started by
+hand. A run that goes on:
 
 1. runs the test suite -- a refresh from broken code is not a refresh;
 2. restores the historical archive from cache (it only changes when a season ends);
@@ -299,6 +324,74 @@ revalidated against the CDN's ETag on each visit. Each
 browser keeps the last good copy it saw, so a failed fetch shows that copy with a
 banner rather than a blank page, and a page error shows a notice instead of dying
 silently. Squads are stored per device in `localStorage`; nothing is sent anywhere.
+
+## Club ratings
+
+The rolling windows say how a club *has* scored and conceded; `fpl/models/team_strength.py`
+says how it *should*, against a given opponent at a given venue. It is a Poisson model
+in the Dixon-Coles tradition: the log of a side's expected goals is its attack rating
+minus the opponent's defence rating plus a home advantage, fitted on every match the
+clubs have played, each weighted down as it ages (half-life 100 days), on a target that
+blends goals with expected goals (35/65 -- xG carries the repeatable part, goals the
+finishing). The fit is a forty-parameter weighted Poisson regression solved by Newton's
+method in milliseconds, so it is refitted before every gameweek of every season, on
+matches that kicked off before that gameweek; the leakage test covers it. Per fixture
+it yields expected goals for and against, a clean-sheet probability and a win
+probability, summed across a double gameweek like the odds; for the four later
+gameweeks of the horizon the ratings as of the deadline are applied to each opponent.
+It is opponent-adjusted, which a rolling mean is not, and it needs no external source.
+
+## Minutes and set pieces
+
+Whether a player plays, and for how long, is the biggest single source of error in
+any projection. Two changes address it. The appearance and 60-minute components are
+now fitted as per-fixture *rates* -- a label in [0, 1] with a cross-entropy objective,
+multiplied back by the number of fixtures -- rather than Poisson counts: a probability
+of playing is what they are, and a classifier calibrates it better. And the feature
+table carries how a player has been used, not just how much: consecutive starts,
+gameweeks since the last start, the share of recent appearances that were cameos off
+the bench, the spread of his minutes, and where his minutes rank among his club's
+players in the same position (with how many of them are regular starters). Set-piece
+duties -- penalties, corners, direct free kicks -- come from the player registry:
+today's for the live season, the end-of-season state for archive seasons (a taker who
+inherited the duty in March is flagged from August; duties change rarely enough that
+the signal is worth that blemish, and it is documented in the code).
+
+## FPL's own figure
+
+For the next gameweek only, FPL's `ep_next` is blended into the projection at 25%
+(`FPL_BLEND` in `config.py`), for unflagged players with a figure. FPL's number knows
+the press conference and the training ground; the model knows the fixtures and the
+underlying rates; two decent, different forecasts averaged usually beat either. The
+archive has no honest pre-deadline copy of `ep_next` (see the `xP` caveat), so the
+weight cannot be backtested; instead the projection log keeps the model's figure,
+FPL's and the blend side by side, and the live scorecard reports each one's rank
+correlation and squad points as gameweeks are played. If the model alone keeps
+beating the blend, the weight comes down; if FPL alone does, it goes up.
+
+## Plan and chips
+
+The page plans the next three gameweeks for your squad: one free transfer a week,
+banked up to five, a four-point hit beyond that, each week's move judged on the
+weeks from there on (nearer ones weighted more, exactly as the rating scores a
+squad) against holding and banking the transfer. Only this week's move is a decision;
+the later ones show where the squad is heading and are re-planned every refresh. A
+Chips table puts a number on each chip for this squad: Bench Boost (all fifteen score
+instead of eleven plus cover), Triple Captain (the captain counts three times), Free
+Hit (the best squad money can buy for that week alone against yours) and Wildcard
+(the best squad over the run, from the solved squads on the Best squad tab, against
+yours) -- the best week of the next five for each, with the extra points and why.
+
+## Import your team
+
+Type your FPL team ID (the number in the address bar of your Points page) and the
+page loads the squad as it stood after the last gameweek, the bank, the team value,
+the chips already used and a reconstruction of your free transfers (FPL does not
+publish the count; it is rebuilt from the transfer history: one a week, banked to
+five, reset by a wildcard or free hit). FPL's API refuses browser requests from other
+sites, so the fetch goes through a public relay -- three are tried in turn -- and
+if none answers the page says so and you pick by hand. Nothing private is involved: a
+team's picks are public on FPL for anyone with the ID.
 
 ## Bookmaker odds
 

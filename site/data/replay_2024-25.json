@@ -5,221 +5,221 @@
   "gameweeks": [
    {
     "gameweek": 6,
-    "points": 42,
+    "points": 61,
     "transfers": [],
     "captain": "Erling Haaland"
    },
    {
     "gameweek": 7,
-    "points": 54,
+    "points": 60,
     "transfers": [
-     "Eberechi Eze -> Leandro Trossard"
+     "Chris Wood -> Francisco Evanilson de Lima Barbosa"
     ],
     "captain": "Erling Haaland"
    },
    {
     "gameweek": 8,
-    "points": 23,
+    "points": 29,
     "transfers": [
-     "Luis D\u00edaz -> Anthony Gordon"
+     "Francisco Evanilson de Lima Barbosa -> Ra\u00fal Jim\u00e9nez"
     ],
     "captain": "Erling Haaland"
    },
    {
     "gameweek": 9,
-    "points": 45,
+    "points": 54,
     "transfers": [
-     "Bukayo Saka -> Jarrod Bowen"
+     "Bukayo Saka -> Ilkay G\u00fcndogan"
     ],
-    "captain": "Erling Haaland"
+    "captain": "Cole Palmer"
    },
    {
     "gameweek": 10,
-    "points": 32,
+    "points": 30,
     "transfers": [
-     "Anthony Gordon -> Eberechi Eze"
+     "Mark O\u2019Mahony -> Chris Wood"
     ],
     "captain": "Erling Haaland"
    },
    {
     "gameweek": 11,
-    "points": 49,
+    "points": 42,
     "transfers": [
-     "Hwang Ui-jo -> Matheus Santos Carneiro Da Cunha"
+     "Ra\u00fal Jim\u00e9nez -> Matheus Santos Carneiro Da Cunha"
     ],
-    "captain": "Matheus Santos Carneiro Da Cunha"
+    "captain": "Erling Haaland"
    },
    {
     "gameweek": 12,
-    "points": 52,
+    "points": 56,
     "transfers": [
-     "Leandro Trossard -> Anthony Gordon"
+     "Ilkay G\u00fcndogan -> Anthony Gordon"
     ],
-    "captain": "Erling Haaland"
+    "captain": "Cole Palmer"
    },
    {
     "gameweek": 13,
-    "points": 42,
+    "points": 65,
     "transfers": [
-     "Kai Havertz -> Danny Welbeck"
+     "Trent Alexander-Arnold -> Gabriel dos Santos Magalh\u00e3es"
     ],
-    "captain": "Bryan Mbeumo"
+    "captain": "Cole Palmer"
    },
    {
     "gameweek": 14,
-    "points": 47,
+    "points": 44,
     "transfers": [
-     "Bryan Mbeumo -> Cole Palmer"
+     "Anthony Gordon -> Jarrod Bowen"
     ],
-    "captain": "Cole Palmer"
+    "captain": "Erling Haaland"
    },
    {
     "gameweek": 15,
-    "points": 72,
+    "points": 58,
     "transfers": [
-     "Robert S\u00e1nchez -> Mark Flekken"
+     "Cole Palmer -> Bukayo Saka"
     ],
-    "captain": "Cole Palmer"
+    "captain": "Bukayo Saka"
    },
    {
     "gameweek": 16,
-    "points": 46,
+    "points": 52,
     "transfers": [
-     "Trent Alexander-Arnold -> William Saliba"
+     "Gabriel dos Santos Magalh\u00e3es -> William Saliba"
     ],
-    "captain": "Cole Palmer"
+    "captain": "Bukayo Saka"
    },
    {
     "gameweek": 17,
-    "points": 49,
+    "points": 34,
     "transfers": [
-     "Eberechi Eze -> Alex Iwobi"
+     "Kevin Mbabu -> Lewis Hall"
     ],
-    "captain": "Cole Palmer"
+    "captain": "Bukayo Saka"
    },
    {
     "gameweek": 18,
-    "points": 71,
+    "points": 51,
     "transfers": [
-     "Pedro Porro -> Trent Alexander-Arnold"
+     "Pedro Porro -> Andrew Robertson"
     ],
-    "captain": "Cole Palmer"
+    "captain": "Jarrod Bowen"
    },
    {
     "gameweek": 19,
-    "points": 46,
+    "points": 59,
     "transfers": [
-     "Mark Flekken -> Dean Henderson"
+     "Bukayo Saka -> Son Heung-min"
     ],
-    "captain": "Cole Palmer"
+    "captain": "Erling Haaland"
    },
    {
     "gameweek": 20,
-    "points": 64,
+    "points": 80,
     "transfers": [
-     "Levi Colwill -> Milos Kerkez"
+     "Son Heung-min -> Anthony Gordon"
     ],
-    "captain": "Erling Haaland"
+    "captain": "Bryan Mbeumo"
    },
    {
     "gameweek": 21,
     "points": 77,
     "transfers": [
-     "Jarrod Bowen -> Eberechi Eze"
+     "Matheus Santos Carneiro Da Cunha -> Alexander Isak"
     ],
-    "captain": "Cole Palmer"
+    "captain": "Alexander Isak"
    },
    {
     "gameweek": 22,
-    "points": 59,
+    "points": 58,
     "transfers": [
-     "Matheus Santos Carneiro Da Cunha -> Chris Wood"
+     "Jarrod Bowen -> Eberechi Eze"
     ],
-    "captain": "Cole Palmer"
+    "captain": "Chris Wood"
    },
    {
     "gameweek": 23,
-    "points": 69,
+    "points": 75,
     "transfers": [
-     "Erling Haaland -> Alexander Isak"
+     "William Saliba -> Trent Alexander-Arnold"
     ],
     "captain": "Alexander Isak"
    },
    {
     "gameweek": 24,
-    "points": 61,
+    "points": 64,
     "transfers": [
-     "Scott Carson -> Alisson Ramses Becker"
+     "Mark Flekken -> Jordan Pickford"
     ],
-    "captain": "Alisson Ramses Becker"
+    "captain": "Trent Alexander-Arnold"
    },
    {
     "gameweek": 25,
-    "points": 85,
+    "points": 66,
     "transfers": [
-     "Cole Palmer -> Mohamed Salah"
+     "Anthony Gordon -> Luis D\u00edaz"
     ],
-    "captain": "Mohamed Salah"
+    "captain": "Luis D\u00edaz"
    },
    {
     "gameweek": 26,
-    "points": 81,
+    "points": 78,
     "transfers": [
-     "Eberechi Eze -> Bryan Mbeumo"
+     "Noni Madueke -> Justin Kluivert"
     ],
-    "captain": "Mohamed Salah"
+    "captain": "Bryan Mbeumo"
    },
    {
     "gameweek": 27,
-    "points": 62,
-    "transfers": [
-     "Anthony Gordon -> Bruno Borges Fernandes"
-    ],
-    "captain": "Mohamed Salah"
-   },
-   {
-    "gameweek": 28,
-    "points": 75,
-    "transfers": [
-     "Alex Iwobi -> Isma\u00efla Sarr"
-    ],
-    "captain": "Mohamed Salah"
-   },
-   {
-    "gameweek": 29,
     "points": 63,
     "transfers": [
-     "Mohamed Salah -> Morgan Gibbs-White"
+     "Bryan Mbeumo -> Bruno Borges Fernandes"
     ],
     "captain": "Bruno Borges Fernandes"
    },
    {
-    "gameweek": 30,
-    "points": 32,
+    "gameweek": 28,
+    "points": 36,
     "transfers": [
-     "Bryan Mbeumo -> Justin Kluivert"
+     "Bruno Borges Fernandes -> Bryan Mbeumo"
+    ],
+    "captain": "Bryan Mbeumo"
+   },
+   {
+    "gameweek": 29,
+    "points": 34,
+    "transfers": [
+     "Luis D\u00edaz -> Morgan Gibbs-White"
+    ],
+    "captain": "Erling Haaland"
+   },
+   {
+    "gameweek": 30,
+    "points": 34,
+    "transfers": [
+     "Ezri Konsa Ngoyo -> Milos Kerkez"
+    ],
+    "captain": "Justin Kluivert"
+   },
+   {
+    "gameweek": 31,
+    "points": 30,
+    "transfers": [
+     "Marcus Tavernier -> Antoine Semenyo"
     ],
     "captain": "Alexander Isak"
    },
    {
-    "gameweek": 31,
-    "points": 35,
-    "transfers": [
-     "Justin Kluivert -> Mohamed Salah"
-    ],
-    "captain": "Mohamed Salah"
-   },
-   {
     "gameweek": 32,
-    "points": 77,
+    "points": 86,
     "transfers": [
-     "Cameron Burgess -> Fabian Sch\u00e4r"
+     "Justin Kluivert -> Harvey Barnes"
     ],
     "captain": "Alexander Isak"
    },
    {
     "gameweek": 33,
-    "points": 70,
+    "points": 81,
     "transfers": [
      "Morgan Gibbs-White -> Gabriel Martinelli Silva"
     ],
@@ -227,47 +227,47 @@
    },
    {
     "gameweek": 34,
-    "points": 60,
+    "points": 42,
     "transfers": [
-     "Gabriel Martinelli Silva -> Jacob Murphy"
+     "Lewis Hall -> Antonee Robinson"
     ],
-    "captain": "Mohamed Salah"
+    "captain": "Alexander Isak"
    },
    {
     "gameweek": 35,
-    "points": 40,
+    "points": 44,
     "transfers": [
-     "Bruno Borges Fernandes -> Bryan Mbeumo"
+     "Milos Kerkez -> Daniel Mu\u00f1oz"
     ],
     "captain": "Bryan Mbeumo"
    },
    {
     "gameweek": 36,
-    "points": 43,
+    "points": 72,
     "transfers": [
-     "Danny Welbeck -> Yoane Wissa"
+     "Trent Alexander-Arnold -> Jo\u0161ko Gvardiol"
     ],
     "captain": "Bryan Mbeumo"
    },
    {
     "gameweek": 37,
-    "points": 35,
+    "points": 41,
     "transfers": [
-     "Trent Alexander-Arnold -> Daniel Mu\u00f1oz"
+     "Alexander Isak -> Ollie Watkins"
     ],
-    "captain": "Mohamed Salah"
+    "captain": "Eberechi Eze"
    },
    {
     "gameweek": 38,
-    "points": 65,
+    "points": 84,
     "transfers": [
-     "Isma\u00efla Sarr -> Leandro Trossard"
+     "Eberechi Eze -> Jarrod Bowen"
     ],
-    "captain": "Mohamed Salah"
+    "captain": "Jarrod Bowen"
    }
   ],
-  "total": 1823,
-  "per_gameweek": 55.2
+  "total": 1840,
+  "per_gameweek": 55.8
  },
  "crowd": {
   "season": "2024-25",

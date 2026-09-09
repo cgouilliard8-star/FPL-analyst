@@ -85,6 +85,16 @@
   .mbox input{width:100%;padding:.3rem .45rem;font-size:1rem;font-weight:700}
   .mbox .big{font-size:1.15rem;font-weight:800;font-variant-numeric:tabular-nums}
   .mbox .big.ok{color:var(--accent)} .mbox .big.over{color:var(--crit)}
+  .mbox.imp{grid-column:1 / -1}
+  .mbox.imp .row{display:flex;gap:.4rem;align-items:center} .mbox.imp .row input{flex:1} .mbox.imp .hint{font-size:.7rem}
+  .plan{display:flex;flex-direction:column;gap:.5rem;margin:.5rem 0}
+  .pweek{border:1px solid var(--line);border-radius:10px;padding:.5rem .7rem;background:var(--surface)}
+  .phead{display:flex;gap:.6rem;align-items:baseline;margin-bottom:.25rem}
+  .pmove{display:flex;flex-wrap:wrap;gap:.4rem;align-items:center;padding:.15rem 0} .pmove.hold{color:var(--ink-3)}
+  .pgain{font-family:var(--m);font-size:.75rem;color:var(--accent);margin-top:.2rem}
+  table.chips{width:100%;border-collapse:collapse;margin:.5rem 0;font-size:.85rem}
+  table.chips th{text-align:left;font-family:var(--m);font-size:.6rem;letter-spacing:.12em;text-transform:uppercase;color:var(--ink-3);padding:.3rem .4rem;border-bottom:1px solid var(--line)}
+  table.chips td{padding:.4rem;border-bottom:1px solid var(--line);vertical-align:top} table.chips td.n{white-space:nowrap} table.chips b.good{color:var(--accent)} table.chips tr.used{opacity:.55}
   .forms{display:flex;flex-wrap:wrap;gap:.35rem;margin-bottom:.6rem}
   .forms button{font-family:var(--m);font-size:.78rem;font-weight:600;padding:.35rem .55rem;border-radius:6px;border:1px solid var(--line-strong);background:var(--surface);color:var(--ink-2);cursor:pointer}
   .forms button[aria-pressed="true"]{background:var(--plum);border-color:var(--plum);color:#fff}
@@ -318,6 +328,7 @@
             <div class="mbox"><label for="bank">In the bank £m</label><input type="number" id="bank" step="0.1" min="0" value="0.0" inputmode="decimal"></div>
             <div class="mbox"><label for="ft">Free transfers</label><input type="number" id="ft" step="1" min="0" max="5" value="1" inputmode="numeric"></div>
             <div class="mbox"><label>Budget left</label><div class="big" id="left">£0.0m</div></div>
+            <div class="mbox imp"><label for="fplid">Your FPL team ID</label><div class="row"><input type="number" id="fplid" min="1" placeholder="e.g. 1234567" inputmode="numeric"><button class="btn small" id="import" type="button" title="Load your squad, bank and free transfers from FPL">Import</button></div><span class="hint">It's the number in the address bar on your Points page.</span></div>
           </div>
           <div class="chips">
             <div class="hzrow"><span class="lbl">Rate over</span><div class="forms" id="hz" role="group" aria-label="Horizon" style="margin:0"></div></div>
@@ -362,7 +373,7 @@
   </main>
 
   <footer>
-    Projections: a component model (appearance, goals, assists, clean sheets, bonus, saves, defensive contribution) trained on 2022-23 to 2025-26, scaled by availability and news, and projected against each of the next five opponents' attack and defence on current form. Ratings are against the best £100m squad over the same horizon. Refreshed every morning.
+    Projections: a component model (appearance, goals, assists, clean sheets, bonus, saves, defensive contribution) trained on 2022-23 to 2025-26, scaled by availability and news, and projected against each of the next five opponents' attack and defence on current form. For the next gameweek, FPL's own expected-points figure is blended in at 25%. Ratings are against the best £100m squad over the same horizon. Refreshed every day, and every six hours in the last 36 hours before a deadline.
   </footer>
 </div>
 
@@ -449,46 +460,50 @@ function playProb(avail, p60){
 }
 // Per-gameweek projections for the current horizon, read off the fixture run.
 function prepPlayer(p){
-  const n = HORIZONS[metric].n, first = DATA.meta.gameweek;
-  p.eps = new Array(n).fill(0); p.plays = new Array(n).fill(0);
-  (p.fixtures||[]).forEach(f => { const k = f.gw - first; if (k>=0 && k<n){ p.eps[k] += f.ep||0; p.plays[k] = Math.max(p.plays[k], playProb(f.avail, f.p60)); } });
-  if (!p.fixtures || !p.fixtures.length){ p.eps[0] = p.ep1 ?? p.ep ?? 0; p.plays[0] = playProb(p.availability, p.p60); }
+  const n = HORIZONS[metric].n, first = DATA.meta.gameweek, N = HW().length;
+  // the full five-gameweek run (for the planner and chips) and the horizon's slice
+  p.eps5 = new Array(N).fill(0); p.plays5 = new Array(N).fill(0); p.fx5 = new Array(N).fill(0);
+  (p.fixtures||[]).forEach(f => { const k = f.gw - first; if (k>=0 && k<N){ p.eps5[k] += f.ep||0; p.plays5[k] = Math.max(p.plays5[k], playProb(f.avail, f.p60)); p.fx5[k] += 1; } });
+  if (!p.fixtures || !p.fixtures.length){ p.eps5[0] = p.ep1 ?? p.ep ?? 0; p.plays5[0] = playProb(p.availability, p.p60); p.fx5[0] = 1; }
+  p.eps = p.eps5.slice(0, n); p.plays = p.plays5.slice(0, n);
   p.ep = p[metric] ?? p.eps.reduce((s,e,k)=>s+e*HW()[k],0);
 }
 const epk = (p,k) => (p.eps && p.eps[k]) || 0;
 const playk = (p,k) => (p.plays && p.plays[k] != null) ? p.plays[k] : (p.availability ?? 1);
+const epk5 = (p,k) => (p.eps5 && p.eps5[k]) || 0;
+const playk5 = (p,k) => (p.plays5 && p.plays5[k] != null) ? p.plays5[k] : (p.availability ?? 1);
 function atLeast(probs){
   let dist = [1];
   for (const q of probs){ const nxt = new Array(dist.length+1).fill(0); dist.forEach((v,i)=>{ nxt[i]+=v*(1-q); nxt[i+1]+=v*q; }); dist = nxt; }
   const out = []; let tail = 1; for (const d of dist){ out.push(tail); tail -= d; } return out;
 }
-function benchCover(squad, eleven, k){
+function benchCover(squad, eleven, k, ep=epk, play=playk){
   const st = new Set(eleven.starters);
   const starters = squad.filter(p=>st.has(p.code)), bench = squad.filter(p=>!st.has(p.code));
   const gk = starters.find(p=>p.position==="GK"), bgk = bench.find(p=>p.position==="GK");
-  const out = starters.filter(p=>p.position!=="GK"), bout = bench.filter(p=>p.position!=="GK").sort((a,b)=>epk(b,k)-epk(a,k));
+  const out = starters.filter(p=>p.position!=="GK"), bout = bench.filter(p=>p.position!=="GK").sort((a,b)=>ep(b,k)-ep(a,k));
   let cover = 0;
-  if (gk && bgk) cover += (1-playk(gk,k)) * epk(bgk,k);
-  const miss = atLeast(out.map(p=>1-playk(p,k)));
-  bout.forEach((sub,i) => { if (i+1 < miss.length) cover += miss[i+1] * epk(sub,k); });
+  if (gk && bgk) cover += (1-play(gk,k)) * ep(bgk,k);
+  const miss = atLeast(out.map(p=>1-play(p,k)));
+  bout.forEach((sub,i) => { if (i+1 < miss.length) cover += miss[i+1] * ep(sub,k); });
   return cover;
 }
-function bestElevenK(players, fixed, k){
+function bestElevenK(players, fixed, k, ep=epk, play=playk){
   const by = {GK:[],DEF:[],MID:[],FWD:[]};
   players.forEach(p => by[p.position].push(p));
-  POSITIONS.forEach(pos => by[pos].sort((a,b)=>epk(b,k)-epk(a,k)));
+  POSITIONS.forEach(pos => by[pos].sort((a,b)=>ep(b,k)-ep(a,k)));
   let best = null;
   for (const f of (fixed ? [fixed] : FORMATIONS)){
     const chosen = POSITIONS.flatMap(pos => by[pos].slice(0, f[pos]));
     if (chosen.length !== 11) continue;
-    const ranked = [...chosen].sort((a,b)=>epk(b,k)-epk(a,k));
-    const pts = chosen.reduce((s,p)=>s+epk(p,k),0) + epk(ranked[0],k);
+    const ranked = [...chosen].sort((a,b)=>ep(b,k)-ep(a,k));
+    const pts = chosen.reduce((s,p)=>s+ep(p,k),0) + ep(ranked[0],k);
     if (!best || pts > best.points) best = {points:pts, starters:chosen.map(p=>p.code), captain:ranked[0].code, vice:ranked[1].code, formation:f, k};
   }
   if (!best) return null;
   const st = new Set(best.starters);
-  best.bench = players.filter(p=>!st.has(p.code)).sort((a,b)=> (a.position!=="GK") - (b.position!=="GK") || epk(b,k)-epk(a,k)).map(p=>p.code);
-  best.cover = players.length===15 ? benchCover(players, best, k) : 0;
+  best.bench = players.filter(p=>!st.has(p.code)).sort((a,b)=> (a.position!=="GK") - (b.position!=="GK") || ep(b,k)-ep(a,k)).map(p=>p.code);
+  best.cover = players.length===15 ? benchCover(players, best, k, ep, play) : 0;
   return best;
 }
 function scoreSquad(players, fixed=null){
@@ -874,6 +889,7 @@ function renderRating(){
     row.appendChild(g); list.appendChild(row);
   });
   mc.appendChild(list); mv.appendChild(mc);
+  if (over <= 1e-9) renderPlan(mv, players, bank, tv, free, budget);
 }
 
 function update(){ renderPitch(); renderRating(); save(); }
@@ -926,6 +942,201 @@ function autoPick(){
   update();
   const added = 15 - have.length;
   notice("ok", `${added ? `Filled ${added} empty slot${added===1?"":"s"} with the best players your budget allows. ` : ""}Best lineup set: ${fname(best.formation)}, captain ${BY[best.captain].web_name}, vice ${BY[best.vice].web_name}.`);
+}
+
+// ---------- plan: the next three gameweeks, and the chips ----------
+// Everything here reads the full five-gameweek run (eps5/plays5) whatever horizon
+// the rating uses, because a plan is about the weeks ahead. Values are "team
+// points": best eleven and captain each gameweek plus expected bench cover, the
+// nearer weeks weighted more (HW), exactly as the rating scores a squad.
+const PLAN_WEEKS = 3, PLAN_CANDIDATES = 14, PLAN_MIN_GAIN = 0.75;
+let chipsUsed = {};   // {wildcard:true, freehit:true, bboost:true, "3xc":true} once a team is imported
+function weekValue(players, k, fixed=null){ const e = bestElevenK(players, fixed, k, epk5, playk5); return e ? e.points + e.cover : 0; }
+// Worth of a squad from gameweek k onward, nearer weeks weighted more.
+function futureValue(players, k){ const w = HW(); let v = 0; for (let j=k;j<w.length;j++) v += w[j-k] * weekValue(players, j); return v; }
+function planCandidates(players, budget, k){
+  // For each player in the squad, the best-looking replacements he could be sold for.
+  const value = players.reduce((s,p)=>s+p.price,0), owned = new Set(players.map(p=>p.code));
+  const worth = p => { const w = HW(); let v=0; for (let j=k;j<w.length;j++) v += w[j-k]*epk5(p,j); return v; };
+  const out = [];
+  for (const leaving of players){
+    const room = budget - (value - leaving.price);
+    const pool = DATA.players.filter(c => !owned.has(c.code) && c.position===leaving.position && c.price>0 && c.availability>0 && c.price <= room + 1e-9 && legalAfter(players,[leaving],[c]));
+    pool.sort((a,b)=>worth(b)-worth(a));
+    pool.slice(0, PLAN_CANDIDATES).forEach(arriving => { if (worth(arriving) > worth(leaving)) out.push([leaving, arriving]); });
+  }
+  return out;
+}
+function planWeek(players, bank, tv, free, k){
+  // The best single or double transfer for gameweek k, judged on the weeks from k on,
+  // net of hits -- or holding, which banks a free transfer for later.
+  const budget = availableBudget(players, bank, tv);
+  const base = futureValue(players, k);
+  const cands = planCandidates(players, budget, k);
+  let best = {moves:[], gain:0, hit:0, net:0, squad:players};
+  const consider = (outs, ins) => {
+    const after = [...players.filter(p=>!outs.includes(p)), ...ins];
+    if (after.reduce((s,p)=>s+p.price,0) > budget + 1e-9) return;
+    const gain = futureValue(after, k) - base, hit = HIT()*Math.max(0, outs.length-free), net = gain - hit;
+    if (net > best.net + 1e-9) best = {moves: outs.map((o,i)=>({out:o, in:ins[i]})), gain, hit, net, squad: after};
+  };
+  cands.forEach(([o,i]) => consider([o],[i]));
+  // doubles: the strongest handful of singles paired with anything that fits
+  const singles = cands.map(([o,i]) => ({o, i, w: futureValue([...players.filter(p=>p!==o), i], k) - base})).sort((a,b)=>b.w-a.w).slice(0, 5);
+  for (const a of singles) for (const [o2,i2] of cands){ if (o2===a.o || i2===a.i) continue; consider([a.o,o2],[a.i,i2]); }
+  return best;
+}
+function buildPlan(players, bank, tv, free){
+  // Greedy week by week with lookahead through futureValue: this week's move is the
+  // one worth making now; later weeks are the model's best guess and get replanned.
+  const weeks = []; let squad = players, ft = free, money = bank, hold = futureValue(players, 0);
+  for (let k=0;k<PLAN_WEEKS;k++){
+    const w = planWeek(squad, money, tv, ft, k);
+    if (w.moves.length && w.net >= PLAN_MIN_GAIN){
+      weeks.push({k, gw: DATA.meta.gameweek + k, moves: w.moves, gain: w.gain, hit: w.hit, net: w.net, ft, week: weekValue(w.squad, k)});
+      money -= w.moves.reduce((s,m)=>s + m.in.price - m.out.price, 0);
+      squad = w.squad; ft = Math.min(5, Math.max(0, ft - w.moves.length) + 1);
+    } else { weeks.push({k, gw: DATA.meta.gameweek + k, moves: [], ft, week: weekValue(squad, k)}); ft = Math.min(5, ft + 1); }
+  }
+  return {weeks, total: futureValue(squad, 0) - weeks.reduce((s,w)=>s+(w.hit||0),0), hold, squad};
+}
+// A greedy squad for one purpose: best for a single gameweek (Free Hit) or over the
+// run (Wildcard). Cheap enough to run in the browser; the server's exact answer is on
+// the Best squad tab.
+function greedySquad(rank, budget){
+  const pool = DATA.players.filter(p=>p.availability>0 && p.price>0).sort(rank);
+  const cheapest = {}; POSITIONS.forEach(k => cheapest[k] = Math.min(...pool.filter(p=>p.position===k).map(p=>p.price)));
+  const picks = [], clubs = {}, counts = {GK:0,DEF:0,MID:0,FWD:0}; let spend = 0;
+  const reserve = () => POSITIONS.reduce((s,k)=>s+(SQUAD_QUOTA[k]-counts[k])*cheapest[k],0);
+  for (const p of pool){
+    if (picks.length===15) break;
+    if (counts[p.position] >= SQUAD_QUOTA[p.position] || (clubs[p.team]||0) >= MAX_PER_CLUB) continue;
+    if (spend + p.price + reserve() - cheapest[p.position] > budget + 1e-9) continue;
+    picks.push(p); spend += p.price; counts[p.position]++; clubs[p.team]=(clubs[p.team]||0)+1;
+  }
+  return picks.length===15 ? picks : null;
+}
+function chipAdvice(players, bank, tv){
+  const N = HW().length, budget = availableBudget(players, bank, tv), out = [];
+  const doubles = k => players.filter(p=>p.fx5[k] > 1).length, blanks = k => players.filter(p=>p.fx5[k] === 0).length;
+  const weeks = [...Array(N).keys()];
+  // Bench Boost: all fifteen score instead of eleven plus cover.
+  const bb = weeks.map(k => { const e = bestElevenK(players, null, k, epk5, playk5); const all = players.reduce((s,p)=>s+epk5(p,k),0) + epk5(BY[e.captain],k); return {k, gain: all - (e.points + e.cover)}; });
+  // Triple Captain: the captain counts three times instead of two.
+  const tc = weeks.map(k => { const top = [...players].sort((a,b)=>epk5(b,k)-epk5(a,k))[0]; return {k, gain: epk5(top,k), who: top}; });
+  // Free Hit: the best squad money can buy for that week alone, against your own.
+  const fh = weeks.map(k => { const sq = greedySquad((a,b)=>epk5(b,k)-epk5(a,k), budget); return {k, gain: sq ? Math.max(0, weekValue(sq, k) - weekValue(players, k)) : 0}; });
+  // Wildcard: the best squad for the run, against your own, over the whole run. The
+  // server's solved squad for the nearest budget at or below yours where it exists.
+  let wcBest = null;
+  if (DATA.optimal_squads && DATA.optimal_squads.ep5){
+    const budgets = Object.keys(DATA.optimal_squads.ep5).map(Number).sort((a,b)=>a-b);
+    const b = budgets.filter(x => x <= budget + 1e-9).pop(); if (b != null) wcBest = DATA.optimal_squads.ep5[String(b)].projected;
+  }
+  if (wcBest == null){ const wcSquad = greedySquad((a,b)=>totalEp5(b)-totalEp5(a), budget); wcBest = wcSquad ? futureValue(wcSquad, 0) : 0; }
+  const wc = Math.max(0, wcBest - futureValue(players, 0));
+  const best = arr => arr.reduce((b,x)=> x.gain > b.gain ? x : b, arr[0]);
+  const note = k => { const d = doubles(k), b = blanks(k); return d ? `${d} of your players play twice in GW${DATA.meta.gameweek+k}` : b ? `${b} of your players blank in GW${DATA.meta.gameweek+k}` : ""; };
+  const b1 = best(bb), b2 = best(tc), b3 = best(fh);
+  out.push({chip:"bboost", name:"Bench Boost", gw: DATA.meta.gameweek + b1.k, gain: b1.gain, note: note(b1.k) || "your bench's projected points that week", used: !!chipsUsed.bboost});
+  out.push({chip:"3xc", name:"Triple Captain", gw: DATA.meta.gameweek + b2.k, gain: b2.gain, note: `${b2.who.web_name} projects ${fmt(epk5(b2.who,b2.k),1)} that week${doubles(b2.k) && b2.who.fx5[b2.k]>1 ? " (plays twice)" : ""}`, used: !!chipsUsed["3xc"]});
+  out.push({chip:"freehit", name:"Free Hit", gw: DATA.meta.gameweek + b3.k, gain: b3.gain, note: note(b3.k) || "a one-week squad built for that fixture list", used: !!chipsUsed.freehit});
+  out.push({chip:"wildcard", name:"Wildcard", gw: DATA.meta.gameweek, gain: wc, note: wc > 0.05 ? `the best £${fmt(budget,0)}m squad over the next ${N} gameweeks beats yours by this much, with no hits` : "your squad already matches the best money can buy over the run", used: !!chipsUsed.wildcard, run: true});
+  return out;
+}
+const totalEp5 = p => p.eps5.reduce((s,e,k)=>s+e*HW()[k],0);
+function renderPlan(box, players, bank, tv, free, budget){
+  const plan = buildPlan(players, bank, tv, free);
+  const c = el("div","card"); c.appendChild(el("h2",null,`Plan for the next ${PLAN_WEEKS} gameweeks`));
+  c.appendChild(el("p","hint",`One free transfer a week, banked up to five, a ${HIT()}-point hit beyond that. Only this week's move is a decision; the later ones show where the squad is heading and get re-planned every refresh.`));
+  const list = el("div","plan");
+  plan.weeks.forEach(w => {
+    const row = el("div","pweek"); const head = el("div","phead");
+    head.appendChild(el("b",null,`GW${w.gw}`)); head.appendChild(el("span","hint",`${w.ft} free`)); row.appendChild(head);
+    if (!w.moves.length){ row.appendChild(el("div","pmove hold", w.k===0 ? "Hold — bank the free transfer." : "Hold.")); }
+    w.moves.forEach(m => { const d = el("div","pmove"); d.appendChild(el("b",null,m.out.web_name)); d.appendChild(el("span","arrow","→")); d.appendChild(el("b",null,m.in.web_name)); d.appendChild(el("span","pos "+m.in.position, m.in.position)); d.appendChild(el("span","hint",`${m.in.team} · bank ${bankDelta(m.in.price - m.out.price)}`)); row.appendChild(d); });
+    if (w.moves.length){ const g = el("div","pgain"); g.textContent = `+${fmt(w.gain,1)} over the run${w.hit ? ` · −${w.hit} hit → +${fmt(w.net,1)} net` : " · no hit"}`; row.appendChild(g); }
+    list.appendChild(row);
+  });
+  c.appendChild(list);
+  const delta = plan.total - plan.hold;
+  c.appendChild(el("p","tip", delta > 0.05 ? `Following the plan projects ${fmt(plan.total,1)} team points over the run against ${fmt(plan.hold,1)} for standing still (+${fmt(delta,1)}, hits included).` : `Standing still is as good as anything: ${fmt(plan.hold,1)} team points over the run.`));
+  const apply = plan.weeks[0].moves.length ? el("button","btn small","Apply this week's move") : null;
+  if (apply){ apply.onclick = () => { plan.weeks[0].moves.forEach(m => { const s = state.slots.find(s=>s.code===m.out.code); if (s) s.code = m.in.code; }); state.slots = buildSlots(state.formation, state.slots.map(s=>s.code).filter(Boolean)); document.getElementById("ft").value = Math.max(0, free - plan.weeks[0].moves.length); update(); }; c.appendChild(apply); }
+  box.appendChild(c);
+
+  const chips = chipAdvice(players, bank, tv);
+  const cc = el("div","card"); cc.appendChild(el("h2",null,"Chips"));
+  cc.appendChild(el("p","hint",`Where each chip would earn most over the next ${HW().length} gameweeks, for this squad. Gains are extra team points from playing the chip that week rather than not at all.`));
+  const t = el("table","chips"); const th = el("tr"); ["Chip","Best week","Extra points","Why"].forEach(x=>th.appendChild(el("th",null,x))); t.appendChild(th);
+  chips.forEach(ch => {
+    const r = el("tr", ch.used ? "used" : ""); r.appendChild(el("td",null, ch.name + (ch.used ? " (used)" : "")));
+    r.appendChild(el("td",null, ch.run ? `GW${ch.gw} on` : `GW${ch.gw}` + (ch.gw===DATA.meta.gameweek ? " (this week)" : "")));
+    const g = el("td","n"); g.appendChild(el("b", ch.gain >= 4 ? "good" : "", `+${fmt(ch.gain,1)}`)); r.appendChild(g);
+    r.appendChild(el("td","hint", ch.note)); t.appendChild(r);
+  });
+  cc.appendChild(t);
+  cc.appendChild(el("p","hint","A chip is worth playing when its best week beats what you would expect from it later in the season: a double gameweek for six of your players is a Bench Boost week; a captain with two fixtures is a Triple Captain week. Blank and double gameweeks are known only a few weeks ahead, so check back."));
+  box.appendChild(cc);
+}
+
+// ---------- import a team from FPL ----------
+// The FPL API refuses browser requests from other sites, so the fetch goes through a
+// public relay; three are tried in turn. Nothing private is involved: a team's picks
+// are public on FPL for anyone with the ID.
+const RELAYS = [u => "https://corsproxy.io/?" + encodeURIComponent(u), u => "https://api.allorigins.win/raw?url=" + encodeURIComponent(u), u => "https://api.codetabs.com/v1/proxy?quest=" + u];
+async function fplGet(path){
+  const url = "https://fantasy.premierleague.com/api/" + path;
+  let last = "";
+  for (const relay of RELAYS){
+    try {
+      const ctl = new AbortController(); const timer = setTimeout(() => ctl.abort(), 9000);
+      const r = await fetch(relay(url), {signal: ctl.signal}); clearTimeout(timer);
+      if (!r.ok) throw new Error("HTTP " + r.status);
+      const j = await r.json(); if (j && (j.picks || j.id || j.current || j.chips)) return j;
+      throw new Error("unexpected reply");
+    } catch (e) { last = e.message || String(e); }
+  }
+  throw new Error(last || "no relay answered");
+}
+function freeTransfersFrom(history){
+  // FPL does not publish the count; reconstruct it from the transfer history: one a
+  // week, banked to five, reset to one after a wildcard or free hit. GW1 is free.
+  const used = new Set((history.chips||[]).filter(c => c.name==="wildcard" || c.name==="freehit").map(c=>c.event));
+  let ft = 1;
+  (history.current||[]).forEach((g, i) => { if (i===0) return; ft = used.has(g.event) ? 1 : Math.min(5, Math.max(0, ft - (g.event_transfers||0)) + 1); });
+  return Math.min(5, ft);
+}
+async function importTeam(id){
+  const b = document.getElementById("import"); b.disabled = true; b.textContent = "Importing…";
+  document.getElementById("notices").replaceChildren();
+  try {
+    const gw = DATA.meta.last_gameweek || 1;
+    const [entry, picks, history] = await Promise.all([fplGet(`entry/${id}/`), fplGet(`entry/${id}/event/${gw}/picks/`), fplGet(`entry/${id}/history/`)]);
+    const byId = {}; DATA.players.forEach(p => byId[p.id] = p);
+    const chosen = (picks.picks||[]).map(x => ({p: byId[x.element], pos: x.position, cap: x.is_captain})).filter(x => x.p);
+    if (chosen.length < 15) throw new Error(`only ${chosen.length} of the 15 players were recognised`);
+    const xi = chosen.filter(x => x.pos <= 11).map(x=>x.p);
+    const f = {GK:1, DEF: xi.filter(p=>p.position==="DEF").length, MID: xi.filter(p=>p.position==="MID").length, FWD: xi.filter(p=>p.position==="FWD").length};
+    const formation = FORMATIONS.find(x => fname(x)===fname(f)) || state.formation;
+    state.formation = formation;
+    state.slots = buildSlots(formation, []);
+    // keep FPL's own starters on the pitch, then the bench in their order
+    const bench = chosen.filter(x => x.pos > 11).map(x=>x.p);
+    state.slots.filter(s=>s.area==="xi").forEach(s => { const i = xi.findIndex(p=>p.position===s.pos); if (i>=0){ s.code = xi[i].code; xi.splice(i,1); } });
+    state.slots.filter(s=>s.area==="bench").forEach(s => { const i = bench.findIndex(p=>p.position===s.pos); if (i>=0){ s.code = bench[i].code; bench.splice(i,1); } });
+    const bank = (picks.entry_history && picks.entry_history.bank != null ? picks.entry_history.bank : entry.last_deadline_bank || 0) / 10;
+    const value = (picks.entry_history && picks.entry_history.value != null ? picks.entry_history.value : entry.last_deadline_value || 1000) / 10;
+      const tv = value - bank;   // FPL's "value" is the squad plus the bank
+    document.getElementById("bank").value = fmt(bank,1); document.getElementById("tv").value = fmt(tv,1);
+    document.getElementById("ft").value = String(freeTransfersFrom(history));
+    chipsUsed = {}; (history.chips||[]).forEach(c => chipsUsed[c.name] = true);
+    try { localStorage.setItem("fpl-entry-id", String(id)); } catch(e){}
+    update();
+    notice("ok", `Imported ${entry.player_first_name ? entry.player_first_name + " " + entry.player_last_name + "'s" : "your"} team "${entry.name||""}" as it stood after GW${gw}: bank £${fmt(bank,1)}m, value £${fmt(tv,1)}m, ${document.getElementById("ft").value} free transfer(s)${Object.keys(chipsUsed).length ? ", chips used: " + Object.keys(chipsUsed).join(", ") : ""}. Transfers made since then are not on FPL's public feed until the deadline — add them here.`);
+  } catch (e) {
+    notice("crit", `Could not import team ${id}: ${e.message}. FPL's API sometimes blocks the relay; try again in a minute, or pick your players by hand (tap the slots).`);
+  } finally { b.disabled = false; b.textContent = "Import"; }
 }
 
 // ---------- best squad + all players ----------
@@ -1204,6 +1415,9 @@ document.querySelectorAll("nav [role=tab]").forEach(b => b.addEventListener("cli
 document.getElementById("clear").addEventListener("click", () => { state.slots = buildSlots(state.formation, []); update(); });
 document.getElementById("template").addEventListener("click", templateTeam);
 document.getElementById("autopick").addEventListener("click", autoPick);
+document.getElementById("import").addEventListener("click", () => { const id = parseInt(document.getElementById("fplid").value, 10); if (!id || id < 1){ notice("warn", "Type your FPL team ID first — it's the number in the address bar of your Points page on fantasy.premierleague.com (…/entry/1234567/…)."); return; } importTeam(id); });
+document.getElementById("fplid").addEventListener("keydown", e => { if (e.key==="Enter") document.getElementById("import").click(); });
+try { const saved = localStorage.getItem("fpl-entry-id"); if (saved) document.getElementById("fplid").value = saved; } catch(e){}
 
 const SCHEMA = 2, CACHE_KEY = "fpl-live-cache-v2", STALE_HOURS = 36;
 function notice(kind, text){ const n = el("div", kind==="crit" ? "critbox" : kind==="ok" ? "okbox" : "warnbox"); n.style.margin = ".6rem 0 0"; n.textContent = text; document.getElementById("notices").appendChild(n); if (kind==="ok") setTimeout(() => n.remove(), 6000); return n; }
@@ -1255,11 +1469,11 @@ document.getElementById("refresh").addEventListener("click", async () => {
   const b = document.getElementById("refresh"); b.disabled = true; b.textContent = "Refreshing…";
   document.getElementById("notices").replaceChildren();
   try {
-    if (typeof EMBEDDED !== "undefined"){ notice("ok", "This file has its data built in (refreshed " + new Date(DATA.meta.captured_at).toUTCString().replace(":00 GMT"," UTC") + "). For newer projections open the online site — it refreshes itself every morning."); return; }
+    if (typeof EMBEDDED !== "undefined"){ notice("ok", "This file has its data built in (refreshed " + new Date(DATA.meta.captured_at).toUTCString().replace(":00 GMT"," UTC") + "). For newer projections open the online site — it refreshes itself every day and more often before a deadline."); return; }
     if (location.protocol === "file:"){ notice("warn", "Refresh only works on the online site or when the site folder is served locally (cd site && python3 -m http.server 8000). Opened from a folder, this page can only show the copy it saved earlier."); return; }
     const got = await loadData();
     if (!got.data || got.cached){ notice("crit", "Could not fetch a newer copy: " + (got.why||"no data") + ". Showing what you already had."); }
-    else { const was = DATA && DATA.meta.captured_at; applyData(got.data, got); notice(was===got.data.meta.captured_at ? "ok" : "ok", was===got.data.meta.captured_at ? "You already had the latest data (refreshed " + new Date(got.data.meta.captured_at).toUTCString().replace(":00 GMT"," UTC") + "). New data lands every morning around 06:30 UTC and again on Saturday mornings." : "Updated to the projections refreshed " + new Date(got.data.meta.captured_at).toUTCString().replace(":00 GMT"," UTC") + "."); }
+    else { const was = DATA && DATA.meta.captured_at; applyData(got.data, got); notice(was===got.data.meta.captured_at ? "ok" : "ok", was===got.data.meta.captured_at ? "You already had the latest data (refreshed " + new Date(got.data.meta.captured_at).toUTCString().replace(":00 GMT"," UTC") + "). New data lands every day, and every six hours in the last 36 hours before a deadline." : "Updated to the projections refreshed " + new Date(got.data.meta.captured_at).toUTCString().replace(":00 GMT"," UTC") + "."); }
   } finally { b.disabled = false; b.textContent = "Refresh data"; }
 });
 </script>

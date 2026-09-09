@@ -33,15 +33,25 @@ from datetime import datetime, timezone
 import numpy as np
 import pandas as pd
 
-from fpl.config import CURRENT_SEASON, HORIZON_WEIGHTS, MAX_HORIZON, TRAIN_SEASONS
+from fpl.config import (
+    CALIBRATION,
+    CURRENT_SEASON,
+    FPL_BLEND,
+    HORIZON_WEIGHTS,
+    MAX_HORIZON,
+    TRAIN_SEASONS,
+)
 from fpl.data.archive import load_players
 from fpl.data.fpl_api import next_gameweek, snapshot_to_gameweeks, snapshot_to_upcoming
 from fpl.data.odds import ODDS_FEATURES, load_odds
 from fpl.data.schedule import load_schedule
 from fpl.data.silver import load_silver
 from fpl.entity.resolve import canonical_team, load_team_aliases
+from fpl.features.aggregate import attach_opponent, build_team_id_map
 from fpl.features.build import attach_congestion, build_features, feature_columns
 from fpl.models.combine import CONTRIBUTIONS, fit_component_model
+from fpl.models.team_strength import FEATURES as TS_FEATURES
+from fpl.models.team_strength import Ratings, latest_ratings
 
 log = logging.getLogger(__name__)
 
@@ -60,6 +70,8 @@ TEAM_METRICS = (
     "team_goals_ew", "team_xg_ew", "team_conceded_ew", "team_xgc_ew",
 )  # fmt: skip
 
+TS_SUMMED = ("ts_xg_for", "ts_xg_against", "ts_cs", "ts_win")
+
 _RETURN = re.compile(r"(?:expected back|suspended until|until)\s+(\d{1,2})\s+([A-Za-z]{3})", re.I)
 _GONE = re.compile(r"joined .* (?:on loan|permanently)|left the club|has left|released", re.I)
 
@@ -75,6 +87,12 @@ def _snapshot_registry(snapshot: dict, season: str) -> pd.DataFrame:
                 "second_name": e["second_name"],
                 "element_type": e["element_type"],
                 "team": e["team"],
+                # set-piece duties, today's state: exactly what the feature wants
+                "penalties_order": e.get("penalties_order"),
+                "corners_and_indirect_freekicks_order": e.get(
+                    "corners_and_indirect_freekicks_order"
+                ),
+                "direct_freekicks_order": e.get("direct_freekicks_order"),
             }
             for e in snapshot["elements"]
         ]
@@ -190,6 +208,7 @@ def _future_rows(
     strength: pd.DataFrame,
     league_xgc: float,
     odds: pd.DataFrame | None = None,
+    ratings: Ratings | None = None,
 ) -> pd.DataFrame:
     """Clone each player's frozen feature row for each later gameweek, swapping in
     that gameweek's fixture context (opponent strength, congestion, and the market's
@@ -238,6 +257,13 @@ def _future_rows(
             quoted = market.get((home_name, away_name, row["team"]))
             for f in ODDS_FEATURES:
                 clone[f] = quoted[f] if quoted else np.nan
+            if ratings is not None:
+                # As in the training table: the expected-goal terms add up across a
+                # double gameweek, the ratings themselves are the club's.
+                per_game = [ratings.features(row["team"], x["opponent"], x["home"]) for x in games]
+                for f in TS_FEATURES:
+                    values = [g[f] for g in per_game]
+                    clone[f] = sum(values) if f in TS_SUMMED else values[0]
             clone["all_opponents"] = " + ".join(
                 f"{x['opponent']} ({'H' if x['home'] else 'A'})" for x in games
             )
@@ -247,6 +273,17 @@ def _future_rows(
 
 UNKNOWN_MINUTES = 90  # fewer league minutes on record than this: no evidence of our own
 UNKNOWN_CAP = 1.25  # ...so defer to FPL's own number, allowing it this much upside
+
+
+def _calibrate(breakdown: pd.DataFrame, positions: pd.Series) -> pd.DataFrame:
+    """Scale each position's projections by its measured calibration factor."""
+    factor = positions.map(CALIBRATION).fillna(1.0).to_numpy()
+    if np.allclose(factor, 1.0):
+        return breakdown
+    out = breakdown.copy()
+    for column in (*CONTRIBUTIONS, "expected_points"):
+        out[column] = out[column].to_numpy() * factor
+    return out
 
 
 def _cap_unknowns(breakdown: pd.DataFrame, rows: pd.DataFrame) -> pd.DataFrame:
@@ -277,6 +314,27 @@ def _cap_unknowns(breakdown: pd.DataFrame, rows: pd.DataFrame) -> pd.DataFrame:
         int(unknown.sum()),
         UNKNOWN_MINUTES,
     )
+    return out
+
+
+def _blend_fpl(fixtures: pd.DataFrame, every: pd.DataFrame, weight: float) -> pd.DataFrame:
+    """Fold FPL's own next-gameweek figure into the next gameweek's projection.
+
+    Applied only where FPL has a figure and the player is unflagged: FPL's number
+    already discounts a doubt in its own way, and stacking two discounts would
+    punish a flagged player twice. The decomposition is scaled with the total so
+    the "why" numbers still add up.
+    """
+    out = fixtures.copy()
+    fpl = pd.to_numeric(every.get("fpl_ep_next"), errors="coerce").fillna(0.0).to_numpy()
+    model = out["expected_points"].to_numpy()
+    eligible = (out["offset"].to_numpy() == 0) & (out["availability"].to_numpy() >= 1.0) & (fpl > 0)
+    blended = np.where(eligible, (1.0 - weight) * model + weight * fpl, model)
+    scale = np.where(model > 0, blended / np.where(model > 0, model, 1.0), 1.0)
+    for term in CONTRIBUTIONS:
+        out[term] = out[term].to_numpy() * scale
+    out["expected_points"] = blended
+    log.info("blended FPL's figure into %d next-gameweek projections", int(eligible.sum()))
     return out
 
 
@@ -321,8 +379,12 @@ def project_horizon(
 
     strength = _team_strength_now(features, season, first)
     league_xgc = float(features.loc[is_target, "opp_team_xgc_r10"].mean())
+    # Club ratings as of the deadline, for the fixtures beyond the next gameweek.
+    in_scope = combined[combined["season"].isin(seasons)]
+    with_opponent = attach_opponent(in_scope, build_team_id_map(registry, in_scope))
+    ratings = latest_ratings(with_opponent, pd.Timestamp(cutoff))
     future = _future_rows(
-        base, snapshot, first, horizon, strength, league_xgc, load_odds((season,))
+        base, snapshot, first, horizon, strength, league_xgc, load_odds((season,)), ratings
     )
     if not future.empty:
         # The clones carry the first gameweek's cup/European context; recompute it
@@ -337,6 +399,7 @@ def project_horizon(
 
     breakdown = model.explain(every).reset_index(drop=True)
     every = every.reset_index(drop=True)
+    breakdown = _calibrate(breakdown, every["position"])
     breakdown = _cap_unknowns(breakdown, every)
 
     reference = (
@@ -369,6 +432,7 @@ def project_horizon(
     for term in CONTRIBUTIONS:
         fixtures[term] = breakdown[term].to_numpy() * avail
     fixtures["expected_points"] = fixtures[list(CONTRIBUTIONS)].sum(axis=1)
+    fixtures["model_expected_points"] = fixtures["expected_points"]
     fixtures["availability"] = avail
     fixtures["p_60"] = np.clip(breakdown["p_60"].to_numpy() * avail, 0, 1)
     fixtures["opp_att_rank"] = fixtures["opponent"].map(strength["att_rank"]).astype("Int64")
@@ -379,6 +443,8 @@ def project_horizon(
     fixtures["weight"] = fixtures["offset"].map(
         lambda k: HORIZON_WEIGHTS[int(k)] if 0 <= k < MAX_HORIZON else 0.0
     )
+    if as_of_gameweek is None and FPL_BLEND > 0:
+        fixtures = _blend_fpl(fixtures, every, FPL_BLEND)
     fixtures = fixtures.sort_values(["code", "GW"]).reset_index(drop=True)
 
     # per-player summary
@@ -397,6 +463,7 @@ def project_horizon(
     players["is_home"] = nxt["is_home"]
     players["fixtures_this_gw"] = nxt["fixtures_this_gw"]
     players["raw_expected_points"] = nxt["raw_expected_points"]
+    players["model_expected_points"] = nxt["model_expected_points"]
     for term in CONTRIBUTIONS:
         players[term] = nxt[term]
     players["expected_points"] = nxt["expected_points"]

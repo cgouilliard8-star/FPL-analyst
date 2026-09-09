@@ -1,7 +1,8 @@
 # Publishing the site and turning the daily refresh on
 
-Everything below is done once. After it, the site rebuilds itself every morning and
-the data the model needs accumulates on its own.
+Everything below is done once. After it, the site rebuilds itself every day (and
+every six hours in the last day and a half before a deadline) and the data the model
+needs accumulates on its own.
 
 ## 1. Put the repository on GitHub
 
@@ -59,8 +60,9 @@ https://<your-username>.github.io/fpl-analyst/
 
 ## What happens from then on
 
-Every morning at 06:00 UTC, and again on Saturday at 10:00 UTC before the usual
-deadline, the workflow:
+The workflow wakes every six hours. A cheap first step (`fpl due`) lets it go on
+only within 36 hours of the next deadline, or once a day as a heartbeat, or when you
+run it by hand. A run that goes on:
 
 1. runs the test suite -- a refresh from broken code is not a refresh;
 2. snapshots the FPL API (immutable, timestamped) and appends every player's injury

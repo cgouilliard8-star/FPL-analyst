@@ -26,7 +26,12 @@ from fpl.optimise.squad import pick_squad
 log = logging.getLogger(__name__)
 
 PROJECTION_DIR = PROJECT_ROOT / "data" / "external" / "projections"
-COLUMNS = ("code", "web_name", "position", "team", "price", "ep1", "ep5", "availability", "p_60")
+COLUMNS = (
+    "code", "web_name", "position", "team", "price", "ep1", "ep5", "availability", "p_60",
+    # the blend's two ingredients, kept apart so the scorecard can judge each
+    "ep1_model", "fpl_ep",
+)  # fmt: skip
+SOURCES = {"ep1": "blend", "ep1_model": "model", "fpl_ep": "fpl"}
 
 
 def projection_path(season: str, gameweek: int) -> Path:
@@ -43,7 +48,7 @@ def save_projections(
     frame.insert(0, "gameweek", gameweek)
     frame.insert(0, "season", season)
     frame.insert(0, "captured_at", captured_at or "")
-    for column in ("ep1", "ep5", "availability", "p_60", "price"):
+    for column in ("ep1", "ep5", "availability", "p_60", "price", "ep1_model", "fpl_ep"):
         if column in frame.columns:
             frame[column] = frame[column].astype(float).round(3)
     path = projection_path(season, gameweek)
@@ -74,9 +79,9 @@ def _actual_points(snapshot: dict, season: str) -> pd.DataFrame:
     return grouped.rename(columns={"GW": "gameweek", "total_points": "actual"})
 
 
-def _best_squad_points(rows: pd.DataFrame) -> float | None:
+def _best_squad_points(rows: pd.DataFrame, column: str = "ep1") -> float | None:
     """What a fresh £100m squad picked on these projections actually scored."""
-    pool = rows.rename(columns={"ep1": "projected"}).assign(
+    pool = rows.rename(columns={column: "projected"}).assign(
         price_tenths=lambda d: (d["price"] * 10).round().astype(int),
         actual=lambda d: d["actual"],
     )
@@ -115,23 +120,30 @@ def score_forward(snapshot: dict, season: str = CURRENT_SEASON) -> dict | None:
             continue
         played = rows[rows["minutes"] > 0]
         top10 = rows.nlargest(10, "ep1")
-        weeks.append(
-            {
-                "gameweek": gameweek,
-                "players": int(len(rows)),
-                "spearman": round(float(rows["ep1"].corr(rows["actual"], method="spearman")), 3),
-                "spearman_played": (
-                    round(float(played["ep1"].corr(played["actual"], method="spearman")), 3)
-                    if len(played) > 30
-                    else None
-                ),
-                "top10_points": int(top10["actual"].sum()),
-                "top10_hits": int((top10["actual"] >= 5).sum()),
-                "squad_points": _best_squad_points(rows),
-                "average": averages[gameweek].get("average_entry_score"),
-                "highest": averages[gameweek].get("highest_score"),
-            }
-        )
+        week = {
+            "gameweek": gameweek,
+            "players": int(len(rows)),
+            "spearman": round(float(rows["ep1"].corr(rows["actual"], method="spearman")), 3),
+            "spearman_played": (
+                round(float(played["ep1"].corr(played["actual"], method="spearman")), 3)
+                if len(played) > 30
+                else None
+            ),
+            "top10_points": int(top10["actual"].sum()),
+            "top10_hits": int((top10["actual"] >= 5).sum()),
+            "squad_points": _best_squad_points(rows),
+            "average": averages[gameweek].get("average_entry_score"),
+            "highest": averages[gameweek].get("highest_score"),
+        }
+        # The blend's ingredients scored on their own, where the log has them.
+        for column, label in SOURCES.items():
+            if column == "ep1" or column not in rows.columns or rows[column].fillna(0).eq(0).all():
+                continue
+            week[f"spearman_{label}"] = round(
+                float(rows[column].corr(rows["actual"], method="spearman")), 3
+            )
+            week[f"squad_points_{label}"] = _best_squad_points(rows, column)
+        weeks.append(week)
     if not weeks:
         return None
     scored = [w for w in weeks if w["squad_points"] is not None and w["average"]]
@@ -147,5 +159,14 @@ def score_forward(snapshot: dict, season: str = CURRENT_SEASON) -> dict | None:
         )
         summary["mean_average"] = round(sum(w["average"] for w in scored) / len(scored), 1)
         summary["edge"] = round(summary["mean_squad_points"] - summary["mean_average"], 1)
+    for label in ("model", "fpl"):
+        rows = [w for w in weeks if w.get(f"squad_points_{label}") is not None]
+        if rows:
+            summary[f"mean_squad_points_{label}"] = round(
+                sum(w[f"squad_points_{label}"] for w in rows) / len(rows), 1
+            )
+            summary[f"mean_spearman_{label}"] = round(
+                sum(w[f"spearman_{label}"] for w in rows) / len(rows), 3
+            )
     log.info("forward scorecard: %d gameweeks scored", len(weeks))
     return summary

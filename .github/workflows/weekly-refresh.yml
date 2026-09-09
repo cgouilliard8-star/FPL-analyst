@@ -1,17 +1,18 @@
 name: refresh
 
-# Injury news, price changes and availability flags move every day, so the
-# projections are rebuilt every morning and again just before the usual Saturday
-# deadline. Each run snapshots the live API (immutable, timestamped), refits the
-# model on everything up to the next gameweek, and publishes the dashboard.
+# Injury news, price changes and availability flags move every day, and most of
+# all in the last day before a deadline. The workflow wakes every six hours; a
+# cheap first step (`fpl due`) lets it go on only within 36 hours of the next
+# deadline, or once a day as a heartbeat, or when run by hand. A run that goes on
+# snapshots the live API (immutable, timestamped), refits the model on everything
+# up to the next gameweek, and publishes the dashboard.
 #
 # Failure policy: the site must never go blank or show broken numbers. Every step
 # that can fail falls back to the last good artefact -- the previous snapshot, the
 # previously published live.json -- and the deploy is gated on `fpl check`.
 on:
   schedule:
-    - cron: "0 6 * * *"    # daily 06:00 UTC
-    - cron: "0 10 * * 6"   # Saturday 10:00 UTC, ahead of the typical 11:30 deadline
+    - cron: "0 */6 * * *"   # every six hours; `fpl due` decides whether to build
   workflow_dispatch:
 
 permissions:
@@ -35,13 +36,19 @@ jobs:
           cache: pip
       - run: pip install -e ".[dev,llm]"
 
+      - name: Is a refresh due? (near a deadline, a day since the last, or by hand)
+        id: due
+        run: fpl due ${{ github.event_name == 'workflow_dispatch' && '--force' || '' }}
+
       - name: Tests (a refresh from broken code is not a refresh)
+        if: steps.due.outputs.due == 'true'
         run: pytest -q -p no:warnings
 
       # The historical archive only changes when a season is added; cache it so a
       # flaky archive host cannot stop a refresh.
       - name: Historical seasons (cached)
         id: archive
+        if: steps.due.outputs.due == 'true'
         uses: actions/cache@v4
         with:
           path: |
@@ -50,29 +57,34 @@ jobs:
             data/silver
           key: archive-${{ hashFiles('src/fpl/config.py', 'src/fpl/data/archive.py', 'src/fpl/data/silver.py', 'src/fpl/entity/**') }}
       - name: Build historical seasons
-        if: steps.archive.outputs.cache-hit != 'true'
+        if: steps.due.outputs.due == 'true' && steps.archive.outputs.cache-hit != 'true'
         run: |
           fpl bootstrap
           fpl silver
 
       - name: Live snapshot (retries inside)
         id: snapshot
+        if: steps.due.outputs.due == 'true'
         run: fpl snapshot
 
       - name: Cup and European fixtures (congestion; non-fatal)
+        if: steps.due.outputs.due == 'true'
         continue-on-error: true
         run: fpl schedule --all
 
       - name: Bookmaker odds (football-data.co.uk; non-fatal)
+        if: steps.due.outputs.due == 'true'
         continue-on-error: true
         run: fpl odds --all
 
       - name: Season replay (from GW1, one free transfer a week, real points)
+        if: steps.due.outputs.due == 'true'
         continue-on-error: true   # slow and cosmetic: the page keeps the last one if it fails
         run: fpl simulate --from-gw 1 --to-gw 3
 
       - name: Project the next five gameweeks and build dashboard data
         id: live
+        if: steps.due.outputs.due == 'true'
         continue-on-error: true
         env:
           ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
@@ -80,6 +92,7 @@ jobs:
 
       - name: Validate, or restore the last published data
         id: gate
+        if: steps.due.outputs.due == 'true'
         run: |
           if [ "${{ steps.live.outcome }}" = "success" ] && fpl check; then
             echo "fresh=true" >> "$GITHUB_OUTPUT"
@@ -91,7 +104,7 @@ jobs:
           fi
 
       - name: Commit refreshed data (keeps the last good copy in git)
-        if: steps.gate.outputs.fresh == 'true'
+        if: steps.due.outputs.due == 'true' && steps.gate.outputs.fresh == 'true'
         run: |
           git config user.name "refresh-bot"
           git config user.email "refresh-bot@users.noreply.github.com"
@@ -100,11 +113,15 @@ jobs:
           git push
 
       - uses: actions/upload-pages-artifact@v3
+        if: steps.due.outputs.due == 'true'
         with:
           path: site
+    outputs:
+      due: ${{ steps.due.outputs.due }}
 
   deploy:
     needs: build
+    if: needs.build.outputs.due == 'true'
     runs-on: ubuntu-latest
     environment:
       name: github-pages

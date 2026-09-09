@@ -51,9 +51,25 @@ class ComponentSpec:
 # Every event that FPL scores per fixture is modelled as a count, so that a double
 # gameweek is worth double. Only the rotation-risk signal shown to the reader is a
 # probability, and it is derived from the count rather than fitted separately.
+#
+# The two minutes components are fitted as per-fixture *rates* (label = events per
+# fixture, in [0, 1], cross-entropy objective) and multiplied back by the number of
+# fixtures: a probability of playing is what they really are, and a classifier
+# calibrates that better than a Poisson count does. Set ``MINUTES_MODEL`` to
+# "poisson" to get the older behaviour.
+MINUTES_MODEL = "rate"
+
+# Recency weighting of the training rows, as a half-life in days (0 = off). Football
+# changes: a rule change, a new manager, a squad turned over. Down-weighting old
+# seasons lets the trees follow the game as it is played now.
+RECENCY_HALFLIFE_DAYS = 0.0
+# Bagging: average this many fits with different seeds. Trades fit time for a
+# little variance -- the count targets are noisy and one seed's split choices show.
+SEEDS = 1
+
 SPECS: tuple[ComponentSpec, ...] = (
-    ComponentSpec("e_appearances", "appearances", "count", "expected appearances"),
-    ComponentSpec("e_full", "full_appearances", "count", "expected 60-minute appearances"),
+    ComponentSpec("e_appearances", "appearances", "rate", "expected appearances"),
+    ComponentSpec("e_full", "full_appearances", "rate", "expected 60-minute appearances"),
     ComponentSpec("e_goals", "goals_scored", "count", "expected goals scored"),
     ComponentSpec("e_assists", "assists", "count", "expected assists"),
     ComponentSpec("e_cs", "clean_sheets", "count", "expected clean sheets"),
@@ -78,8 +94,14 @@ def _fit_one(spec: ComponentSpec, train: pd.DataFrame, features: list[str]):
     import lightgbm as lgb
 
     y = train[spec.target]
-    if spec.kind == "binary":
+    kind = spec.kind if not (spec.kind == "rate" and MINUTES_MODEL == "poisson") else "count"
+    if kind == "binary":
         model = lgb.LGBMClassifier(objective="binary", **_COMMON)
+    elif kind == "rate":
+        # Events per fixture, a label in [0, 1]; LightGBM's cross-entropy objective
+        # accepts fractional labels, so a double gameweek with one appearance is 0.5.
+        model = lgb.LGBMRegressor(objective="cross_entropy", **_COMMON)
+        y = (y.clip(lower=0) / train["fixtures_this_gw"].clip(lower=1)).clip(0.0, 1.0)
     else:
         # Poisson: these targets are non-negative counts with a heavy zero mass.
         model = lgb.LGBMRegressor(objective="poisson", **_COMMON)
@@ -91,8 +113,27 @@ def _fit_one(spec: ComponentSpec, train: pd.DataFrame, features: list[str]):
         # nothing to learn: predict zero rather than fail the whole ensemble.
         return _Zero()
 
-    model.fit(train[features], y)
+    weight = None
+    if RECENCY_HALFLIFE_DAYS > 0 and "kickoff_time" in train.columns:
+        age = (train["kickoff_time"].max() - train["kickoff_time"]).dt.total_seconds() / 86400.0
+        weight = np.power(0.5, age.to_numpy() / RECENCY_HALFLIFE_DAYS)
+    if SEEDS > 1:
+        members = []
+        for seed in range(SEEDS):
+            member = lgb.LGBMRegressor(**{**model.get_params(), "random_state": 42 + seed})
+            member.fit(train[features], y, sample_weight=weight)
+            members.append(member)
+        return _Bag(members)
+    model.fit(train[features], y, sample_weight=weight)
     return model
+
+
+class _Bag:
+    def __init__(self, members):
+        self.members = members
+
+    def predict(self, X):
+        return np.mean([m.predict(X) for m in self.members], axis=0)
 
 
 class _Zero:
@@ -123,16 +164,18 @@ class ComponentEnsemble:
         """Raw sub-model outputs, one column per component."""
         X = frame[self.features]
         out = pd.DataFrame(index=frame.index)
+        fixtures = frame["fixtures_this_gw"].clip(lower=1).to_numpy()
         for spec in SPECS:
             model = self.models[spec.name]
             if spec.kind == "binary":
                 out[spec.name] = model.predict_proba(X)[:, 1]
+            elif spec.kind == "rate" and MINUTES_MODEL != "poisson":
+                out[spec.name] = np.clip(model.predict(X), 0.0, 1.0) * fixtures
             else:
                 out[spec.name] = np.clip(model.predict(X), 0.0, None)
 
         # A player cannot appear more often than his club plays, nor play 60 minutes
         # more often than he appears; the Poisson models do not know that, so clip.
-        fixtures = frame["fixtures_this_gw"].clip(lower=1).to_numpy()
         out["e_appearances"] = np.minimum(out["e_appearances"].to_numpy(), fixtures)
         out["e_full"] = np.minimum(out["e_full"].to_numpy(), out["e_appearances"].to_numpy())
         out["e_cs"] = np.minimum(out["e_cs"].to_numpy(), out["e_full"].to_numpy())

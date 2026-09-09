@@ -27,6 +27,12 @@ SUM_COLUMNS = [
     "odds_xgc",
     "odds_cs",
     "odds_over25",
+    # Opponent-adjusted club ratings per fixture (fpl.models.team_strength): the
+    # expected-goal and probability terms add up across a double gameweek.
+    "ts_xg_for",
+    "ts_xg_against",
+    "ts_cs",
+    "ts_win",
     # FPL publishes its own expected-points figure before each deadline. It is the
     # baseline the backtest scores against, and also a legitimate pre-match input
     # (see ``fpl_xp_now`` in features.build).
@@ -64,6 +70,8 @@ FIRST_COLUMNS = [
     "penalties_order", "corners_order", "freekicks_order", "transfers_in_event",
     "transfers_out_event", "cost_change_start", "value_season",
     "is_upcoming", "selected_by_percent",
+    # the ratings themselves describe the club, not the match
+    "ts_att", "ts_def", "ts_opp_att", "ts_opp_def",
 ]  # fmt: skip
 
 

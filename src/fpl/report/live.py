@@ -151,6 +151,7 @@ def _player_record(row: pd.Series) -> dict:
         "ep3": round(float(row["ep3"]), 2),
         "ep5": round(float(row["ep5"]), 2),
         "raw_ep": round(float(row["raw_expected_points"]), 2),
+        "ep_model": round(float(row.get("model_expected_points", row["expected_points"])), 2),
         "own_att": None if pd.isna(row["own_att_rank"]) else int(row["own_att_rank"]),
         "own_def": None if pd.isna(row["own_def_rank"]) else int(row["own_def_rank"]),
         "fpl_ep": round(float(row["fpl_ep_next"]), 1),
