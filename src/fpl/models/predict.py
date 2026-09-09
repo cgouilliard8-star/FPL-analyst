@@ -26,6 +26,7 @@ loan or permanent departure is zeroed throughout; an unspecified doubt clears.
 
 from __future__ import annotations
 
+import contextlib
 import logging
 import math
 import re
@@ -288,7 +289,20 @@ def _future_rows(
                 f"{x['opponent']} ({'H' if x['home'] else 'A'})" for x in games
             )
             rows.append(clone)
-    return pd.DataFrame(rows) if rows else pd.DataFrame(columns=base.columns)
+    if not rows:
+        return pd.DataFrame(columns=base.columns)
+    # Rows built from Series copies come back as object columns; the model needs
+    # numbers. Restore the base frame's dtypes, and force the market and rating
+    # columns numeric (a quoted price next to NaN is exactly what tripped this).
+    future = pd.DataFrame(rows).infer_objects()
+    for column in (*ODDS_FEATURES, *TS_FEATURES):
+        if column in future.columns:
+            future[column] = pd.to_numeric(future[column], errors="coerce").astype(float)
+    for column, dtype in base.dtypes.items():
+        if column in future.columns and future[column].dtype == object and dtype != np.dtype("O"):
+            with contextlib.suppress(TypeError, ValueError):
+                future[column] = future[column].astype(dtype)
+    return future
 
 
 UNKNOWN_MINUTES = 90  # fewer league minutes on record than this: no evidence of our own

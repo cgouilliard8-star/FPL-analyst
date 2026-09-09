@@ -131,6 +131,19 @@ def _fit_one(spec: ComponentSpec, train: pd.DataFrame, features: list[str]):
     return model
 
 
+def _numeric(frame: pd.DataFrame, features: list[str]) -> pd.DataFrame:
+    """Every feature column as a float. A column that arrives as ``object`` (a price
+    beside a NaN, a rating from a copied row) would make LightGBM refuse the frame."""
+    bad = [c for c in features if c in frame.columns and frame[c].dtype == object]
+    if not bad:
+        return frame
+    out = frame.copy()
+    for c in bad:
+        out[c] = pd.to_numeric(out[c], errors="coerce").astype(float)
+    log.debug("coerced %d object feature columns to float", len(bad))
+    return out
+
+
 class _Bag:
     def __init__(self, members):
         self.members = members
@@ -157,6 +170,7 @@ class ComponentEnsemble:
     @classmethod
     def fit(cls, train: pd.DataFrame, features: list[str]) -> ComponentEnsemble:
         train = prepare_targets(train)
+        train = _numeric(train, features)
         models = {}
         for spec in SPECS:
             models[spec.name] = _fit_one(spec, train, features)
@@ -165,7 +179,7 @@ class ComponentEnsemble:
 
     def predict_components(self, frame: pd.DataFrame) -> pd.DataFrame:
         """Raw sub-model outputs, one column per component."""
-        X = frame[self.features]
+        X = _numeric(frame, self.features)[self.features]
         out = pd.DataFrame(index=frame.index)
         fixtures = frame["fixtures_this_gw"].clip(lower=1).to_numpy()
         for spec in SPECS:
