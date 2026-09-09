@@ -340,6 +340,11 @@ it yields expected goals for and against, a clean-sheet probability and a win
 probability, summed across a double gameweek like the odds; for the four later
 gameweeks of the horizon the ratings as of the deadline are applied to each opponent.
 It is opponent-adjusted, which a rolling mean is not, and it needs no external source.
+The attack and defence ranks the page shows -- and the fixture-toughness colours built
+on them -- come from these ratings too (expected goals for and against an average
+opponent at a neutral venue). They used to follow a two-match form window, which put
+a club with two lucky clean sheets third in the league for defence; the ratings do
+not forget a season of evidence that quickly.
 
 ## Minutes and set pieces
 
@@ -381,6 +386,16 @@ instead of eleven plus cover), Triple Captain (the captain counts three times), 
 Hit (the best squad money can buy for that week alone against yours) and Wildcard
 (the best squad over the run, from the solved squads on the Best squad tab, against
 yours) -- the best week of the next five for each, with the extra points and why.
+
+## Substitutions
+
+Drag a card onto another (or tap the ⇄ on a card, then the card to swap with) to
+make a substitution. Same position swaps straight across, pitch or bench; a different
+position is allowed between pitch and bench when the eleven stays a legal formation,
+and the formation changes with it, as in the FPL app -- keepers only swap with
+keepers. The arrangement is kept between visits. When the eleven on the pitch are not
+the best eleven from the fifteen in that shape, the rating card says by how much and
+offers to arrange them.
 
 ## Import your team
 

@@ -122,6 +122,13 @@
   .slot .fl{font-family:var(--m);font-size:.58rem;font-weight:800;border-radius:4px;padding:0 .3rem}
   .slot .fl.d{background:#F5C56B;color:#3A2400} .slot .fl.out{background:#F27189;color:#3A0010}
   .slot.empty{border-style:dashed}
+  .slot{position:relative}
+  .slot .swap{position:absolute;top:.25rem;right:.3rem;font-size:.8rem;line-height:1;opacity:.55;padding:.1rem .2rem;border-radius:4px}
+  .slot .swap:hover{opacity:1;background:rgba(255,255,255,.2)}
+  .slot.lifting{outline:2px solid #fff;box-shadow:0 0 0 4px rgba(255,255,255,.35);opacity:.85}
+  .slot.target{outline:2px dashed #FFD84D;cursor:copy} .slot.target.over{background:rgba(255,216,77,.35)}
+  .slot.notarget{opacity:.35;cursor:not-allowed}
+  .bench .slot.lifting{outline-color:var(--accent)} .bench .slot .swap:hover{background:var(--accent-soft)}
   .bench{background:var(--surface-2);padding:.6rem .5rem .8rem;border-top:1px solid var(--line)}
   .bench .lbl{text-align:center;font-family:var(--m);font-size:.62rem;letter-spacing:.14em;text-transform:uppercase;color:var(--ink-3);margin-bottom:.45rem}
   .bench .slot{background:var(--surface);color:var(--ink);border-color:var(--line-strong)}
@@ -356,7 +363,7 @@
             <button class="btn" id="template">Use template team</button>
             <button class="btn" id="autopick" title="Fill empty slots with the best players you can afford, then set the best formation, eleven and captain">Auto-pick</button>
             <button class="btn link" id="clear">Clear</button>
-            <span class="hint">Tap a slot to add a player.</span>
+            <span class="hint">Tap a slot to add a player. Drag a card onto another (or tap ⇄, then the other card) to make a substitution.</span>
           </div>
         </div>
         <div class="right">
@@ -579,16 +586,53 @@ function suggestTransfers(players, pool, bank, teamValue, formation, topN=5, fre
 }
 
 // ---------- squad state ----------
-function buildSlots(formation, existing=[]){
+function buildSlots(formation, existing=[], keepOrder=false){
+  // keepOrder: place players in the order given (a lineup the manager arranged by
+  // hand) instead of best-projection-first.
   const f = formation, slots = [];
   POSITIONS.forEach(pos => { for (let i=0;i<f[pos];i++) slots.push({pos, area:"xi", code:null}); });
   slots.push({pos:"GK", area:"bench", code:null});
   [["DEF",SQUAD_QUOTA.DEF-f.DEF],["MID",SQUAD_QUOTA.MID-f.MID],["FWD",SQUAD_QUOTA.FWD-f.FWD]].forEach(([pos,n]) => { for (let i=0;i<n;i++) slots.push({pos, area:"bench", code:null}); });
   const byPos = {GK:[],DEF:[],MID:[],FWD:[]};
   existing.map(c=>BY[c]).filter(Boolean).forEach(p => byPos[p.position].push(p));
-  POSITIONS.forEach(k => byPos[k].sort((a,b)=>epk(b,0)-epk(a,0)));
+  if (!keepOrder) POSITIONS.forEach(k => byPos[k].sort((a,b)=>epk(b,0)-epk(a,0)));
   slots.forEach(s => { const p = byPos[s.pos].shift(); if (p) s.code = p.code; });
   return slots;
+}
+// ---------- substitutions: swap two slots, keeping the shape legal ----------
+// Same position: a straight swap (pitch<->bench, or reordering the bench). Different
+// positions: only pitch<->bench and never a keeper, and only if the eleven stays a
+// legal formation -- then the formation changes with it, as in the FPL app.
+let swapFrom = null;   // index of the slot picked up (tap-to-swap mode)
+function swapTarget(i, j){
+  const a = state.slots[i], b = state.slots[j];
+  if (!a || !b || i===j || !a.code || !b.code) return null;
+  if (a.pos === b.pos) return {formation: state.formation};
+  if (a.area === b.area || a.pos==="GK" || b.pos==="GK") return null;
+  const onPitch = a.area==="xi" ? a : b, fromBench = a.area==="xi" ? b : a;
+  const f = {...state.formation}; f[onPitch.pos] -= 1; f[fromBench.pos] += 1;
+  const legal = FORMATIONS.find(x => fname(x)===fname(f));
+  return legal ? {formation: legal} : null;
+}
+function swapSlots(i, j){
+  const ok = swapTarget(i, j); if (!ok) return false;
+  const a = state.slots[i], b = state.slots[j];
+  if (a.pos === b.pos){ const t = a.code; a.code = b.code; b.code = t; }
+  else {
+    const xi = state.slots.filter(s=>s.area==="xi").map(s => s===a ? b.code : s===b ? a.code : s.code);
+    const bench = state.slots.filter(s=>s.area==="bench").map(s => s===a ? b.code : s===b ? a.code : s.code);
+    state.formation = ok.formation;
+    state.slots = buildSlots(ok.formation, [...xi, ...bench].filter(Boolean), true);
+  }
+  swapFrom = null; update(); return true;
+}
+function cancelSwap(){ if (swapFrom==null) return; swapFrom = null; markTargets(); }
+// The manager's own eleven, scored like the rating does for the next gameweek.
+function xiPoints(players){ if (players.length !== 11) return null; const top = [...players].sort((a,b)=>epk(b,0)-epk(a,0))[0]; return players.reduce((s,p)=>s+epk(p,0),0) + epk(top,0); }
+function arrangeBest(lineup){
+  state.formation = lineup.formation;
+  state.slots = buildSlots(lineup.formation, [...lineup.starters, ...lineup.bench], true);
+  update();
 }
 const squadPlayers = () => state.slots.map(s=>s.code).filter(Boolean).map(c=>BY[c]);
 const xiPlayers = () => state.slots.filter(s=>s.area==="xi" && s.code).map(s=>BY[s.code]);
@@ -596,7 +640,7 @@ const squadValue = () => squadPlayers().reduce((s,p)=>s+p.price,0);
 const clubCount = team => squadPlayers().filter(p=>p.team===team).length;
 function setFormation(f){ state.formation = f; state.slots = buildSlots(f, state.slots.map(s=>s.code).filter(Boolean)); update(); }
 function save(){ try{ localStorage.setItem("fpl-squad-v3", JSON.stringify({formation:state.formation, codes:state.slots.map(s=>s.code), bank:document.getElementById("bank").value, tv:document.getElementById("tv").value, ft:document.getElementById("ft").value, metric, cols})); }catch(e){} }
-function load(){ try{ const s=JSON.parse(localStorage.getItem("fpl-squad-v3")||"null"); if(!s) return false; state.formation=s.formation; state.slots=buildSlots(s.formation, s.codes.filter(Boolean)); document.getElementById("bank").value=s.bank??"0.0"; document.getElementById("tv").value=s.tv??""; document.getElementById("ft").value=s.ft??"1"; if (HORIZONS[s.metric]) metric=s.metric; if (Array.isArray(s.cols)&&s.cols.length===3) cols=s.cols; return true; }catch(e){ return false; } }
+function load(){ try{ const s=JSON.parse(localStorage.getItem("fpl-squad-v3")||"null"); if(!s) return false; state.formation=s.formation; state.slots=buildSlots(s.formation, s.codes.filter(Boolean), true); document.getElementById("bank").value=s.bank??"0.0"; document.getElementById("tv").value=s.tv??""; document.getElementById("ft").value=s.ft??"1"; if (HORIZONS[s.metric]) metric=s.metric; if (Array.isArray(s.cols)&&s.cols.length===3) cols=s.cols; return true; }catch(e){ return false; } }
 
 // ---------- pitch ----------
 function slotEl(slot, index, captain){
@@ -611,9 +655,33 @@ function slotEl(slot, index, captain){
     if (p.availability<1) badges.appendChild(el("span","fl "+(p.availability===0?"out":"d"), p.availability===0?"OUT":(p.chance!=null?p.chance+"%":"DOUBT")));
     b.appendChild(badges);
     b.title = `${p.name} · ${p.team} ${oppLong(p.opponent)} · ${HORIZONS[metric].long} ${fmt(p.ep)}${p.news?" · "+p.news:""}`;
+    // substitutions: drag a card onto another, or tap the arrows then tap the target
+    b.draggable = true;
+    b.addEventListener("dragstart", e => { swapFrom = index; e.dataTransfer.setData("text/plain", String(index)); e.dataTransfer.effectAllowed = "move"; markTargets(); });
+    b.addEventListener("dragend", () => { swapFrom = null; markTargets(); });
+    const handle = el("span","swap","⇄"); handle.title = "Substitute: tap, then tap the player to swap with"; handle.setAttribute("role","button");
+    handle.onclick = e => { e.stopPropagation(); swapFrom = (swapFrom===index) ? null : index; markTargets(); };
+    b.appendChild(handle);
   }
-  b.onclick = () => openPicker(index);
+  b.dataset.index = index;
+  b.addEventListener("dragover", e => { if (swapFrom!=null && swapTarget(swapFrom, index)){ e.preventDefault(); e.dataTransfer.dropEffect = "move"; b.classList.add("over"); } });
+  b.addEventListener("dragleave", () => b.classList.remove("over"));
+  b.addEventListener("drop", e => { e.preventDefault(); const from = swapFrom ?? parseInt(e.dataTransfer.getData("text/plain"), 10); if (swapTarget(from, index)) swapSlots(from, index); else { swapFrom = null; markTargets(); } });
+  b.onclick = () => {
+    if (swapFrom==null){ openPicker(index); return; }
+    if (swapFrom!==index && swapTarget(swapFrom, index)) swapSlots(swapFrom, index); else cancelSwap();
+  };
   return b;
+}
+// Highlight where the lifted player can go, without re-rendering mid-drag.
+function markTargets(){
+  document.querySelectorAll(".slot").forEach(n => {
+    const i = parseInt(n.dataset.index, 10);
+    n.classList.remove("lifting","target","notarget","over");
+    if (swapFrom==null) return;
+    if (i===swapFrom) n.classList.add("lifting");
+    else n.classList.add(swapTarget(swapFrom, i) ? "target" : "notarget");
+  });
 }
 function renderPitch(){
   const pitch = document.getElementById("pitch"), bench = document.getElementById("bench");
@@ -842,6 +910,11 @@ function renderRating(){
   c.appendChild(k);
   const meter = el("div","meter"); const i = el("i"); i.style.width = Math.min(100,rating)+"%"; meter.appendChild(i); c.appendChild(meter);
   if (freeShape.total - lineup.total > 0.05) c.appendChild(el("p","tip",`${fname(freeShape.formation)} with the same fifteen would project ${fmt(freeShape.total,1)} (+${fmt(freeShape.total-lineup.total,1)}).`));
+  const mine = xiPoints(xiPlayers()), sameXI = mine!=null && [...lineup.starters].sort().join() === xiPlayers().map(p=>p.code).sort().join();
+  if (mine!=null && !sameXI && lineup.points - mine > 0.05){
+    const t = el("p","tip"); t.textContent = `The eleven you have on the pitch project ${fmt(mine,1)} next gameweek; the best eleven from your fifteen in this shape project ${fmt(lineup.points,1)} (+${fmt(lineup.points-mine,1)}). `;
+    const fix = el("button","btn small","Arrange the best eleven"); fix.onclick = () => arrangeBest(lineup); t.appendChild(fix); c.appendChild(t);
+  }
   const budget = availableBudget(players, bank, tv);
   const over = squadValue() - budget;
   if (over > 1e-9){ const w = el("div","critbox"); w.appendChild(el("b",null,`Over budget by £${fmt(over,1)}m`)); w.appendChild(el("div",null,`Your fifteen cost £${fmt(squadValue(),1)}m against £${fmt(budget,1)}m (team value + bank). The moves below all bring you back under; if your team value has really grown, set it above.`)); c.appendChild(w); }
@@ -1413,6 +1486,7 @@ document.querySelectorAll("nav [role=tab]").forEach(b => b.addEventListener("cli
 }));
 ["bank","tv","ft"].forEach(id => document.getElementById(id).addEventListener("input", debounce(() => { renderPitch(); renderRating(); renderBest(); save(); }, 150)));
 document.getElementById("clear").addEventListener("click", () => { state.slots = buildSlots(state.formation, []); update(); });
+document.addEventListener("keydown", e => { if (e.key==="Escape") cancelSwap(); });
 document.getElementById("template").addEventListener("click", templateTeam);
 document.getElementById("autopick").addEventListener("click", autoPick);
 document.getElementById("import").addEventListener("click", () => { const id = parseInt(document.getElementById("fplid").value, 10); if (!id || id < 1){ notice("warn", "Type your FPL team ID first — it's the number in the address bar of your Points page on fantasy.premierleague.com (…/entry/1234567/…)."); return; } importTeam(id); });
@@ -1441,7 +1515,7 @@ function indexData(data){
 function applyData(data, got){
   indexData(data);
   // a saved squad may name players who have since left the game: drop them, keep the rest
-  state.slots = buildSlots(state.formation, state.slots.map(s=>s.code).filter(c => c && BY[c]));
+  state.slots = buildSlots(state.formation, state.slots.map(s=>s.code).filter(c => c && BY[c]), true);
   document.getElementById("notices").replaceChildren();
   renderStatus(); renderHorizon();
   update(); renderBest(); renderAll(); renderTeams(); renderBacktest();

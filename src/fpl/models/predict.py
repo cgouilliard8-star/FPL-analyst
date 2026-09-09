@@ -27,6 +27,7 @@ loan or permanent departure is zeroed throughout; an unspecified doubt clears.
 from __future__ import annotations
 
 import logging
+import math
 import re
 from datetime import datetime, timezone
 
@@ -179,8 +180,20 @@ def assemble(
     return combined, registry, first
 
 
-def _team_strength_now(features: pd.DataFrame, season: str, gameweek: int) -> pd.DataFrame:
-    """Each club's lagged attack/defence numbers as of the first projected gameweek."""
+def _team_strength_now(
+    features: pd.DataFrame, season: str, gameweek: int, ratings: Ratings | None = None
+) -> pd.DataFrame:
+    """Each club's attack/defence numbers as of the first projected gameweek.
+
+    The rolling windows are kept for the fixture context (they are what the model
+    was trained on). The *ranks* -- what the page shows as fixture toughness -- come
+    from the opponent-adjusted ratings: expected goals for and against an average
+    opponent at a neutral venue, with every match weighted down as it ages
+    (half-life 100 days). Ranking on a two-match form window instead put a club
+    with two lucky clean sheets third in the league for defence; the ratings do not
+    forget a season of evidence that quickly, and they credit a clean sheet against
+    the champions more than one against a promoted side.
+    """
     rows = features[(features["season"] == season) & (features["GW"] == gameweek)]
     own = [f"own_{m}" for m in TEAM_METRICS]
     table = rows.groupby("team")[own].first()
@@ -188,11 +201,17 @@ def _team_strength_now(features: pd.DataFrame, season: str, gameweek: int) -> pd
     # A club with no recent history (promoted, first gameweek) is treated as average
     # rather than dropped: it still has to be ranked and faced.
     table = table.fillna(table.mean()).fillna(0.0)
-    # Ranks follow current form: the exponentially weighted numbers, in which the last
-    # two or three matches carry most of the weight, blended 70/30 with the season-long
-    # window so one freak scoreline does not rewrite a club's standing.
-    att = 0.7 * table["team_xg_ew"] + 0.3 * table["team_xg_r38"]
-    dfn = 0.7 * table["team_xgc_ew"] + 0.3 * table["team_xgc_r38"]
+    if ratings is not None and ratings.att:
+        neutral = ratings.intercept + ratings.home / 2.0
+        att = pd.Series(
+            [math.exp(neutral + ratings.att.get(t, 0.0)) for t in table.index], index=table.index
+        )
+        dfn = pd.Series(
+            [math.exp(neutral - ratings.dfn.get(t, 0.0)) for t in table.index], index=table.index
+        )
+    else:  # no ratings (tests, tiny fixtures): fall back to recent form
+        att = 0.7 * table["team_xg_ew"] + 0.3 * table["team_xg_r38"]
+        dfn = 0.7 * table["team_xgc_ew"] + 0.3 * table["team_xgc_r38"]
     table["att_score"] = att
     table["def_score"] = dfn
     table["att_rank"] = att.rank(ascending=False, method="min").astype(int)
@@ -377,12 +396,13 @@ def project_horizon(
     )  # fmt: skip
     model = fit_component_model(train, columns)
 
-    strength = _team_strength_now(features, season, first)
-    league_xgc = float(features.loc[is_target, "opp_team_xgc_r10"].mean())
-    # Club ratings as of the deadline, for the fixtures beyond the next gameweek.
+    # Club ratings as of the deadline: the fixture-toughness ranks, and the fixture
+    # context for the gameweeks beyond the next one.
     in_scope = combined[combined["season"].isin(seasons)]
     with_opponent = attach_opponent(in_scope, build_team_id_map(registry, in_scope))
     ratings = latest_ratings(with_opponent, pd.Timestamp(cutoff))
+    strength = _team_strength_now(features, season, first, ratings)
+    league_xgc = float(features.loc[is_target, "opp_team_xgc_r10"].mean())
     future = _future_rows(
         base, snapshot, first, horizon, strength, league_xgc, load_odds((season,)), ratings
     )
