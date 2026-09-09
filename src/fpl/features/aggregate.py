@@ -12,7 +12,7 @@ import logging
 
 import pandas as pd
 
-from fpl.config import DC_THRESHOLD
+from fpl.config import DC_THRESHOLD, HAUL_POINTS
 
 log = logging.getLogger(__name__)
 
@@ -105,6 +105,10 @@ def aggregate_to_gameweek(silver: pd.DataFrame) -> pd.DataFrame:
         was_home=("was_home", "first"),
         opponent_team=("opponent_team", "first"),
     ).reset_index()
+
+    # The captaincy target: a haul, eight points or more in the gameweek. Expected
+    # points say who scores most on average; this says who has the ceiling.
+    aggregated["haul"] = (aggregated["total_points"].fillna(0) >= HAUL_POINTS).astype(int)
 
     doubles = int((aggregated["fixtures_this_gw"] > 1).sum())
     log.info(

@@ -48,6 +48,13 @@ In the repository on github.com:
 recommended eleven; without it the refresh still succeeds and a template sentence is
 used instead.
 
+## 3b. Bookmaker prices (optional, recommended)
+
+Sign up at <https://the-odds-api.com> (free tier, 500 requests a month; the refresh
+uses one per run), copy the API key, and add it as a second repository secret named
+`ODDS_API_KEY`. From the next refresh the coming gameweek's prices are fetched,
+folded into the club ratings, and kept as a growing history.
+
 ## 4. Run it once by hand
 
 **Actions -> refresh -> Run workflow.** The first run takes about fifteen minutes

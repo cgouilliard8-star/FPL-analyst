@@ -16,7 +16,15 @@ from pathlib import Path
 
 import pandas as pd
 
-from fpl.config import CURRENT_SEASON, HORIZON_WEIGHTS, MAX_HORIZON, PROJECT_ROOT, TRANSFER_HIT
+from fpl.config import (
+    CAPTAIN_HAUL_WEIGHT,
+    CURRENT_SEASON,
+    HAUL_POINTS,
+    HORIZON_WEIGHTS,
+    MAX_HORIZON,
+    PROJECT_ROOT,
+    TRANSFER_HIT,
+)
 from fpl.data.fpl_api import gameweek_averages, load_latest_snapshot, snapshot_to_gameweeks
 from fpl.data.schedule import EUROPEAN, load_schedule
 from fpl.data.silver import load_silver
@@ -125,6 +133,7 @@ def _fixture_record(row: pd.Series) -> dict:
         "raw_ep": _flt(row["raw_expected_points"]),
         "avail": _flt(row["availability"]),
         "p60": _flt(row["p_60"]),
+        "haul": _flt(row.get("p_haul")),
         "opp_att": _int(row["opp_att_rank"]),
         "opp_def": _int(row["opp_def_rank"]),
         "opp_xg": _flt(row["opp_xg_r5"]),
@@ -160,6 +169,7 @@ def _player_record(row: pd.Series) -> dict:
         "chance": None if pd.isna(row["chance_of_playing"]) else int(row["chance_of_playing"]),
         "news": row["news"] or "",
         "p60": round(float(row["p_60"]), 2),
+        "haul": round(float(row.get("p_haul") or 0.0), 3),
         "opponent": row["opponent"],
         "home": bool(row["is_home"]),
         "fixtures": int(row["fixtures_this_gw"]),
@@ -342,6 +352,8 @@ def build_live(
             "optimal_by": optimal_by,
             "horizon_weights": list(HORIZON_WEIGHTS),
             "transfer_hit": TRANSFER_HIT,
+            "captain_haul_weight": CAPTAIN_HAUL_WEIGHT,
+            "haul_points": HAUL_POINTS,
             "clubs": {t["name"]: t["short_name"] for t in snapshot["teams"]},
             "averages": gameweek_averages(snapshot),
         },

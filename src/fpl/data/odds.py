@@ -34,8 +34,25 @@ log = logging.getLogger(__name__)
 
 EXTERNAL = PROJECT_ROOT / "data" / "external"
 BASE = "https://www.football-data.co.uk"
+# The same files by other names, tried in turn: the site sits behind a bot filter
+# that has answered 503 to plain clients for days at a time.
+MIRRORS = (
+    "https://www.football-data.co.uk",
+    "https://football-data.co.uk",
+    "http://www.football-data.co.uk",
+)
+HEADERS = {
+    "User-Agent": (
+        "Mozilla/5.0 (Macintosh; Intel Mac OS X 14_0) AppleWebKit/537.36 (KHTML, like Gecko) "
+        "Chrome/128.0 Safari/537.36"
+    ),
+    "Accept": "text/csv,text/plain,*/*;q=0.8",
+    "Accept-Language": "en-GB,en;q=0.9",
+    "Referer": "https://www.football-data.co.uk/englandm.php",
+}
 TIMEOUT = 30
 DIVISION = "E0"
+ODDS_API = "https://api.the-odds-api.com/v4/sports/soccer_epl/odds/"
 
 ODDS_FEATURES = (
     "odds_win", "odds_draw", "odds_lose", "odds_xg", "odds_xgc", "odds_cs", "odds_over25",
@@ -151,31 +168,143 @@ def fetch_odds(
     the raw CSVs. Returns rows stored per season; a season that cannot be fetched
     keeps whatever is already on disk."""
     session = session or requests.Session()
-    session.headers.setdefault("User-Agent", "fpl-analyst/0.1")
+    for key, value in HEADERS.items():
+        session.headers.setdefault(key, value)
     EXTERNAL.mkdir(parents=True, exist_ok=True)
     stored: dict[str, int] = {}
     for season in seasons:
-        url = f"{BASE}/mmz4281/{_season_code(season)}/{DIVISION}.csv"
+        text = _fetch_csv(session, f"mmz4281/{_season_code(season)}/{DIVISION}.csv", "HomeTeam")
+        if text is None:
+            log.warning("odds %s: every mirror failed; keeping the stored file", season)
+            continue
+        odds_path(season).write_text(text)
+        stored[season] = text.count("\n") - 1
+        log.info("odds %s: %d matches", season, stored[season])
+    if upcoming:
+        text = _fetch_csv(session, "fixtures.csv", "HomeTeam")
+        if text is not None:
+            (EXTERNAL / "odds_fixtures.csv").write_text(text)
+            stored["fixtures"] = text.count("\n") - 1
+        else:
+            log.warning("odds fixtures: every mirror failed")
+    return stored
+
+
+def _fetch_csv(session: requests.Session, path: str, marker: str) -> str | None:
+    """One CSV from the first mirror that answers with the real thing. Every failure
+    is logged with its status so the Actions log says *why* the odds are missing."""
+    for base in MIRRORS:
+        url = f"{base}/{path}"
         try:
             r = session.get(url, timeout=TIMEOUT)
-            r.raise_for_status()
+            if r.status_code != 200:
+                log.warning("odds: %s -> HTTP %s", url, r.status_code)
+                continue
             text = r.content.decode("utf-8", errors="replace")
-            if "HomeTeam" not in text.splitlines()[0]:
-                raise ValueError("not a results CSV")
-            odds_path(season).write_text(text)
-            stored[season] = text.count("\n") - 1
-            log.info("odds %s: %d matches", season, stored[season])
-        except Exception as e:  # noqa: BLE001 - keep the last good copy
-            log.warning("odds %s: fetch failed (%s); keeping the stored file", season, e)
-    if upcoming:
-        try:
-            r = session.get(f"{BASE}/fixtures.csv", timeout=TIMEOUT)
-            r.raise_for_status()
-            (EXTERNAL / "odds_fixtures.csv").write_text(r.content.decode("utf-8", errors="replace"))
-            stored["fixtures"] = r.text.count("\n") - 1
+            if marker not in text.splitlines()[0]:
+                log.warning("odds: %s -> not a CSV (%s...)", url, text[:60].replace("\n", " "))
+                continue
+            return text
         except Exception as e:  # noqa: BLE001
-            log.warning("odds fixtures: fetch failed (%s)", e)
-    return stored
+            log.warning("odds: %s -> %s", url, e)
+    return None
+
+
+def fetch_live_odds(
+    season: str = CURRENT_SEASON,
+    *,
+    api_key: str | None = None,
+    session: requests.Session | None = None,
+) -> int:
+    """Today's prices for the coming Premier League matches from The Odds API (free
+    tier: 500 requests a month; this is one request), stored beside the results files
+    as ``odds_live_<season>.csv`` and merged with anything already there, so a
+    history of pre-match prices accumulates on its own even while football-data.co.uk
+    is unreachable. Returns the number of matches stored. Needs ``ODDS_API_KEY``."""
+    import os
+
+    api_key = api_key or os.environ.get("ODDS_API_KEY")
+    if not api_key:
+        log.info("odds live: no ODDS_API_KEY, skipping")
+        return 0
+    session = session or requests.Session()
+    params = {
+        "regions": "uk,eu",
+        "markets": "h2h,totals",
+        "oddsFormat": "decimal",
+        "apiKey": api_key,
+    }
+    r = session.get(ODDS_API, params=params, timeout=TIMEOUT)
+    if r.status_code != 200:
+        log.warning("odds live: HTTP %s (%s)", r.status_code, r.text[:120])
+        return 0
+    rows = parse_odds_api(r.json())
+    if not rows:
+        log.warning("odds live: no usable matches in the reply")
+        return 0
+    frame = pd.DataFrame(rows)
+    frame["season"] = season
+    path = EXTERNAL / f"odds_live_{season}.csv"
+    if path.exists():
+        old = pd.read_csv(path)
+        frame = pd.concat([frame, old], ignore_index=True)
+    # keep the latest price seen for each match
+    frame = frame.drop_duplicates(["home", "away"], keep="first")
+    EXTERNAL.mkdir(parents=True, exist_ok=True)
+    frame.to_csv(path, index=False)
+    log.info("odds live: %d matches stored (%s)", len(rows), path.name)
+    return len(rows)
+
+
+def parse_odds_api(payload: list[dict]) -> list[dict]:
+    """Average each match's 1X2 and over/under 2.5 prices across the bookmakers
+    quoted, as one row per match in football-data.co.uk's column names."""
+    aliases = load_team_aliases()
+    out = []
+    for event in payload:
+        home = canonical_team(event.get("home_team", ""), aliases)
+        away = canonical_team(event.get("away_team", ""), aliases)
+        if home is None or away is None:
+            log.warning(
+                "odds live: unknown club in %s v %s", event.get("home_team"), event.get("away_team")
+            )
+            continue
+        h, d, a, over, under = [], [], [], [], []
+        for book in event.get("bookmakers", []):
+            for market in book.get("markets", []):
+                prices = {o.get("name"): o for o in market.get("outcomes", [])}
+                if market.get("key") == "h2h" and {
+                    event["home_team"],
+                    event["away_team"],
+                    "Draw",
+                } <= set(prices):
+                    h.append(prices[event["home_team"]]["price"])
+                    a.append(prices[event["away_team"]]["price"])
+                    d.append(prices["Draw"]["price"])
+                elif market.get("key") == "totals":
+                    o = prices.get("Over")
+                    u = prices.get("Under")
+                    if o and u and float(o.get("point", 0)) == 2.5:
+                        over.append(o["price"])
+                        under.append(u["price"])
+        if not h:
+            continue
+        row = {
+            "Date": pd.Timestamp(event["commence_time"]).strftime("%d/%m/%Y"),
+            "HomeTeam": event["home_team"],
+            "AwayTeam": event["away_team"],
+            "home": home,
+            "away": away,
+            "AvgH": sum(h) / len(h),
+            "AvgD": sum(d) / len(d),
+            "AvgA": sum(a) / len(a),
+            "books": len(h),
+        }
+        if over:
+            row["Avg>2.5"] = sum(over) / len(over)
+            row["Avg<2.5"] = sum(under) / len(under)
+        out.append(row)
+    return out
 
 
 def load_odds(seasons: tuple[str, ...] = (*TRAIN_SEASONS, CURRENT_SEASON)) -> pd.DataFrame:
@@ -190,6 +319,10 @@ def load_odds(seasons: tuple[str, ...] = (*TRAIN_SEASONS, CURRENT_SEASON)) -> pd
     upcoming = EXTERNAL / "odds_fixtures.csv"
     if upcoming.exists():
         raw = pd.read_csv(upcoming, encoding="utf-8", encoding_errors="replace")
+        parts.append(parse_football_data(raw, CURRENT_SEASON))
+    live = EXTERNAL / f"odds_live_{CURRENT_SEASON}.csv"
+    if live.exists():  # The Odds API prices, in the same columns; results files win
+        raw = pd.read_csv(live)
         parts.append(parse_football_data(raw, CURRENT_SEASON))
     if not parts:
         return pd.DataFrame(columns=[*COLUMNS, "side", "team"])

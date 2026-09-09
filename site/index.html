@@ -469,15 +469,21 @@ function playProb(avail, p60){
 function prepPlayer(p){
   const n = HORIZONS[metric].n, first = DATA.meta.gameweek, N = HW().length;
   // the full five-gameweek run (for the planner and chips) and the horizon's slice
-  p.eps5 = new Array(N).fill(0); p.plays5 = new Array(N).fill(0); p.fx5 = new Array(N).fill(0);
-  (p.fixtures||[]).forEach(f => { const k = f.gw - first; if (k>=0 && k<N){ p.eps5[k] += f.ep||0; p.plays5[k] = Math.max(p.plays5[k], playProb(f.avail, f.p60)); p.fx5[k] += 1; } });
-  if (!p.fixtures || !p.fixtures.length){ p.eps5[0] = p.ep1 ?? p.ep ?? 0; p.plays5[0] = playProb(p.availability, p.p60); p.fx5[0] = 1; }
+  p.eps5 = new Array(N).fill(0); p.plays5 = new Array(N).fill(0); p.fx5 = new Array(N).fill(0); p.hauls5 = new Array(N).fill(0);
+  (p.fixtures||[]).forEach(f => { const k = f.gw - first; if (k>=0 && k<N){ p.eps5[k] += f.ep||0; p.plays5[k] = Math.max(p.plays5[k], playProb(f.avail, f.p60)); p.fx5[k] += 1; p.hauls5[k] = 1 - (1 - p.hauls5[k]) * (1 - (f.haul||0)); } });
+  if (!p.fixtures || !p.fixtures.length){ p.eps5[0] = p.ep1 ?? p.ep ?? 0; p.plays5[0] = playProb(p.availability, p.p60); p.fx5[0] = 1; p.hauls5[0] = p.haul||0; }
   p.eps = p.eps5.slice(0, n); p.plays = p.plays5.slice(0, n);
   p.ep = p[metric] ?? p.eps.reduce((s,e,k)=>s+e*HW()[k],0);
 }
 const epk = (p,k) => (p.eps && p.eps[k]) || 0;
 const playk = (p,k) => (p.plays && p.plays[k] != null) ? p.plays[k] : (p.availability ?? 1);
 const epk5 = (p,k) => (p.eps5 && p.eps5[k]) || 0;
+// The armband is decided for one gameweek at a time: expected points plus a weight
+// on the chance of a haul (8+), the weight set from the backtest (meta.captain_haul_weight).
+const haulk = (p,k) => (p.hauls5 && p.hauls5[k]) || 0;
+const CAPW = () => (DATA && DATA.meta.captain_haul_weight) || 0;
+const capScore = (p,k) => (k < (p.eps ? p.eps.length : 0) ? epk(p,k) : epk5(p,k)) + CAPW() * haulk(p,k);
+const capScore5 = (p,k) => epk5(p,k) + CAPW() * haulk(p,k);
 const playk5 = (p,k) => (p.plays5 && p.plays5[k] != null) ? p.plays5[k] : (p.availability ?? 1);
 function atLeast(probs){
   let dist = [1];
@@ -503,7 +509,8 @@ function bestElevenK(players, fixed, k, ep=epk, play=playk){
   for (const f of (fixed ? [fixed] : FORMATIONS)){
     const chosen = POSITIONS.flatMap(pos => by[pos].slice(0, f[pos]));
     if (chosen.length !== 11) continue;
-    const ranked = [...chosen].sort((a,b)=>ep(b,k)-ep(a,k));
+    const cs = p => ep(p,k) + CAPW() * haulk(p,k);   // armband: this gameweek only
+    const ranked = [...chosen].sort((a,b)=>cs(b)-cs(a));
     const pts = chosen.reduce((s,p)=>s+ep(p,k),0) + ep(ranked[0],k);
     if (!best || pts > best.points) best = {points:pts, starters:chosen.map(p=>p.code), captain:ranked[0].code, vice:ranked[1].code, formation:f, k};
   }
@@ -896,6 +903,30 @@ function lineupLine(lineup){
   return box;
 }
 
+// Captaincy for the next gameweek only: the armband is re-picked every week, so a
+// player's run of fixtures never decides it. Ranks the eleven by expected points plus
+// the weighted chance of a haul; explains each candidate in a line.
+function captaincyCard(players, lineup){
+  const c = el("div","card"); c.appendChild(el("h2",null,`Captain · GW${DATA.meta.gameweek}`));
+  const st = new Set(lineup.starters);
+  const xi = players.filter(p=>st.has(p.code)).map(p => ({p, ep: epk(p,0), haul: haulk(p,0), score: capScore(p,0)})).sort((a,b)=>b.score-a.score).slice(0,5);
+  const hp = DATA.meta.haul_points || 8;
+  c.appendChild(el("p","hint", CAPW() > 0
+    ? `Chosen for this gameweek alone: expected points, plus the chance of a ${hp}+ haul weighted at ${CAPW()} (set from the backtest). A steady 6 loses the armband to a 5.8 with a fatter tail.`
+    : `Chosen for this gameweek alone, on expected points. The chance of a ${hp}+ haul is shown for context.`));
+  const t = el("table","chips"); const th = el("tr"); ["","Player","Fixture","Exp. pts","Haul"].forEach(x=>th.appendChild(el("th",null,x))); t.appendChild(th);
+  xi.forEach((x,i) => {
+    const r = el("tr"); r.appendChild(el("td",null, i===0 ? "C" : i===1 ? "V" : ""));
+    const who = el("td"); who.appendChild(el("b",null,x.p.web_name)); who.appendChild(el("span","pos "+x.p.position, x.p.position)); r.appendChild(who);
+    const fx = el("td"); const opp = oppParts(x.p.opponent)[0]; fx.textContent = oppLong(x.p.opponent); const band = opp ? bandFor(x.p.position, opp.name) : null; if (band) fx.appendChild(bandChip(band, BAND_WORD[band])); if (x.p.fx5 && x.p.fx5[0] > 1) fx.appendChild(el("span","dif mid","DOUBLE")); r.appendChild(fx);
+    r.appendChild(el("td","n", fmt(x.ep,1)));
+    const hc = el("td","n"); hc.appendChild(el("b", x.haul >= 0.25 ? "good" : "", Math.round(100*x.haul)+"%")); r.appendChild(hc);
+    t.appendChild(r);
+  });
+  c.appendChild(t);
+  return c;
+}
+
 function renderRating(){
   const box = document.getElementById("rating"), mv = document.getElementById("moves");
   box.replaceChildren(); mv.replaceChildren();
@@ -906,7 +937,7 @@ function renderRating(){
   const lineup = bestEleven(players, state.formation), freeShape = bestEleven(players);
   const rating = 100*lineup.total/opt;
   const k = el("dl","kpis four");
-  [["rating","/100",fmt(rating,1)],[h.long,"pts",fmt(lineup.total,1)],["best £100m squad","pts",fmt(opt,1)],["next GW · captain","",`${fmt(lineup.points,1)} · ${BY[lineup.captain].web_name}`]].forEach(([t,u,v])=>{ const d=el("div","kpi"); d.appendChild(el("dt",null,t+(u?" "+u:""))); d.appendChild(el("dd",null,v)); k.appendChild(d); });
+  [["rating","/100",fmt(rating,1)],[h.long,"pts",fmt(lineup.total,1)],["best £100m squad","pts",fmt(opt,1)],[`GW${DATA.meta.gameweek} · captain`,"",`${fmt(lineup.points,1)} · ${BY[lineup.captain].web_name}${haulk(BY[lineup.captain],0)?` (${Math.round(100*haulk(BY[lineup.captain],0))}% haul)`:""}`]].forEach(([t,u,v])=>{ const d=el("div","kpi"); d.appendChild(el("dt",null,t+(u?" "+u:""))); d.appendChild(el("dd",null,v)); k.appendChild(d); });
   c.appendChild(k);
   const meter = el("div","meter"); const i = el("i"); i.style.width = Math.min(100,rating)+"%"; meter.appendChild(i); c.appendChild(meter);
   if (freeShape.total - lineup.total > 0.05) c.appendChild(el("p","tip",`${fname(freeShape.formation)} with the same fifteen would project ${fmt(freeShape.total,1)} (+${fmt(freeShape.total-lineup.total,1)}).`));
@@ -927,6 +958,7 @@ function renderRating(){
   }
   c.appendChild(lineupLine(freeShape.total - lineup.total > 0.05 ? freeShape : lineup));
   box.appendChild(c);
+  box.appendChild(captaincyCard(players, lineup));
 
   const moves = suggestTransfers(players, DATA.players, bank, tv, state.formation, 5, free);
   const mc = el("div","card"); mc.appendChild(el("h2",null, over > 1e-9 ? "Moves that fix your budget" : "Five moves that lift your rating"));

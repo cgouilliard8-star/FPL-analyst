@@ -72,10 +72,12 @@ jobs:
         continue-on-error: true
         run: fpl schedule --all
 
-      - name: Bookmaker odds (football-data.co.uk; non-fatal)
+      - name: Bookmaker odds (football-data.co.uk + The Odds API; non-fatal)
         if: steps.due.outputs.due == 'true'
         continue-on-error: true
-        run: fpl odds --all
+        env:
+          ODDS_API_KEY: ${{ secrets.ODDS_API_KEY }}
+        run: fpl -v odds --all
 
       - name: Season replay (from GW1, one free transfer a week, real points)
         if: steps.due.outputs.due == 'true'

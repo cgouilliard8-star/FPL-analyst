@@ -39,6 +39,7 @@ from fpl.config import (
     CURRENT_SEASON,
     FPL_BLEND,
     HORIZON_WEIGHTS,
+    MARKET_WEIGHT,
     MAX_HORIZON,
     TRAIN_SEASONS,
 )
@@ -294,6 +295,37 @@ UNKNOWN_MINUTES = 90  # fewer league minutes on record than this: no evidence of
 UNKNOWN_CAP = 1.25  # ...so defer to FPL's own number, allowing it this much upside
 
 
+_MARKET_PAIRS = (
+    ("ts_xg_for", "odds_xg"),
+    ("ts_xg_against", "odds_xgc"),
+    ("ts_cs", "odds_cs"),
+    ("ts_win", "odds_win"),
+)
+
+
+def _fold_market(rows: pd.DataFrame, weight: float = MARKET_WEIGHT) -> pd.DataFrame:
+    """Average the market's view of a coming fixture into the club-rating features.
+
+    Both are estimates of the same thing -- how many goals each side should score
+    -- and the bookmakers' one also knows the team news. The model was trained on
+    the ratings, so the blend stays on the same scale; where no price exists the
+    ratings stand alone.
+    """
+    if weight <= 0 or "odds_xg" not in rows.columns:
+        return rows
+    out = rows.copy()
+    priced = pd.to_numeric(out["odds_xg"], errors="coerce").notna()
+    if not priced.any():
+        return out
+    for rating, market in _MARKET_PAIRS:
+        if rating in out.columns and market in out.columns:
+            r = pd.to_numeric(out[rating], errors="coerce")
+            m = pd.to_numeric(out[market], errors="coerce")
+            out[rating] = np.where(priced & m.notna() & r.notna(), (1 - weight) * r + weight * m, r)
+    log.info("market prices folded into the club ratings for %d fixture rows", int(priced.sum()))
+    return out
+
+
 def _calibrate(breakdown: pd.DataFrame, positions: pd.Series) -> pd.DataFrame:
     """Scale each position's projections by its measured calibration factor."""
     factor = positions.map(CALIBRATION).fillna(1.0).to_numpy()
@@ -417,8 +449,8 @@ def project_horizon(
         else base.reset_index(drop=True)
     )
 
+    every = _fold_market(every.reset_index(drop=True))
     breakdown = model.explain(every).reset_index(drop=True)
-    every = every.reset_index(drop=True)
     breakdown = _calibrate(breakdown, every["position"])
     breakdown = _cap_unknowns(breakdown, every)
 
@@ -455,6 +487,9 @@ def project_horizon(
     fixtures["model_expected_points"] = fixtures["expected_points"]
     fixtures["availability"] = avail
     fixtures["p_60"] = np.clip(breakdown["p_60"].to_numpy() * avail, 0, 1)
+    # The armband: the chance of a haul is judged per gameweek, never over a run,
+    # because the captain is chosen again every week.
+    fixtures["p_haul"] = np.clip(breakdown["p_haul"].to_numpy() * avail, 0, 1)
     fixtures["opp_att_rank"] = fixtures["opponent"].map(strength["att_rank"]).astype("Int64")
     fixtures["opp_def_rank"] = fixtures["opponent"].map(strength["def_rank"]).astype("Int64")
     fixtures["opp_xg_r5"] = fixtures["opponent"].map(strength["team_xg_r5"])
@@ -488,6 +523,7 @@ def project_horizon(
         players[term] = nxt[term]
     players["expected_points"] = nxt["expected_points"]
     players["p_60"] = nxt["p_60"]
+    players["p_haul"] = nxt["p_haul"]
     weighted = fixtures.assign(w=fixtures["expected_points"] * fixtures["weight"])
     for h in (1, 3, 5):
         if h <= horizon:

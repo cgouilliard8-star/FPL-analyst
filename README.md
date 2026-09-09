@@ -172,6 +172,18 @@ defender's five mean the same thing. The archive cannot measure the live-only
 changes -- FPL's figure blended in, the deadline-aware refresh -- which is what the
 live scorecard is for.
 
+**Captaincy.** The haul classifier is well calibrated, and it does not pick better
+captains. On the same coarse folds, choosing the captain each gameweek from the
+fifteen highest-projected players by expected points alone averaged 6.73 points
+(2024-25) and 6.52 (2023-24); adding the weighted haul chance moved that to 7.12 and
+6.18 at a weight of 8, 6.94 and 6.58 at 12, 6.79 and 5.45 at 4 -- up one season, down
+the other, with no weight that helps both. Thirty-three captain picks a season is a
+small sample and the differences are one or two hauls either way. So the weight ships
+at zero: the captain is the highest expected points, the haul chance is shown beside
+each candidate for the reader, and the weight is re-measured when more seasons of
+walk-forward predictions exist. Perfect hindsight within the same fifteen would
+average about 16 a week, which says how much of captaincy is luck.
+
 **A whole season, with transfer rules.** `fpl replay` plays 2024-25 from gameweek 6
 to 38 under FPL's rules — a £100m squad, one free transfer a week bankable to five,
 never a hit, lineup and captain re-picked weekly, automatic substitutions — using the
@@ -342,9 +354,12 @@ gameweeks of the horizon the ratings as of the deadline are applied to each oppo
 It is opponent-adjusted, which a rolling mean is not, and it needs no external source.
 The attack and defence ranks the page shows -- and the fixture-toughness colours built
 on them -- come from these ratings too (expected goals for and against an average
-opponent at a neutral venue). They used to follow a two-match form window, which put
-a club with two lucky clean sheets third in the league for defence; the ratings do
-not forget a season of evidence that quickly.
+opponent at a neutral venue). They used to follow a two-match form window, and a
+data bug flattered it further: the live snapshot booked a transferred player's
+earlier fixtures to his *new* club, as phantom matches with nothing conceded, which
+once put a defence that had shipped five in three games third in the league. Each
+row is now booked to the club the player was actually playing for that day, and the
+ratings do not forget a season of evidence the way a two-match window does.
 
 ## Minutes and set pieces
 
@@ -373,6 +388,21 @@ weight cannot be backtested; instead the projection log keeps the model's figure
 FPL's and the blend side by side, and the live scorecard reports each one's rank
 correlation and squad points as gameweeks are played. If the model alone keeps
 beating the blend, the weight comes down; if FPL alone does, it goes up.
+
+## Captaincy
+
+The armband is the highest-leverage decision of the week and it is decided for
+*one* gameweek at a time -- a player's run of fixtures never chooses it. A tenth
+sub-model, a binary classifier on the same features, predicts each player's chance of
+a haul (eight points or more) in the coming gameweek; it is well calibrated (players
+given a 24% chance haul 23% of the time). The captain each week is the starter with
+the highest **expected points + `CAPTAIN_HAUL_WEIGHT` x P(haul)**, so a steady 6.0
+could lose the armband to a 5.8 with a fatter tail. The weight is set on the
+walk-forward: for every gameweek the captain is picked from the fifteen highest
+projected players and what he actually scored is averaged over the season
+(`scripts/captaincy.py`). Measured on two seasons it does not help reliably, so it
+ships at zero -- expected points choose, the haul chance informs; see Results. The Captain card on the My
+team tab shows the top five options for the gameweek with each one's haul chance.
 
 ## Plan and chips
 
@@ -412,7 +442,18 @@ team's picks are public on FPL for anyone with the ID.
 
 `fpl odds --all` pulls football-data.co.uk's results files (one per season, a dozen
 bookmakers' prices per match) and its `fixtures.csv` (the same prices for matches not
-yet played), and stores them in `data/external/`. From the 1X2 and over/under 2.5
+yet played), and stores them in `data/external/`. The site sits behind a bot filter
+that has answered 503 to plain clients for days at a time, so the fetch now presents
+itself as a browser, tries three spellings of the host in turn, and logs every
+response code so the Actions log says why a file is missing rather than just that it
+is. For the matches ahead there is a second source: with an `ODDS_API_KEY` secret
+(The Odds API, free tier, one request per refresh) the coming gameweek's prices are
+averaged across the bookmakers quoted and stored as `odds_live_<season>.csv`, merged
+week by week so a history of pre-match prices accumulates on its own. Where a coming
+fixture has a price, the market's implied goals for and against are averaged with the
+club ratings' (`MARKET_WEIGHT`, 50/50) before the model sees them -- both estimate
+the same thing, and the market also knows the team news -- so the live prices help
+now, without waiting for a training history. From the 1X2 and over/under 2.5
 prices each match yields, per side: the chance of winning, drawing and losing, and —
 by solving a two-team Poisson model so that the win probability and the over-2.5
 probability both match the market — an implied expected goals for and against, and a

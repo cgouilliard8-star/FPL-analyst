@@ -169,12 +169,15 @@ def _replay(args: argparse.Namespace) -> int:
 
 def _odds(args: argparse.Namespace) -> int:
     from fpl.config import CURRENT_SEASON, TRAIN_SEASONS
-    from fpl.data.odds import fetch_odds, load_odds
+    from fpl.data.odds import fetch_live_odds, fetch_odds, load_odds
 
     seasons = (*TRAIN_SEASONS, CURRENT_SEASON) if args.all else (CURRENT_SEASON,)
     stored = fetch_odds(seasons)
+    live = fetch_live_odds()
     table = load_odds((*TRAIN_SEASONS, CURRENT_SEASON))
-    print(f"fetched {stored}; {len(table) // 2} matches with odds on disk")
+    print(
+        f"fetched {stored}; live prices for {live} matches; {len(table) // 2} matches with odds on disk"
+    )
     return 0
 
 
@@ -209,7 +212,7 @@ def _projection_frame(payload: dict):
             {
                 "code": p["code"], "web_name": p["web_name"], "position": p["position"],
                 "team": p["team"], "price": p["price"], "ep1": p["ep1"], "ep5": p["ep5"],
-                "availability": p["availability"], "p_60": p["p60"],
+                "availability": p["availability"], "p_60": p["p60"], "p_haul": p.get("haul"),
                 "ep1_model": p.get("ep_model", p["ep1"]), "fpl_ep": p.get("fpl_ep", 0.0),
                 "gameweek": payload["meta"]["gameweek"],
             }

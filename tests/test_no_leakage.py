@@ -57,6 +57,7 @@ OUTCOME_COLUMNS = {
     "red_cards",
     "appearances",
     "full_appearances",
+    "haul",
     # FPL's xP as archived is scraped after the gameweek and carries the real points
     # inside FPL's "form", so it must be treated as an outcome, never a feature.
     "xP",

@@ -104,7 +104,9 @@ def test_save_snapshot_never_overwrites(snapshot, tmp_path, monkeypatch):
     # every snapshot appends one row per player to the availability log
     log = pd.read_csv(tmp_path / "availability_log.csv")
     assert len(log) == len(snapshot["elements"])
-    assert {"captured_at", "gameweek", "code", "status", "chance", "news", "price"} <= set(log.columns)
+    assert {"captured_at", "gameweek", "code", "status", "chance", "news", "price"} <= set(
+        log.columns
+    )
 
 
 def test_unknown_players_are_capped_at_fpls_view():

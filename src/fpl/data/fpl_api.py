@@ -245,6 +245,11 @@ def snapshot_to_gameweeks(
     """
     names = _team_names(snapshot)
     by_id = {e["id"]: e for e in snapshot["elements"]}
+    # The club a player was actually playing for in each fixture. ``element.team`` is
+    # the club he is at *today*; after a mid-season transfer his earlier rows would
+    # otherwise be booked to the new club -- as phantom matches with zero goals
+    # against, which once made a leaky defence look like the third best in the league.
+    sides = {f["id"]: (f["team_h"], f["team_a"]) for f in snapshot["fixtures"]}
 
     rows: list[dict] = []
     for element_id, history in snapshot["history"].items():
@@ -259,7 +264,9 @@ def snapshot_to_gameweeks(
             row["code"] = element["code"]
             row["name"] = f"{element['first_name']} {element['second_name']}".strip()
             row["position"] = ELEMENT_TYPE_TO_POSITION.get(element["element_type"], "UNK")
-            row["team"] = names[element["team"]]
+            home_id, away_id = sides.get(h.get("fixture"), (None, None))
+            played_for = (home_id if h.get("was_home") else away_id) if home_id else None
+            row["team"] = names[played_for] if played_for in names else names[element["team"]]
             row["GW"] = h["round"]
             row["xP"] = None
             rows.append(row)

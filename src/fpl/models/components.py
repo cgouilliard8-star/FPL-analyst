@@ -77,6 +77,9 @@ SPECS: tuple[ComponentSpec, ...] = (
     ComponentSpec("e_conceded", "goals_conceded", "count", "expected goals conceded"),
     ComponentSpec("e_bonus", "bonus", "count", "expected bonus points"),
     ComponentSpec("e_dc", "dc_hits", "count", "expected defensive-contribution awards"),
+    # Not a scoring event: the chance of a haul, for the armband. Binary, so it is
+    # a calibrated probability, and it passes through the decomposition untouched.
+    ComponentSpec("p_haul", "haul", "binary", "chance of a haul (8+ points)"),
 )
 
 REQUIRED_TARGETS = tuple(spec.target for spec in SPECS)
@@ -117,7 +120,7 @@ def _fit_one(spec: ComponentSpec, train: pd.DataFrame, features: list[str]):
     if RECENCY_HALFLIFE_DAYS > 0 and "kickoff_time" in train.columns:
         age = (train["kickoff_time"].max() - train["kickoff_time"]).dt.total_seconds() / 86400.0
         weight = np.power(0.5, age.to_numpy() / RECENCY_HALFLIFE_DAYS)
-    if SEEDS > 1:
+    if SEEDS > 1 and kind != "binary":
         members = []
         for seed in range(SEEDS):
             member = lgb.LGBMRegressor(**{**model.get_params(), "random_state": 42 + seed})

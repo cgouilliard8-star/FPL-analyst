@@ -73,6 +73,20 @@ TRANSFER_HIT = 4  # points cost of an extra transfer
 # the next deadline in full, then less as the future gets less certain.
 HORIZON_WEIGHTS: tuple[float, ...] = (1.0, 0.85, 0.7, 0.55, 0.4)
 
+# A haul: the gameweek score the captaincy model predicts the chance of. Eight is a
+# goal-plus-assist-plus-bonus kind of week -- the ones that decide a rank.
+HAUL_POINTS = 8
+# How much a haul's chance counts next to expected points when the armband is
+# chosen for a gameweek: captain score = expected points + CAPTAIN_HAUL_WEIGHT x
+# P(haul). Set from the walk-forward (scripts/captaincy.py); 0 means pure expected points.
+CAPTAIN_HAUL_WEIGHT = 0.0
+
+# Where the market has priced a coming fixture, its implied goals for and against
+# (and clean-sheet and win chances) are averaged with the club ratings' before the
+# model sees them: the two estimate the same quantity, and the market also knows
+# the team news. 0 ignores the market, 1 trusts it alone.
+MARKET_WEIGHT = 0.5
+
 # Share of FPL's own expected-points figure blended into the next gameweek's
 # projection (production only: the archive has no honest copy of it). FPL's number
 # knows the press conference and the training ground; ours knows the fixtures and

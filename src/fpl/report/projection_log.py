@@ -29,7 +29,7 @@ PROJECTION_DIR = PROJECT_ROOT / "data" / "external" / "projections"
 COLUMNS = (
     "code", "web_name", "position", "team", "price", "ep1", "ep5", "availability", "p_60",
     # the blend's two ingredients, kept apart so the scorecard can judge each
-    "ep1_model", "fpl_ep",
+    "ep1_model", "fpl_ep", "p_haul",
 )  # fmt: skip
 SOURCES = {"ep1": "blend", "ep1_model": "model", "fpl_ep": "fpl"}
 
@@ -48,7 +48,7 @@ def save_projections(
     frame.insert(0, "gameweek", gameweek)
     frame.insert(0, "season", season)
     frame.insert(0, "captured_at", captured_at or "")
-    for column in ("ep1", "ep5", "availability", "p_60", "price", "ep1_model", "fpl_ep"):
+    for column in ("ep1", "ep5", "availability", "p_60", "price", "ep1_model", "fpl_ep", "p_haul"):
         if column in frame.columns:
             frame[column] = frame[column].astype(float).round(3)
     path = projection_path(season, gameweek)
