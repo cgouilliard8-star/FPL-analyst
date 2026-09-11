@@ -80,6 +80,15 @@ HAUL_POINTS = 8
 # chosen for a gameweek: captain score = expected points + CAPTAIN_HAUL_WEIGHT x
 # P(haul). Set from the walk-forward (scripts/captaincy.py); 0 means pure expected points.
 CAPTAIN_HAUL_WEIGHT = 0.0
+# The armband goes to a midfielder or forward unless a defender or keeper projects
+# at least this much more than the best attacker in the eleven. Defenders' points
+# are floor (clean sheet, defensive contribution); attackers' are ceiling, and the
+# captain is a bet on the ceiling. Keeps a £4.1m full-back off the armband.
+CAPTAIN_DEFENDER_MARGIN = 1.0
+# What a bench player's projection is worth to the squad builder: roughly the
+# chance he comes on for a starter who misses out. Without it the solver leaves
+# money unspent and fills the bench with £4.5m players who will never play.
+BENCH_WEIGHT = 0.15
 
 # Where the market has priced a coming fixture, its implied goals for and against
 # (and clean-sheet and win chances) are averaged with the club ratings' before the

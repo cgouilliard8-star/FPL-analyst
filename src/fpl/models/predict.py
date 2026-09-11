@@ -307,6 +307,8 @@ def _future_rows(
 
 UNKNOWN_MINUTES = 90  # fewer league minutes on record than this: no evidence of our own
 UNKNOWN_CAP = 1.25  # ...so defer to FPL's own number, allowing it this much upside
+UNKNOWN_PRICE_BAND = 5  # a "similar" player costs within this many tenths (£0.5m)
+UNKNOWN_PRIOR_MIN = 5  # ...and a prior needs at least this many of them
 
 
 _MARKET_PAIRS = (
@@ -351,6 +353,66 @@ def _calibrate(breakdown: pd.DataFrame, positions: pd.Series) -> pd.DataFrame:
     return out
 
 
+def _scale_rows(breakdown: pd.DataFrame, scale: np.ndarray) -> pd.DataFrame:
+    out = breakdown.copy()
+    for column in (*CONTRIBUTIONS, "expected_points"):
+        out[column] = out[column].to_numpy() * scale
+    return out
+
+
+def _shrink_unknowns(breakdown: pd.DataFrame, rows: pd.DataFrame) -> pd.DataFrame:
+    """Pull a projection with little behind it toward what his price says he is.
+
+    The trees have to say *something* about a player with ten league minutes, and
+    what they say is an extrapolation from the few who looked like him -- which is
+    how a £4.1m defender was once the model's captain. The market has priced every
+    player, so the prior is the median projection of established players in the
+    same position within ``UNKNOWN_PRICE_BAND`` of his price, in the same gameweek;
+    the model's own figure earns its full weight only at ``UNKNOWN_MINUTES``. Runs
+    in backtests too, where FPL's own figure (``_cap_unknowns``) is not available.
+    """
+    minutes = rows["minutes_todate"].fillna(0.0).to_numpy(dtype=float)
+    unknown = minutes < UNKNOWN_MINUTES
+    if not unknown.any() or unknown.all():
+        return breakdown
+    price = pd.to_numeric(rows.get("value"), errors="coerce").to_numpy(dtype=float)
+    total = breakdown["expected_points"].to_numpy(dtype=float)
+    # Shrink the quality of an appearance, not the chance of one: the model's minutes
+    # judgement (price, ownership, the registry) is the best there is for a newcomer,
+    # and a prior in points per game would hand a non-playing £4.5m keeper a
+    # starter's projection.
+    apps = np.clip(breakdown["e_appearances"].to_numpy(dtype=float), 0.0, None)
+    per_app = np.where(apps > 0.05, total / np.where(apps > 0.05, apps, 1.0), np.nan)
+    gameweeks = rows["GW"].to_numpy()
+    positions = rows["position"].to_numpy()
+
+    prior = np.full(len(rows), np.nan)
+    known = ~unknown & np.isfinite(price) & (apps >= 0.5) & np.isfinite(per_app)
+    for gw in np.unique(gameweeks[unknown]):
+        for position in np.unique(positions[unknown & (gameweeks == gw)]):
+            peers = known & (gameweeks == gw) & (positions == position)
+            if peers.sum() < UNKNOWN_PRIOR_MIN:
+                continue
+            targets = np.flatnonzero(unknown & (gameweeks == gw) & (positions == position))
+            for i in targets:
+                near = peers & (np.abs(price - price[i]) <= UNKNOWN_PRICE_BAND)
+                pool = per_app[near] if near.sum() >= UNKNOWN_PRIOR_MIN else per_app[peers]
+                prior[i] = float(np.median(pool)) * apps[i]
+
+    has_prior = unknown & np.isfinite(prior) & (total > 0)
+    if not has_prior.any():
+        return breakdown
+    weight = np.clip(minutes / UNKNOWN_MINUTES, 0.0, 1.0)
+    shrunk = weight * total + (1.0 - weight) * prior
+    scale = np.where(has_prior, shrunk / np.where(total > 0, total, 1.0), 1.0)
+    log.info(
+        "shrank %d projections for players with under %d minutes on record",
+        int(has_prior.sum()),
+        UNKNOWN_MINUTES,
+    )
+    return _scale_rows(breakdown, scale)
+
+
 def _cap_unknowns(breakdown: pd.DataFrame, rows: pd.DataFrame) -> pd.DataFrame:
     """Rein in projections for players the data has never really seen.
 
@@ -371,9 +433,7 @@ def _cap_unknowns(breakdown: pd.DataFrame, rows: pd.DataFrame) -> pd.DataFrame:
     if not unknown.any():
         return breakdown
     scale = np.where(unknown, UNKNOWN_CAP * fpl / np.where(total > 0, total, 1.0), 1.0)
-    out = breakdown.copy()
-    for column in (*CONTRIBUTIONS, "expected_points"):
-        out[column] = out[column].to_numpy() * scale
+    out = _scale_rows(breakdown, scale)
     log.info(
         "capped %d projections for players with under %d minutes on record",
         int(unknown.sum()),
@@ -466,6 +526,7 @@ def project_horizon(
     every = _fold_market(every.reset_index(drop=True))
     breakdown = model.explain(every).reset_index(drop=True)
     breakdown = _calibrate(breakdown, every["position"])
+    breakdown = _shrink_unknowns(breakdown, every)
     breakdown = _cap_unknowns(breakdown, every)
 
     reference = (

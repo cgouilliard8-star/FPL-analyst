@@ -22,7 +22,7 @@ import pandas as pd
 from fpl.config import CURRENT_SEASON, XI_MAX, XI_MIN
 from fpl.data.fpl_api import snapshot_to_gameweeks
 from fpl.models.predict import project_horizon
-from fpl.optimise.rate import _best_eleven, _to_players, suggest_transfers
+from fpl.optimise.rate import _best_eleven, _to_players, captain_order, suggest_transfers
 from fpl.optimise.squad import pick_squad
 
 log = logging.getLogger(__name__)
@@ -116,12 +116,9 @@ def _play(
                 break
 
     captain = eleven.captain
-    if not played(captain):  # armband passes to the vice: next-best projected starter
-        vice = max(
-            (c for c in eleven.starters if c != captain),
-            key=lambda c: by_code[c]["expected_points"],
-        )
-        captain = vice
+    if not played(captain):  # armband passes to the vice: next in armband order
+        others = [by_code[c] for c in eleven.starters if c != captain]
+        captain = int(captain_order(others, lambda p: p["expected_points"])[0]["code"])
     total = sum(points(c) for c in starters) + (points(captain) if captain in starters else 0)
     bench = [c for c in by_code if c not in starters]
     return total, starters, captain, bench, autosubs, eleven.points

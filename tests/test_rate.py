@@ -46,14 +46,29 @@ def test_every_formation_is_legal():
     assert len(rate.FORMATIONS) == 8
 
 
-def test_best_eleven_captain_is_the_top_projection_not_the_keeper():
+def test_best_eleven_captain_is_the_top_attacker_unless_a_defender_is_clearly_ahead():
     squad = legal_squad(pool())
     eleven = rate.best_eleven(squad)
-    top = squad.loc[squad["code"].isin(eleven.starters)].sort_values("expected_points").iloc[-1]
-    assert eleven.captain == int(top["code"])
-    assert squad.loc[squad["code"] == eleven.captain, "position"].iloc[0] != "GK" or (
-        squad["expected_points"].max() == top["expected_points"]
-    )
+    starters = squad.loc[squad["code"].isin(eleven.starters)]
+    attackers = starters[starters["position"].isin(["MID", "FWD"])]
+    best_attacker = attackers.sort_values("expected_points").iloc[-1]
+    captain = starters.loc[starters["code"] == eleven.captain].iloc[0]
+    if captain["position"] in ("MID", "FWD"):
+        assert captain["expected_points"] == pytest.approx(best_attacker["expected_points"])
+    else:  # a defender or keeper only with a clear margin
+        assert captain["expected_points"] >= best_attacker["expected_points"] + 1.0
+
+
+def test_captain_order_keeps_a_cheap_defender_off_the_armband():
+    players = [
+        {"code": 1, "position": "DEF", "ep": 5.3},
+        {"code": 2, "position": "MID", "ep": 5.0},
+        {"code": 3, "position": "FWD", "ep": 4.8},
+        {"code": 4, "position": "DEF", "ep": 6.5},
+    ]
+    order = [p["code"] for p in rate.captain_order(players, lambda p: p["ep"])]
+    # 6.5 beats the best attacker by more than the margin: leads; 5.3 does not: waits
+    assert order == [4, 2, 3, 1]
 
 
 def test_best_eleven_points_include_the_captain_twice():

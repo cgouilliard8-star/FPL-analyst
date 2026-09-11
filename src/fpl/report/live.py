@@ -17,6 +17,7 @@ from pathlib import Path
 import pandas as pd
 
 from fpl.config import (
+    CAPTAIN_DEFENDER_MARGIN,
     CAPTAIN_HAUL_WEIGHT,
     CURRENT_SEASON,
     HAUL_POINTS,
@@ -353,6 +354,7 @@ def build_live(
             "horizon_weights": list(HORIZON_WEIGHTS),
             "transfer_hit": TRANSFER_HIT,
             "captain_haul_weight": CAPTAIN_HAUL_WEIGHT,
+            "captain_defender_margin": CAPTAIN_DEFENDER_MARGIN,
             "haul_points": HAUL_POINTS,
             "clubs": {t["name"]: t["short_name"] for t in snapshot["teams"]},
             "averages": gameweek_averages(snapshot),

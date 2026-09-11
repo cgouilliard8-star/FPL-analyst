@@ -124,3 +124,36 @@ def test_unknown_players_are_capped_at_fpls_view():
     assert out["expected_points"].iloc[1] == 6.0  # a known player is left alone
     assert out["expected_points"].iloc[2] == 6.0  # no FPL figure: nothing to defer to
     assert np.isclose(out[list(CONTRIBUTIONS)].iloc[0].sum(), out["expected_points"].iloc[0])
+
+
+def test_unknown_players_are_shrunk_toward_their_price_band():
+    import numpy as np
+    import pandas as pd
+
+    from fpl.models.combine import CONTRIBUTIONS
+    from fpl.models.predict import _shrink_unknowns
+
+    # Six established £4.5m defenders worth ~2 points a start, one newcomer the trees
+    # rate at 6, one newcomer who is not expected to play, one known £8m star.
+    n = 9
+    rows = pd.DataFrame(
+        {
+            "minutes_todate": [2000.0] * 6 + [10.0, 0.0, 3000.0],
+            "value": [45.0] * 6 + [41.0, 45.0, 80.0],
+            "GW": [1] * n,
+            "position": ["DEF"] * n,
+        }
+    )
+    totals = [2.0, 2.1, 1.9, 2.0, 2.2, 1.8, 6.0, 0.2, 6.5]
+    apps = [1.0, 1.0, 0.9, 1.0, 1.0, 0.9, 1.0, 0.1, 1.0]
+    parts = {term: [t / len(CONTRIBUTIONS) for t in totals] for term in CONTRIBUTIONS}
+    breakdown = pd.DataFrame(
+        {**parts, "expected_points": totals, "e_appearances": apps, "p_60": [0.5] * n}
+    )
+    out = _shrink_unknowns(breakdown, rows)
+    newcomer = out["expected_points"].iloc[6]
+    assert 2.0 < newcomer < 2.8  # ten minutes of evidence: nearly all prior
+    assert out["expected_points"].iloc[7] < 0.3  # not expected to play: stays low
+    assert out["expected_points"].iloc[8] == 6.5  # the star has a record: untouched
+    assert out["expected_points"].iloc[0] == 2.0
+    assert np.isclose(out[list(CONTRIBUTIONS)].iloc[6].sum(), newcomer)

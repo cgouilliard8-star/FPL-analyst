@@ -29,6 +29,7 @@ from itertools import product
 import pandas as pd
 
 from fpl.config import (
+    CAPTAIN_DEFENDER_MARGIN,
     HORIZON_WEIGHTS,
     MAX_PER_CLUB,
     METRIC_HORIZON,
@@ -214,6 +215,20 @@ def _bench_cover(squad: list[Player], eleven: Eleven, k: int) -> float:
     return cover
 
 
+def captain_order(players: list, score) -> list:
+    """Players in armband order: by ``score``, but a defender or keeper only leads
+    an attacker he beats by ``CAPTAIN_DEFENDER_MARGIN`` -- his points are a floor,
+    the captaincy is a bet on a ceiling."""
+    ranked = sorted(players, key=lambda p: -score(p))
+    attackers = [p for p in ranked if p["position"] in ("MID", "FWD")]
+    if not attackers:
+        return ranked
+    threshold = score(attackers[0]) + CAPTAIN_DEFENDER_MARGIN
+    lead = [p for p in ranked if p["position"] in ("MID", "FWD") or score(p) >= threshold]
+    rest = [p for p in ranked if p not in lead]
+    return lead + rest
+
+
 def _best_eleven(
     squad: list[Player], formation: dict[str, int] | None = None, k: int = 0
 ) -> Eleven:
@@ -230,7 +245,7 @@ def _best_eleven(
         chosen = [p for pos, n in shape.items() for p in by_position[pos][:n]]
         if len(chosen) != XI_SIZE:
             continue
-        ranked = sorted(chosen, key=lambda p: -_ep(p, k))
+        ranked = captain_order(chosen, lambda p: _ep(p, k))
         captain, vice = ranked[0], ranked[1]
         points = sum(_ep(p, k) for p in chosen) + _ep(captain, k)
         if best is None or points > best.points:

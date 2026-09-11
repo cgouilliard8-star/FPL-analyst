@@ -16,6 +16,7 @@ import pandas as pd
 import pulp
 
 from fpl.config import (
+    BENCH_WEIGHT,
     BUDGET_TENTHS,
     MAX_PER_CLUB,
     SQUAD_QUOTA,
@@ -47,9 +48,11 @@ def pick_squad(
 ) -> pd.DataFrame:
     """Choose the fifteen that maximise projected points inside every FPL rule.
 
-    The objective counts only the starting eleven plus a captain, because bench
-    players score nothing. Optimising the full fifteen instead would spend budget on
-    an expensive bench that never plays.
+    The objective is the starting eleven plus a captain, with the bench counted at
+    ``BENCH_WEIGHT`` -- about the chance a substitute comes on. Counting the bench in
+    full would buy an expensive bench that never plays; counting it at nothing left
+    money unspent and four £4.5m players who could never cover an absence. The
+    captain must be a midfielder or forward: his points are a bet on a ceiling.
     """
     _validate(players)
     pool = players.reset_index(drop=True)
@@ -59,8 +62,15 @@ def pick_squad(
     starter = pulp.LpVariable.dicts("start", pool.index, cat="Binary")
     captain = pulp.LpVariable.dicts("captain", pool.index, cat="Binary")
 
-    # A captain scores double, so his projection is counted twice.
-    problem += pulp.lpSum(pool.loc[i, "projected"] * (starter[i] + captain[i]) for i in pool.index)
+    # A captain scores double, so his projection is counted twice; the bench counts
+    # for the chance it is needed.
+    problem += pulp.lpSum(
+        pool.loc[i, "projected"]
+        * (starter[i] + captain[i] + BENCH_WEIGHT * (squad[i] - starter[i]))
+        for i in pool.index
+    )
+    for i in pool.index[~pool["position"].isin(["MID", "FWD"])]:
+        problem += captain[i] == 0
 
     problem += pulp.lpSum(squad.values()) == SQUAD_SIZE
     problem += pulp.lpSum(starter.values()) == XI_SIZE

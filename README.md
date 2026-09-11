@@ -19,7 +19,7 @@ browser, so it runs on GitHub Pages with nothing behind it.
 
 ## What the live page does
 
-**Rate my team.** Search and pick your fifteen (quotas and the three-per-club rule are
+**My Team.** Search and pick your fifteen (quotas and the three-per-club rule are
 enforced as you go), enter your team value, bank and free transfers, and the page
 scores the squad and rates it against the best £100m squad the model can build over
 the same horizon. Flagged players are called out with FPL's own news text.
@@ -198,7 +198,28 @@ The GW1–3 season replay is a three-gameweek sample and behaves like one: the s
 model with the earlier defaults scored 181 points (43 / 88 / 50) and with the tuned
 parameters 166 (27 / 99 / 40) — a fifteen-point swing between two models the 33-fold
 backtest cannot tell apart, driven by which fringe player happened to blank. Read it
-as a demonstration of the pipeline, not as a measurement.
+as a demonstration of the pipeline, not as a measurement. What it *is* good for is
+catching a broken decision: the 2026-27 replay once built a £95.5m squad with £4.5m
+unspent, two £4.5m forwards on the bench who could never play, a 5-5-1 eleven and a
+£4.1m defender as captain. Those were three separate bugs — a bench counted at
+nothing, no prior for players with no record, and an armband chosen on the mean —
+and each has its own section below. The replay after the fixes: 33 / 95 / 47 = 175
+against a 182 average, with the money spent (£99.5m), a bench that plays, a 3-5-2
+and Bruno Fernandes captain.
+
+**Defensive contribution.** The 2025-26 rule (two points for ten tackles,
+interceptions and clearances, or twelve for midfielders) is a scoring event like any
+other, so it has its own sub-model — but until this round it had nothing to learn
+from: the target was zero for three of four training seasons and there was no
+history feature for it, so it predicted 0.00 where defenders actually earn 0.21 a
+game, and every defender was under-projected by about a point. The player's own
+defensive-contribution history (rolling and per-90) and a flag for the seasons the
+rule applies to are now features. On the first rule season, walk-forward, the
+component moves from 0.00 to 0.11 against an actual 0.21 — the fold refits see only
+a few weeks of the new rule — and defenders' projections from 2.09 to 2.34 against
+3.06. On 2024-25 the features are constant and the scores are unchanged (Spearman
+0.716). With a full season of the rule now on record, the live model has what the
+backtest folds did not.
 
 **The `xP` caveat.** The archived `xP` row is not a fair baseline. It was scraped
 after each gameweek, and FPL folds the gameweek's real points into the "form" its
@@ -266,6 +287,16 @@ reused: of the 866 ids in the archive, 804 refer to more than one footballer. Jo
 seasons on it silently corrupts every rolling feature. `fpl.entity.resolve` builds the
 `(season, element) -> code` bridge from the player registry and fails hard on any
 unresolved row — a 99%-successful join is the worst outcome, because it looks fine.
+
+**The squad optimiser buys a bench.** The mixed-integer program that builds a squad
+from scratch (`optimise/squad.py`) maximises the starting eleven plus a captain, with
+the four bench players counted at `BENCH_WEIGHT` (0.15) of their projection --
+roughly the chance a substitute comes on. Counting the bench at nothing, as the first
+version did, is what produced a £95.5m squad with £4.5m unspent and two £4.5m
+forwards who could never cover an absence: the solver had no reason to spend on
+anyone who was not starting. Counting it in full would buy an expensive bench that
+never plays. The weight is small on purpose; it is there to make the solver prefer a
+£5.0m sub who plays to a £4.5m one who does not.
 
 ## Validation
 
@@ -389,6 +420,22 @@ FPL's and the blend side by side, and the live scorecard reports each one's rank
 correlation and squad points as gameweeks are played. If the model alone keeps
 beating the blend, the weight comes down; if FPL alone does, it goes up.
 
+## Newcomers
+
+A player with fewer than ninety league minutes on record has a price, an ownership
+and a club, but no evidence of his own; the trees still have to say something about
+him, and what they say is an extrapolation from the handful who looked like him --
+which is how a £4.1m defender with ten minutes to his name was once the model's
+captain in a backtest. Two guards. Live, `ep_next` caps such a player at 1.25x FPL's
+own figure. Everywhere -- backtests included, where FPL's figure does not exist --
+the *quality* of his appearances is shrunk toward the market's view: the median
+points-per-appearance of established players in his position within £0.5m of his
+price, in the same gameweek, with the model's own figure earning its full weight only
+at ninety minutes. The shrinkage is applied per appearance rather than per game on
+purpose: the model's judgement of whether he plays (price, ownership, the registry)
+is the best there is for a newcomer, and a per-game prior would hand a non-playing
+£4.5m keeper a starter's projection.
+
 ## Captaincy
 
 The armband is the highest-leverage decision of the week and it is decided for
@@ -401,8 +448,17 @@ could lose the armband to a 5.8 with a fatter tail. The weight is set on the
 walk-forward: for every gameweek the captain is picked from the fifteen highest
 projected players and what he actually scored is averaged over the season
 (`scripts/captaincy.py`). Measured on two seasons it does not help reliably, so it
-ships at zero -- expected points choose, the haul chance informs; see Results. The Captain card on the My
-team tab shows the top five options for the gameweek with each one's haul chance.
+ships at zero -- expected points choose, the haul chance informs; see Results.
+
+One guardrail: the armband goes to a midfielder or forward unless a keeper or
+defender is at least `CAPTAIN_DEFENDER_MARGIN` (1.0) points clear of the best
+attacker. Expected points are a mean; a captain is a bet on a ceiling, and a
+defender's ceiling is a clean sheet where an attacker's is a hat-trick. The
+projection alone cannot see that, and left to it the squad builder once handed the
+armband to a cheap defender on a 0.1-point edge. The same rule runs in the squad
+optimiser (its captain variable is fixed at zero for keepers and defenders), in the
+season simulation, and in the page's Arrange and Auto-pick. The Captain card on the
+My team tab shows the top five options for the gameweek with each one's haul chance.
 
 ## Plan and chips
 
@@ -426,6 +482,48 @@ and the formation changes with it, as in the FPL app -- keepers only swap with
 keepers. The arrangement is kept between visits. When the eleven on the pitch are not
 the best eleven from the fifteen in that shape, the rating card says by how much and
 offers to arrange them.
+
+## Player profiles
+
+Tap any player -- a card on the pitch, a row in a table, a name in a transfer -- and
+a sheet opens with his profile, the way the FPL app does it: photo, club, price and
+ownership; the next-gameweek and five-gameweek projections beside FPL's own figure
+and his chance of starting; the run of five fixtures as a ribbon, each opponent
+coloured by how tough it is for his position, with the points projected against each;
+where this week's points come from; and, under "Full Profile", the season so far
+(points, form, minutes, goals, assists, xG, xA, clean sheets, bonus, defensive
+contributions), his set-piece duties, his club's attack and defence ranks and the
+market (transfers in and out, price change). The actions follow from where you are:
+*Select Replacement* for a player you own (it opens the picker for his slot), *Add to
+Squad* or *Swap In…* for one you don't, *Replace X* when you came from the picker,
+and *Add to Comparison* everywhere.
+
+## Comparison
+
+Up to five players side by side. Add them with the + beside any player (the picker,
+the Players table, a profile) or with *Compare* on a suggested transfer, which puts
+the player leaving and the player arriving in the tray together. The comparison
+sheet lines up everything the model knows about them -- projections, the five
+fixtures with their toughness, the points decomposition, the season's numbers, set
+pieces, club strength and the market -- and marks the best of the group on each line
+(lower is better for goals conceded, ranks and set-piece order). A row at the top
+says who is already in your squad; for the others, *Bring in for…* swaps a player of
+the same position out and takes you back to the rating. The tray stays put as you
+move between tabs, so a comparison can be built up from several places.
+
+## The interface
+
+The page follows Apple's Human Interface Guidelines, so it feels at home on an
+iPhone and a Mac: the system typeface with the iOS type scale on phones and the macOS
+scale on desktop, Apple's semantic colours in light and dark (with the elevated
+surfaces dark mode uses for sheets), inset grouped cards, segmented controls for
+horizon and formation, a translucent bottom tab bar on phones and a toolbar on
+desktop, and bottom sheets with a grabber that swipe down to dismiss (a centred card
+on wider screens). Every control meets the 44pt touch target on phones; keyboard
+focus is visible; reduced motion and reduced transparency are honoured. The one
+splash of saturated colour is the pitch, because it is the content; fixture
+difficulty uses FPL's own five-step ramp, always with the opponent named beside it,
+so nothing is said by colour alone.
 
 ## Import your team
 

@@ -56,6 +56,12 @@ FORM_COLUMNS = [
     "clean_sheets",
     "saves",
     "goals_conceded",
+    # Defensive actions (tackles, interceptions, clearances, recoveries), scored from
+    # 2025-26. Without their own history the DC sub-model saw a target that was
+    # zero for three seasons and real for one, and learnt a diluted rate -- which
+    # under-projected every defender by about a point a game.
+    "defensive_contribution",
+    "dc_hits",
 ]
 
 # Rates: shrunk per-90 numbers built from career-to-date totals.
@@ -68,7 +74,12 @@ RATE_COLUMNS = [
     "saves",
     "clean_sheets",
     "expected_goals_conceded",
+    "defensive_contribution",
 ]
+
+# Seasons scored under the defensive-contribution rule. The flag lets the trees keep
+# the pre-rule seasons' zeros apart from a real zero.
+DC_SEASONS = ("2025-26", "2026-27", "2027-28", "2028-29")
 
 
 def _add_rate_features(frame: pd.DataFrame) -> pd.DataFrame:
@@ -256,6 +267,8 @@ def build_features(
     frame = aggregate_to_gameweek(silver)
     frame = attach_opponent(frame, team_map)
     frame = frame.sort_values(["code", "kickoff_time"]).reset_index(drop=True)
+    frame["defensive_contribution"] = frame["defensive_contribution"].fillna(0.0)
+    frame["dc_era"] = frame["season"].isin(DC_SEASONS).astype(int)
 
     # --- player history ----------------------------------------------------
     form = lagged_rolling_mean(frame, FORM_COLUMNS, WINDOWS)
@@ -330,6 +343,7 @@ def feature_columns(frame: pd.DataFrame) -> list[str]:
         "is_mid",
         "is_fwd",
         "GW",
+        "dc_era",
         *DUTY_FEATURES,
         *MINUTES_PATTERN_FEATURES,
     }

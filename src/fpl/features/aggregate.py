@@ -60,6 +60,7 @@ SUM_COLUMNS = [
     "expected_assists",
     "expected_goal_involvements",
     "expected_goals_conceded",
+    "defensive_contribution",
 ]
 
 # Taken from the first fixture of the gameweek (they describe the player, not the match).
