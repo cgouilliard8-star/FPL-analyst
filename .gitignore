@@ -8,6 +8,9 @@ data/gold/
 !tests/fixtures/*.csv
 !data/external/*.csv
 
+# player headshots, fetched once by the refresh
+!site/photos/*.png
+
 # secrets
 .env
 .env.*

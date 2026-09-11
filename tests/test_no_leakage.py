@@ -21,6 +21,7 @@ import pandas as pd
 import pytest
 
 from fpl.data.archive import load_players
+from fpl.data.core_insights import CORE_COLUMNS
 from fpl.data.silver import SILVER_PATH, load_silver
 from fpl.features.build import build_features, feature_columns
 
@@ -63,6 +64,8 @@ OUTCOME_COLUMNS = {
     # FPL's xP as archived is scraped after the gameweek and carries the real points
     # inside FPL's "form", so it must be treated as an outcome, never a feature.
     "xP",
+    # per-match actions from FPL-Core-Insights: outcomes of the match, like goals
+    *CORE_COLUMNS,
 }
 
 CORRUPTIBLE = sorted(OUTCOME_COLUMNS - {"played", "started", "appearances", "full_appearances"})
@@ -169,3 +172,31 @@ def test_double_gameweek_counts_are_per_fixture(honest):
 def test_feature_columns_exclude_outcomes(honest):
     exposed = set(feature_columns(honest)) & OUTCOME_COLUMNS
     assert not exposed, f"outcome columns exposed as features: {sorted(exposed)}"
+
+
+@pytest.fixture(scope="module")
+def core(silver) -> pd.DataFrame:
+    """Synthetic per-match actions for the fixture season, so the joined source is
+    put through the same corruption test as the archive itself."""
+    rows = silver[["season", "code", "GW"]].drop_duplicates().reset_index(drop=True)
+    rng = np.random.default_rng(0)
+    for column in CORE_COLUMNS:
+        rows[column] = rng.poisson(1.0, len(rows)).astype(float)
+    rows["ci_matches"] = 1
+    return rows
+
+
+def test_rewriting_future_match_actions_does_not_change_the_past(silver, players, core):
+    """The joined dataset must obey the same rule as the archive: corrupt its rows
+    from the cutoff on and nothing before the cutoff may move."""
+    honest = build_features(SEASONS, write=False, silver=silver, players=players, core=core)
+    tampered_core = core.copy()
+    mask = tampered_core["GW"] >= CUTOFF_GW
+    for column in CORE_COLUMNS:
+        tampered_core.loc[mask, column] = tampered_core.loc[mask, column] * 1000 + 999
+    tampered = build_features(
+        SEASONS, write=False, silver=silver, players=players, core=tampered_core
+    )
+    leaking = _leaking_features(honest, tampered, CUTOFF_GW)
+    assert not leaking, f"{len(leaking)} match-action feature(s) leak: {leaking[:12]}"
+    assert honest["ci_shots_mean3"].notna().sum() > 1000, "the synthetic actions were not joined"

@@ -279,10 +279,26 @@ def _results_to_date(snapshot: dict, season: str) -> pd.DataFrame:
 REPLAY_PATH = SITE_DATA / "replay_2024-25.json"
 
 
+def replay_path(season: str) -> Path:
+    return SITE_DATA / f"replay_{season}.json"
+
+
 def _load_replay(path: Path = REPLAY_PATH) -> dict | None:
     """The archived-season replay (model vs crowd manager over 33 gameweeks), produced
     by ``fpl.evaluate.replay`` from cached walk-forward predictions and committed."""
     return json.loads(path.read_text()) if path.exists() else None
+
+
+def _load_replays() -> dict[str, dict]:
+    """Every archived season replayed, newest first: ``{season: {model, crowd}}``."""
+    out = {}
+    for path in sorted(SITE_DATA.glob("replay_????-??.json"), reverse=True):
+        season = path.stem.replace("replay_", "")
+        try:
+            out[season] = json.loads(path.read_text())
+        except ValueError:
+            log.warning("unreadable replay %s", path)
+    return out
 
 
 def load_season_sim(path: Path = SEASON_SIM_PATH) -> dict | None:
@@ -365,6 +381,7 @@ def build_live(
         "optimal_squads": optimal_squads,
         "backtest": load_season_sim() if season_sim is None else season_sim,
         "replay": _load_replay(),
+        "replays": _load_replays(),
         "forward": score_forward(snapshot),
         "optimal": {
             "starters": [int(c) for c in squad.loc[squad["is_starter"], "code"]],

@@ -7,9 +7,10 @@ squad optimiser and transfer suggester together -- rather than of any one model.
 Every gameweek is projected ``as_of`` its own deadline, so nothing later leaks in.
 
 Transfer rules followed: one free transfer per gameweek from GW2, bankable up to
-five, and none in GW1 (the squad is built there). The planner never takes a points
-hit; it makes its best move when that move is worth at least ``MIN_GAIN`` weighted
-points over the horizon, and rolls the transfer otherwise.
+five, and none in GW1 (the squad is built there). By default the multi-week solver
+(fpl.optimise.plan) chooses each week's transfers, hits included when it judges them
+worth it; the older one-week suggester, which never takes a hit and moves only when
+a swap is worth ``MIN_GAIN`` weighted points, is kept as ``planner="greedy"``.
 """
 
 from __future__ import annotations
@@ -19,9 +20,10 @@ from dataclasses import dataclass, field
 
 import pandas as pd
 
-from fpl.config import CURRENT_SEASON, XI_MAX, XI_MIN
+from fpl.config import CURRENT_SEASON, HORIZON_WEIGHTS, XI_MAX, XI_MIN
 from fpl.data.fpl_api import snapshot_to_gameweeks
 from fpl.models.predict import project_horizon
+from fpl.optimise.plan import plan_transfers
 from fpl.optimise.rate import _best_eleven, _to_players, captain_order, suggest_transfers
 from fpl.optimise.squad import pick_squad
 
@@ -124,6 +126,34 @@ def _play(
     return total, starters, captain, bench, autosubs, eleven.points
 
 
+def _milp_move(own, players, fixtures, bank, free, gw, metric) -> list[dict]:
+    """This week's transfers from the multi-week plan, in the suggester's shape."""
+    pool = _to_players(players, metric, fixtures=fixtures)
+    filled = own.fillna({metric: 0.0, "expected_points": 0.0, "availability": 0.0})
+    squad = _to_players(filled, metric, fixtures=fixtures)
+    for p in squad:  # a player who left the game has no projection row
+        p.setdefault("eps", [0.0] * len(HORIZON_WEIGHTS))
+    try:
+        plan = plan_transfers(squad, pool, bank=bank, free_transfers=free, first_gameweek=gw)
+    except Exception as exc:  # noqa: BLE001 - the replay must not die on a solver hiccup
+        log.warning("GW%s: plan solver failed (%s); holding", gw, exc)
+        return []
+    week = plan.weeks[0]
+    if not week.transfers_in:
+        return []
+    cost = sum(p["price"] for p in week.transfers_in) - sum(p["price"] for p in week.transfers_out)
+    return [
+        {
+            "out": [p["code"] for p in week.transfers_out],
+            "in": [p["code"] for p in week.transfers_in],
+            "transfers": len(week.transfers_in),
+            "gain": plan.objective - plan.hold,
+            "cost_change": cost,
+            "hit": week.hit,
+        }
+    ]
+
+
 def simulate_season(
     snapshot: dict,
     season: str = CURRENT_SEASON,
@@ -132,8 +162,15 @@ def simulate_season(
     horizon: int = 5,
     metric: str = "ep5",
     min_gain: float = MIN_GAIN,
+    planner: str = "milp",
 ) -> dict:
-    """Build a team at ``gameweeks[0]`` and play through the rest; return the log."""
+    """Build a team at ``gameweeks[0]`` and play through the rest; return the log.
+
+    ``planner`` is how transfers are chosen each week: ``"milp"`` solves the whole
+    horizon at once (fpl.optimise.plan) and makes its first week's move;
+    ``"greedy"`` takes the best single or double transfer for the horizon
+    (fpl.optimise.rate.suggest_transfers) when it is worth ``min_gain``.
+    """
     actual = _actuals(snapshot, season)
     events = {e["id"]: e for e in snapshot["events"]}
     squad: list[int] = []
@@ -141,6 +178,7 @@ def simulate_season(
     free = 0
     results: list[GameweekResult] = []
     prices: dict[int, float] = {}
+    hits_total = 0
 
     for gw in gameweeks:
         players, fixtures, _ = project_horizon(snapshot, season, horizon=horizon, as_of_gameweek=gw)
@@ -163,23 +201,28 @@ def simulate_season(
                 )  # fmt: skip
                 own = pd.concat([own, filler], ignore_index=True)
             value = float(own["price"].sum())
-            moves = suggest_transfers(
-                own.fillna({metric: 0.0, "expected_points": 0.0, "availability": 0.0}),
-                players,
-                bank=bank,
-                top_n=3,
-                metric=metric,
-                team_value=value,
-                free_transfers=free,
-                fixtures=fixtures,
-            )
-            moves = [m for m in moves if m["transfers"] <= free and m["gain"] >= min_gain]
+            if planner == "milp":
+                moves = _milp_move(own, players, fixtures, bank, free, gw, metric)
+            else:
+                moves = suggest_transfers(
+                    own.fillna({metric: 0.0, "expected_points": 0.0, "availability": 0.0}),
+                    players,
+                    bank=bank,
+                    top_n=3,
+                    metric=metric,
+                    team_value=value,
+                    free_transfers=free,
+                    fixtures=fixtures,
+                )
+                moves = [m for m in moves if m["transfers"] <= free and m["gain"] >= min_gain]
             if moves:
                 best = moves[0]
                 for out_code, in_code in zip(best["out"], best["in"], strict=True):
                     squad[squad.index(out_code)] = in_code
                 bank = round(bank - best["cost_change"], 1)
-                free -= best["transfers"]
+                hit = int(best.get("hit") or 0)
+                hits_total += hit
+                free = max(0, free - best["transfers"])
                 names = dict(zip(players["code"], players["web_name"], strict=True))
                 transfers.append(
                     {
@@ -189,6 +232,7 @@ def simulate_season(
                         "in_names": [names.get(c, "?") for c in best["in"]],
                         "gain": best["gain"],
                         "cost_change": best["cost_change"],
+                        "hit": hit,
                     }
                 )
                 log.info("GW%s: %s -> %s (+%.2f)", gw, transfers[0]["out_names"],
@@ -200,6 +244,7 @@ def simulate_season(
         prices.update(dict(zip(own["code"].astype(int), own["price"].astype(float), strict=True)))
         rows = _to_players(own)  # rated on the next gameweek for lineup and captain
         points, starters, captain, bench, autosubs, projected = _play(rows, actual, gw)
+        points -= sum(t.get("hit", 0) for t in transfers)  # a hit is real points
         event = events.get(gw, {})
         results.append(
             GameweekResult(
@@ -231,10 +276,11 @@ def simulate_season(
         "rules": {
             "free_transfer_per_gameweek": 1,
             "max_banked": MAX_FREE_TRANSFERS,
-            "hits_taken": 0,
+            "hits_taken": hits_total,
             "min_gain": min_gain,
             "metric": metric,
             "horizon": horizon,
+            "planner": planner,
         },
         "note": (
             "Injury and suspension flags are not archived, so every player was treated "

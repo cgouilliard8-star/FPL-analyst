@@ -72,6 +72,16 @@ jobs:
         continue-on-error: true
         run: fpl schedule --all
 
+      - name: Per-match player actions (FPL-Core-Insights on GitHub; non-fatal)
+        if: steps.due.outputs.due == 'true'
+        continue-on-error: true
+        run: fpl -v core
+
+      - name: Player photos (only the missing ones; non-fatal)
+        if: steps.due.outputs.due == 'true'
+        continue-on-error: true
+        run: fpl photos
+
       - name: Bookmaker odds (football-data.co.uk + The Odds API; non-fatal)
         if: steps.due.outputs.due == 'true'
         continue-on-error: true
@@ -110,7 +120,7 @@ jobs:
         run: |
           git config user.name "refresh-bot"
           git config user.email "refresh-bot@users.noreply.github.com"
-          git add site/data/live.json data/external
+          git add site/data/live.json data/external site/photos
           git diff --cached --quiet || git commit -m "data: refresh $(date -u +%Y-%m-%dT%H:%MZ) [skip ci]"
           git push
 

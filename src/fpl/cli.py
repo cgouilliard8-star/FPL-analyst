@@ -124,7 +124,7 @@ def _simulate(args: argparse.Namespace) -> int:
     from fpl.report.live import SEASON_SIM_PATH
 
     gameweeks = tuple(range(args.from_gw, args.to_gw + 1))
-    result = simulate_season(load_latest_snapshot(), gameweeks=gameweeks)
+    result = simulate_season(load_latest_snapshot(), gameweeks=gameweeks, planner=args.planner)
     SEASON_SIM_PATH.parent.mkdir(parents=True, exist_ok=True)
     SEASON_SIM_PATH.write_text(json.dumps(result, indent=1))
     for g in result["gameweeks"]:
@@ -155,11 +155,24 @@ def _replay(args: argparse.Namespace) -> int:
     import json
 
     from fpl.evaluate.replay import replay_season
-    from fpl.report.live import REPLAY_PATH
+    from fpl.report.live import replay_path
 
     out = {m: replay_season(args.season, manager=m) for m in ("model", "crowd")}
-    REPLAY_PATH.parent.mkdir(parents=True, exist_ok=True)
-    REPLAY_PATH.write_text(json.dumps(out, indent=1))
+    try:  # the walk-forward scorecard for the same season, for the page's accuracy table
+        from fpl.evaluate.compare import build_scorecard
+
+        card = build_scorecard(args.season)
+        keep = [
+            c
+            for c in ("model", "n", "spearman", "precision@10", "rmse", "haulers")
+            if c in card.columns
+        ]
+        out["scorecard"] = json.loads(card[keep].to_json(orient="records"))
+    except FileNotFoundError:
+        pass
+    path = replay_path(args.season)
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_text(json.dumps(out, indent=1))
     for m, r in out.items():
         print(
             f"{m}: {r['total']} points over {len(r['gameweeks'])} gameweeks ({r['per_gameweek']} a week)"
@@ -177,6 +190,27 @@ def _odds(args: argparse.Namespace) -> int:
     table = load_odds((*TRAIN_SEASONS, CURRENT_SEASON))
     print(
         f"fetched {stored}; live prices for {live} matches; {len(table) // 2} matches with odds on disk"
+    )
+    return 0
+
+
+def _core(args: argparse.Namespace) -> int:
+    from fpl.config import CURRENT_SEASON, TRAIN_SEASONS
+    from fpl.data.core_insights import fetch_core_insights
+
+    seasons = (*TRAIN_SEASONS, CURRENT_SEASON) if args.all else (CURRENT_SEASON,)
+    written = fetch_core_insights(seasons, source=args.source)
+    print("core insights: " + ", ".join(f"{k}: {v} rows" for k, v in written.items()))
+    return 0
+
+
+def _photos(args: argparse.Namespace) -> int:
+    from fpl.data.fpl_api import load_latest_snapshot
+    from fpl.data.photos import fetch_photos
+
+    counts = fetch_photos(load_latest_snapshot())
+    print(
+        f"photos: {counts['fetched']} fetched, {counts['present']} present, {counts['failed']} failed"
     )
     return 0
 
@@ -338,6 +372,24 @@ def main(argv: list[str] | None = None) -> int:
     )
     od.set_defaults(func=_odds)
 
+    core = sub.add_parser(
+        "core",
+        parents=[common],
+        help="fetch per-match player actions from FPL-Core-Insights (GitHub)",
+    )
+    core.add_argument(
+        "--all", action="store_true", help="every training season, not just the current one"
+    )
+    core.add_argument(
+        "--source", default=None, help="a local checkout of the dataset instead of cloning"
+    )
+    core.set_defaults(func=_core)
+
+    ph = sub.add_parser(
+        "photos", parents=[common], help="copy every current player's FPL headshot into site/photos"
+    )
+    ph.set_defaults(func=_photos)
+
     due = sub.add_parser(
         "due", parents=[common],
         help="is a refresh worth running now? (near a deadline, or a day since the last)",
@@ -357,6 +409,10 @@ def main(argv: list[str] | None = None) -> int:
     )
     sim.add_argument("--from-gw", type=int, default=1)
     sim.add_argument("--to-gw", type=int, default=3)
+    sim.add_argument(
+        "--planner", choices=["milp", "greedy"], default="milp",
+        help="transfer planner: the multi-week solver (default) or the one-week suggester",
+    )  # fmt: skip
     sim.set_defaults(func=_simulate)
 
     args = parser.parse_args(argv)

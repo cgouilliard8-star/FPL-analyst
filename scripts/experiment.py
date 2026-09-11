@@ -32,6 +32,9 @@ def main() -> None:
     ap.add_argument("--minutes", choices=["rate", "poisson"], default=None)
     ap.add_argument("--halflife", type=float, default=None, help="recency half-life, days")
     ap.add_argument("--seeds", type=int, default=None)
+    ap.add_argument(
+        "--exclude", default=None, help="drop feature columns starting with this prefix"
+    )
     args = ap.parse_args()
     from fpl.models import components
 
@@ -44,6 +47,8 @@ def main() -> None:
 
     frame = build_features() if args.rebuild else load_features()
     features = feature_columns(frame)
+    if args.exclude:
+        features = [c for c in features if not c.startswith(args.exclude)]
     t0 = time.time()
     preds = walkforward.run(
         frame, features, fit_component_model, test_season=args.season,

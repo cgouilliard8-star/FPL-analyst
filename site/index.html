@@ -16,7 +16,7 @@
     --good:#248A3D; --good-soft:rgba(52,199,89,.14); --warn:#C93400; --warn-soft:rgba(255,149,0,.16); --crit:#D70015; --crit-soft:rgba(255,59,48,.12);
     --gk:#5856D6; --def:#0E7490; --mid:#248A3D; --fwd:#C93400;
     --gk-soft:rgba(88,86,214,.14); --def-soft:rgba(48,176,199,.16); --mid-soft:rgba(52,199,89,.14); --fwd-soft:rgba(255,149,0,.16);
-    --grass-a:#2E8B57; --grass-b:#2A8050; --grass-line:rgba(255,255,255,.7);
+    --grass-a:#3A9B5C; --grass-b:#349054; --grass-line:rgba(255,255,255,.75);
     --card:#FFFFFF; --card-ink:#000; --card-sub:rgba(60,60,67,.6);
     --glass:rgba(249,249,249,.78); --glass-line:rgba(0,0,0,.08);
     --shadow:0 1px 2px rgba(0,0,0,.04), 0 8px 24px rgba(0,0,0,.06);
@@ -90,6 +90,7 @@
   .status{display:flex;flex-wrap:wrap;gap:2px 14px;margin-top:6px;font-size:var(--t-foot);color:var(--ink-3)}
   .status b{color:var(--ink-2);font-weight:500}
   #refresh{margin-left:auto}
+  .brand .gw{margin-left:0}
 
   /* ---- navigation: bottom tab bar on phones, segmented toolbar on desktop ---- */
   nav{position:fixed;left:0;right:0;bottom:0;z-index:15;display:flex;justify-content:space-around;padding:6px max(8px,env(safe-area-inset-left)) calc(4px + env(safe-area-inset-bottom));background:var(--glass);-webkit-backdrop-filter:blur(24px) saturate(1.6);backdrop-filter:blur(24px) saturate(1.6);border-top:.5px solid var(--glass-line);margin:0}
@@ -163,41 +164,55 @@
   .chips .hzrow{margin:0}
 
   /* ---- builder: pitch + rating ---- */
-  .builder{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:16px;align-items:start}
-  .builder > .left,.builder > .right{position:sticky;top:56px;max-height:calc(100vh - 64px);overflow-y:auto;overscroll-behavior:contain;scrollbar-width:thin;padding:2px}
+  .builder{display:grid;grid-template-columns:minmax(0,1.18fr) minmax(0,1fr);gap:16px;align-items:start}
+  .builder > .left{padding:2px}
+  .builder > .right{position:sticky;top:56px;max-height:calc(100vh - 64px);overflow-y:auto;overscroll-behavior:contain;scrollbar-width:thin;padding:2px}
   @media(max-width:880px){.builder{grid-template-columns:minmax(0,1fr)} .builder > .left,.builder > .right{position:static;max-height:none;overflow:visible}}
   .pitchwrap{border-radius:var(--r);overflow:hidden;box-shadow:var(--shadow);background:var(--surface)}
   .banner{display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap;padding:10px 14px;color:var(--ink);font-weight:600;font-size:var(--t-foot)}
   .banner span{font-variant-numeric:tabular-nums}
-  .pitch{position:relative;background:repeating-linear-gradient(180deg,var(--grass-a) 0 11.1%,var(--grass-b) 11.1% 22.2%);padding:20px 8px 18px;overflow:hidden}
+  .pitch{position:relative;background:repeating-linear-gradient(180deg,var(--grass-a) 0 11.1%,var(--grass-b) 11.1% 22.2%);padding:18px 6px 20px;overflow:hidden}
+  .pitch::before{content:"";position:absolute;inset:0;background:radial-gradient(120% 70% at 50% 0%,rgba(255,255,255,.12),transparent 60%);pointer-events:none}
   .pitch svg.lines{position:absolute;inset:0;width:100%;height:100%;pointer-events:none}
-  .line{display:flex;justify-content:center;gap:clamp(4px,1.5vw,12px);margin:0 0 16px;position:relative;z-index:1;min-width:0}
+  .line{display:flex;justify-content:center;align-items:flex-start;gap:clamp(5px,1.2vw,12px);margin:0 0 14px;position:relative;z-index:1;min-width:0}
   .line:last-child{margin-bottom:0}
-  .slot{position:relative;flex:0 1 104px;min-width:0;width:auto;overflow:hidden;display:flex;flex-direction:column;align-items:stretch;background:var(--card);border:0;border-radius:var(--r-s);padding:8px 6px 6px;cursor:pointer;color:var(--card-ink);font-family:var(--f);text-align:center;box-shadow:0 1px 2px rgba(0,0,0,.18),0 4px 12px rgba(0,0,0,.12);transition:transform .12s var(--ease),box-shadow .12s;letter-spacing:-.01em}
-  .slot:hover{transform:translateY(-1px);box-shadow:0 2px 4px rgba(0,0,0,.18),0 8px 20px rgba(0,0,0,.16)}
-  .slot:active{transform:scale(.97)}
-  .slot .ic{font-size:22px;line-height:1;margin-bottom:2px;color:var(--ink-3)}
-  .slot .posl{font-size:var(--t-cap2);letter-spacing:.06em;font-weight:700;color:var(--card-sub);padding-left:14px}
-  @media(max-width:420px){.slot .nm{font-size:12px;letter-spacing:-.02em} .slot{padding:7px 4px 5px}}
-  .slot .nm{font-size:var(--t-foot);font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-top:2px}
-  .slot .pr{font-size:var(--t-cap2);color:var(--card-sub)}
-  .slot .fx1{font-size:var(--t-cap2);font-weight:700;background:var(--fill-2);color:var(--ink);border-radius:6px;margin-top:5px;padding:2px 0;letter-spacing:.01em}
-  .slot .ep{font-size:var(--t-foot);font-weight:700;background:var(--fill-2);color:var(--ink);border-radius:6px;margin-top:5px;padding:2px 0}
-  .slot .badges{display:flex;justify-content:center;gap:4px;margin-top:5px;min-height:16px}
-  .slot .c{font-size:10px;font-weight:800;background:var(--ink);color:var(--surface);border-radius:50%;width:16px;height:16px;display:grid;place-items:center}
-  .slot .fl{font-size:9px;font-weight:800;border-radius:4px;padding:0 5px;line-height:16px}
-  .slot .fl.d{background:var(--warn-soft);color:var(--warn)} .slot .fl.out{background:var(--crit-soft);color:var(--crit)}
-  .slot.empty{background:rgba(255,255,255,.55);border:1.5px dashed rgba(255,255,255,.9);box-shadow:none;color:#083A22}
-  .slot.empty .posl,.slot.empty .nm{color:#0B3D2A}
-  .slot .swap{position:absolute;top:3px;left:4px;font-size:13px;line-height:1;opacity:.5;padding:2px 3px;border-radius:5px;color:var(--card-ink)}
-  .slot .swap:hover{opacity:1;background:var(--fill)}
-  .slot.lifting{outline:2px solid var(--accent);outline-offset:2px;opacity:.9}
-  .slot.target{outline:2px dashed #FFD60A;outline-offset:2px;cursor:copy} .slot.target.over{background:#FFF4B8;color:#000}
+  .slot{position:relative;flex:0 1 110px;min-width:0;width:auto;display:flex;flex-direction:column;align-items:stretch;border:0;padding:0;cursor:pointer;color:#3B2E0A;font-family:var(--f);text-align:center;letter-spacing:-.01em;background:linear-gradient(172deg,#3A3B45 0%,#26272F 45%,#17181E 100%);clip-path:polygon(0 3%,8% 0,92% 0,100% 3%,100% 90%,50% 100%,0 90%);filter:drop-shadow(0 3px 5px rgba(0,0,0,.28));transition:transform .12s var(--ease)}
+  .slot:hover{transform:translateY(-2px) scale(1.02)} .slot:active{transform:scale(.97)}
+  .slot::after{content:"";position:absolute;inset:0;background:linear-gradient(120deg,rgba(255,255,255,.14) 0%,rgba(255,255,255,0) 45%,rgba(255,255,255,0) 65%,rgba(255,255,255,.06) 100%);pointer-events:none}
+  .slot .top{position:relative;height:76px;overflow:hidden}
+  .slot .top::before{content:"";position:absolute;left:54%;top:58%;width:86px;height:70px;transform:translate(-50%,-50%);border-radius:50%;background:radial-gradient(closest-side,var(--glow,rgba(255,255,255,.5)),transparent);opacity:.75;filter:blur(6px)}
+  .slot.GK{--glow:rgba(125,122,255,.85)} .slot.DEF{--glow:rgba(64,200,224,.85)} .slot.MID{--glow:rgba(48,209,88,.85)} .slot.FWD{--glow:rgba(255,159,10,.85)}
+  .slot .top .pic{position:absolute;left:54%;bottom:-4px;transform:translateX(-50%);height:84px;width:auto;max-width:none;object-fit:contain;object-position:bottom;filter:drop-shadow(0 2px 3px rgba(0,0,0,.3))}
+  .slot .top .ini{position:absolute;left:54%;top:52%;transform:translate(-50%,-50%);font-weight:800;font-size:22px;color:rgba(255,255,255,.7)}
+  .slot .top .plus{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);font-size:28px;line-height:1;color:#fff;font-weight:500}
+  .slot.empty{background:rgba(255,255,255,.14);clip-path:none;border-radius:12px;border:1.5px dashed rgba(255,255,255,.85);filter:none;color:#fff}
+  .slot.empty::after{display:none} .slot.empty .pr{color:rgba(255,255,255,.8)} .slot.empty .nm{color:#fff}
+  .slot .rt{position:absolute;left:6px;top:6px;display:flex;flex-direction:column;align-items:center;line-height:1;z-index:2}
+  .slot .rt b{font-size:19px;font-weight:800;color:#fff;letter-spacing:-.03em;text-shadow:0 1px 2px rgba(0,0,0,.4)}
+  .slot .posl{margin-top:2px;font-size:8px;letter-spacing:.06em;font-weight:800;padding:1px 4px;border-radius:4px;color:#fff}
+  .slot .posl.GK{background:#5856D6} .slot .posl.DEF{background:#0E7490} .slot .posl.MID{background:#248A3D} .slot .posl.FWD{background:#C93400}
+  .slot .c{position:absolute;right:6px;bottom:4px;font-size:10px;font-weight:800;background:#FFD60A;color:#1C1C1E;border-radius:50%;width:18px;height:18px;display:grid;place-items:center;box-shadow:0 1px 3px rgba(0,0,0,.35);z-index:2}
+  .slot .fl{position:absolute;right:5px;top:6px;font-size:9px;font-weight:800;border-radius:5px;padding:1px 4px;line-height:14px;box-shadow:0 1px 2px rgba(0,0,0,.25);z-index:2}
+  .slot .fl.d{background:#FFCC00;color:#3A2A00} .slot .fl.out{background:#FF3B30;color:#fff}
+  .slot .swap{position:absolute;right:5px;top:6px;width:18px;height:18px;border-radius:50%;background:rgba(255,255,255,.22);color:#fff;font-size:11px;line-height:18px;box-shadow:0 1px 2px rgba(0,0,0,.25);z-index:2}
+  .slot .fl ~ .swap{top:24px}
+  .slot .swap:hover{background:rgba(255,255,255,.4)}
+  .slot .lb{position:relative;padding:0 0 0;z-index:1}
+  .slot .nm{font-size:11.5px;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;color:#1C1C1E;background:#F2F2F7;padding:4px 5px;letter-spacing:0;margin:0;border-radius:0}
+  .slot .pr{font-size:10px;color:rgba(255,255,255,.75);padding:3px 0 2px;font-weight:600}
+  .slot .fx1{margin:0;padding:4px 4px 15px;font-size:10.5px;font-weight:800;letter-spacing:.04em;border-radius:0;background:rgba(255,255,255,.16);color:#fff;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .slot .fx1.b1,.slot .fx1.b2,.slot .fx1.b3,.slot .fx1.b4,.slot .fx1.b5{background:var(--bc);color:var(--bt)}
+  .slot.lifting{outline:0;transform:translateY(-4px) scale(1.04)}
+  .slot.target{cursor:copy} .slot.target::after{background:rgba(255,214,10,.35)} .slot.target.over::after{background:rgba(255,214,10,.6)}
   .slot.notarget{opacity:.35;cursor:not-allowed}
-  .bench{background:var(--surface);padding:10px 8px 14px;border-top:.5px solid var(--line)}
-  .bench .lbl{text-align:center;margin-bottom:8px}
-  .bench .slot{background:var(--surface-2);box-shadow:none;border:.5px solid var(--line)}
-  .bench .slot .ep,.bench .slot .fx1{background:var(--fill-2)}
+  .sortable-fallback{opacity:.95!important;transform:scale(1.08) rotate(-2deg);z-index:50}
+  .sortable-ghost{opacity:.35}
+  .sortable-chosen{cursor:grabbing}
+  .bench .slot{background:linear-gradient(172deg,#5C5E6B 0%,#484A55 45%,#34353E 100%)}
+  @media(max-width:420px){.slot{flex-basis:76px} .slot .top{height:64px} .slot .top .pic{height:72px} .slot .rt b{font-size:15px} .slot .nm{font-size:11px} .slot .fx1{font-size:9.5px;padding:3px 2px 12px}}
+  .bench{background:linear-gradient(180deg,#1E5C3A,#174A2F);padding:12px 8px 16px}
+  .bench .lbl{text-align:center;margin-bottom:10px;color:rgba(255,255,255,.75)}
+  .bench .line{margin:0}
   .actions{display:flex;flex-wrap:wrap;gap:8px 10px;align-items:center;margin-top:12px}
   .actions .hint{flex-basis:100%}
 
@@ -256,6 +271,8 @@
   .ptable .count{padding:10px 12px;color:var(--ink-3);font-size:var(--t-foot)}
   .cmpadd{width:26px;height:26px;border-radius:50%;border:0;background:var(--fill);color:var(--accent-ink);font-size:15px;font-weight:600;cursor:pointer;display:grid;place-items:center;flex:none;line-height:1}
   .cmpadd[aria-pressed="true"]{background:var(--accent);color:#fff}
+  .starbtn{width:26px;height:26px;border-radius:50%;border:0;background:var(--fill);color:var(--warn);font-size:14px;cursor:pointer;display:grid;place-items:center;flex:none;line-height:1}
+  .starbtn[aria-pressed="true"]{background:var(--warn-soft)}
   .cmpadd.info{font-family:Georgia,"Times New Roman",serif;font-style:italic;font-weight:700;background:transparent;border:1.5px solid var(--line-strong);color:var(--ink-2)}
   .cmpadd:hover{filter:brightness(.95)}
 
@@ -334,7 +351,6 @@
   .band{background:var(--bc);color:var(--bt)}
   td.band{font-weight:600;color:var(--bt);background:var(--bc)}
   .wide td .oppc{display:block;font-size:var(--t-cap2);font-weight:500;opacity:.9}
-  .slot .fx1.b1,.slot .fx1.b2,.slot .fx1.b3,.slot .fx1.b4,.slot .fx1.b5{background:var(--bc);color:var(--bt)}
   .bandkey{display:flex;gap:6px;align-items:center;flex-wrap:wrap;font-size:var(--t-foot);color:var(--ink-2);margin:6px 0 12px}
   .bandkey .dif{margin:0}
   .day{margin:16px 0 6px}
@@ -460,6 +476,7 @@
 
   <nav role="tablist" aria-label="Sections">
     <button role="tab" aria-selected="true" data-tab="rate"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="4" width="18" height="16" rx="2"/><path d="M12 4v16M3 12h18"/><circle cx="12" cy="12" r="2.6"/></svg><span>My Team</span></button>
+    <button role="tab" aria-selected="false" data-tab="cmp"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="5" width="7" height="14" rx="1.5"/><rect x="14" y="5" width="7" height="14" rx="1.5"/><path d="M6.5 9v6M17.5 9v6"/></svg><span>Compare</span></button>
     <button role="tab" aria-selected="false" data-tab="best"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3.5l2.6 5.4 5.9.8-4.3 4.1 1.1 5.9L12 16.9l-5.3 2.8 1.1-5.9-4.3-4.1 5.9-.8z"/></svg><span>Best Squad</span></button>
     <button role="tab" aria-selected="false" data-tab="all"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="9" cy="8" r="3.2"/><path d="M3.5 19c.6-3.3 2.9-5 5.5-5s4.9 1.7 5.5 5"/><circle cx="17" cy="9" r="2.4"/><path d="M15.5 14.2c2.4.1 4.4 1.6 5 4.8"/></svg><span>Players</span></button>
     <button role="tab" aria-selected="false" data-tab="teams"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M3 10h18M8 3v4M16 3v4"/></svg><span>Matches</span></button>
@@ -484,7 +501,7 @@
       <div class="builder">
         <div class="left">
           <div class="pitchwrap">
-            <div class="banner"><span id="bnr-left">SQUAD 0 / 15</span><span id="bnr-right">BUDGET £100.0m</span></div>
+            <div class="banner"><span id="bnr-left">Squad 0 / 15</span><span id="bnr-right">Budget £100.0m</span></div>
             <div class="pitch" id="pitch">
               <svg class="lines" viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true">
                 <g fill="none" stroke="var(--grass-line)" stroke-width=".35" vector-effect="non-scaling-stroke">
@@ -515,6 +532,7 @@
     <section id="tab-best" hidden><div id="best"></div></section>
     <section id="tab-all" hidden><div id="all"></div></section>
     <section id="tab-teams" hidden><div id="teams"></div></section>
+    <section id="tab-cmp" hidden><div id="cmp"></div></section>
     <section id="tab-test" hidden><div id="test"></div></section>
   </main>
 
@@ -523,8 +541,9 @@
   </footer>
 </div>
 
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Sortable/1.15.6/Sortable.min.js" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
 <div id="sheet" hidden></div>
-<div id="tray" hidden></div>
+<div id="tray" class="tray" hidden></div>
 
 <script>
 // ---------- constants (mirror of fpl/config.py and fpl/optimise/rate.py) ----------
@@ -802,30 +821,41 @@ function save(){ try{ localStorage.setItem("fpl-squad-v3", JSON.stringify({forma
 function load(){ try{ const s=JSON.parse(localStorage.getItem("fpl-squad-v3")||"null"); if(!s) return false; state.formation=s.formation; state.slots=buildSlots(s.formation, s.codes.filter(Boolean), true); document.getElementById("bank").value=s.bank??"0.0"; document.getElementById("tv").value=s.tv??""; document.getElementById("ft").value=s.ft??"1"; if (HORIZONS[s.metric]) metric=s.metric; if (Array.isArray(s.cols)&&s.cols.length===3) cols=s.cols; return true; }catch(e){ return false; } }
 
 // ---------- pitch ----------
-function slotEl(slot, index, captain){
+function slotEl(slot, index, captain, readonly=false){
   const p = slot.code ? BY[slot.code] : null;
-  const b = el("button", "slot"+(p?"":" empty")); b.type="button";
-  if (!p){ b.appendChild(el("div","ic","+")); b.appendChild(el("div","posl",slot.pos)); b.appendChild(el("div","nm","Add")); b.title=`Add a ${slot.pos}`; }
+  const b = el("button", "slot"+(p?" "+p.position:" empty")); b.type="button";
+  if (!p){ const top = el("div","top"); top.appendChild(el("span","plus","+")); b.appendChild(top); const lb = el("div","lb"); lb.appendChild(el("div","nm","Add")); lb.appendChild(el("div","pr",({GK:"goalkeeper",DEF:"defender",MID:"midfielder",FWD:"forward"})[slot.pos])); b.appendChild(lb); b.title=`Add a ${slot.pos}`; }
   else {
-    b.appendChild(el("div","posl",p.position)); b.appendChild(el("div","nm",p.web_name));
-    b.appendChild(el("div","pr",`£${fmt(p.price,1)}m`)); const opp0 = oppParts(p.opponent)[0]; const band0 = opp0 ? bandFor(p.position, opp0.name) : null; b.appendChild(el("div","fx1"+(band0?" b"+band0:""),oppShort(p.opponent)));
-    const badges = el("div","badges");
-    if (captain===p.code) badges.appendChild(el("span","c","C"));
-    if (p.availability<1) badges.appendChild(el("span","fl "+(p.availability===0?"out":"d"), p.availability===0?"OUT":(p.chance!=null?p.chance+"%":"DOUBT")));
-    b.appendChild(badges);
-    b.title = `${p.name} · ${p.team} ${oppLong(p.opponent)} · ${HORIZONS[metric].long} ${fmt(p.ep)}${p.news?" · "+p.news:""}`;
+    const top = el("div","top");
+    const im = new Image(); im.alt=""; im.loading="lazy"; im.decoding="async"; im.className="pic"; photoInto(im, p.code, () => top.appendChild(el("span","ini",initials(p)))); top.appendChild(im);
+    const rt = el("div","rt"); rt.appendChild(el("b",null,fmt(epk(p,0),1))); rt.appendChild(el("span","posl "+p.position, p.position)); top.appendChild(rt);
+    if (captain===p.code) top.appendChild(el("span","c","C"));
+    if (p.availability<1) top.appendChild(el("span","fl "+(p.availability===0?"out":"d"), p.availability===0?"OUT":(p.chance!=null?p.chance+"%":"?")));
     // substitutions: drag a card onto another, or tap the arrows then tap the target
-    b.draggable = true;
-    b.addEventListener("dragstart", e => { swapFrom = index; e.dataTransfer.setData("text/plain", String(index)); e.dataTransfer.effectAllowed = "move"; markTargets(); });
-    b.addEventListener("dragend", () => { swapFrom = null; markTargets(); });
-    const handle = el("span","swap","⇄"); handle.title = "Substitute: tap, then tap the player to swap with"; handle.setAttribute("role","button");
-    handle.onclick = e => { e.stopPropagation(); swapFrom = (swapFrom===index) ? null : index; markTargets(); };
-    b.appendChild(handle);
+    if (!readonly){
+      const handle = el("span","swap","⇄"); handle.title = "Substitute: tap, then tap the player to swap with"; handle.setAttribute("role","button");
+      handle.onclick = e => { e.stopPropagation(); swapFrom = (swapFrom===index) ? null : index; markTargets(); };
+      top.appendChild(handle);
+    }
+    b.appendChild(top);
+    const lb = el("div","lb"); lb.appendChild(el("div","nm",p.web_name)); lb.appendChild(el("div","pr",`£${fmt(p.price,1)}m`));
+    const opp0 = oppParts(p.opponent)[0]; const band0 = opp0 ? bandFor(p.position, opp0.name) : null;
+    const fx = el("div","fx1"+(band0?" b"+band0:"")); fx.textContent = oppShort(p.opponent); fx.title = `${oppLong(p.opponent)}${band0?" · "+BAND_WORD[band0]+" fixture for a "+p.position:""}`; lb.appendChild(fx);
+    b.appendChild(lb);
+    b.title = `${p.name} · ${p.team} ${oppLong(p.opponent)} · ${HORIZONS[metric].long} ${fmt(p.ep)}${p.news?" · "+p.news:""}`;
+    if (!window.Sortable && !readonly){   // no SortableJS (offline): the browser's own drag and drop, mouse only
+      b.draggable = true;
+      b.addEventListener("dragstart", e => { swapFrom = index; e.dataTransfer.setData("text/plain", String(index)); e.dataTransfer.effectAllowed = "move"; markTargets(); });
+      b.addEventListener("dragend", () => { swapFrom = null; markTargets(); });
+    }
   }
   b.dataset.index = index;
-  b.addEventListener("dragover", e => { if (swapFrom!=null && swapTarget(swapFrom, index)){ e.preventDefault(); e.dataTransfer.dropEffect = "move"; b.classList.add("over"); } });
-  b.addEventListener("dragleave", () => b.classList.remove("over"));
-  b.addEventListener("drop", e => { e.preventDefault(); const from = swapFrom ?? parseInt(e.dataTransfer.getData("text/plain"), 10); if (swapTarget(from, index)) swapSlots(from, index); else { swapFrom = null; markTargets(); } });
+  if (readonly){ b.onclick = () => { if (p) openProfile(p); }; return b; }
+  if (!window.Sortable){
+    b.addEventListener("dragover", e => { if (swapFrom!=null && swapTarget(swapFrom, index)){ e.preventDefault(); e.dataTransfer.dropEffect = "move"; b.classList.add("over"); } });
+    b.addEventListener("dragleave", () => b.classList.remove("over"));
+    b.addEventListener("drop", e => { e.preventDefault(); const from = swapFrom ?? parseInt(e.dataTransfer.getData("text/plain"), 10); if (swapTarget(from, index)) swapSlots(from, index); else { swapFrom = null; markTargets(); } });
+  }
   b.onclick = () => {
     if (swapFrom==null){ if (p) openProfile(p); else openPicker(index); return; }
     if (swapFrom!==index && swapTarget(swapFrom, index)) swapSlots(swapFrom, index); else cancelSwap();
@@ -842,6 +872,33 @@ function markTargets(){
     else n.classList.add(swapTarget(swapFrom, i) ? "target" : "notarget");
   });
 }
+// Finger-friendly drag and drop (SortableJS, loaded from a CDN): the browser's own
+// drag events do not fire on iPhone Safari, so the pitch uses Sortable's pointer
+// fallback everywhere -- press, hold a moment, drag onto the player to swap with.
+function initSortable(){
+  if (!window.Sortable) return;
+  document.querySelectorAll("#pitch .line, #bench .line").forEach(line => {
+    if (line._sortable) line._sortable.destroy();
+    line._sortable = Sortable.create(line, {
+      group: "pitch", swap: true, swapClass: "over", forceFallback: true, fallbackTolerance: 4,
+      delay: 120, delayOnTouchOnly: true, animation: 0, draggable: ".slot:not(.empty)", filter: ".swap", preventOnFilter: false,
+      onStart: e => { swapFrom = +e.item.dataset.index; markTargets(); },
+      onMove: e => { const to = e.related && e.related.dataset && e.related.dataset.index != null ? +e.related.dataset.index : null; return to != null && swapFrom != null && !!swapTarget(swapFrom, to); },
+      onEnd: e => { const to = e.swapItem && e.swapItem.dataset ? +e.swapItem.dataset.index : null; const from = swapFrom; swapFrom = null; setTimeout(() => { if (to != null && from != null && swapTarget(from, to)) swapSlots(from, to); else renderPitch(); }, 0); },
+    });
+  });
+}
+function pitchFor(codes, formation, captain, title){
+  const slots = buildSlots(formation, codes, true);
+  const wrap = el("div","pitchwrap");
+  const banner = el("div","banner"); banner.appendChild(el("span",null,title||"")); banner.appendChild(el("span",null,`${fname(formation)} · £${fmt(codes.map(c=>BY[c]).filter(Boolean).reduce((s,p)=>s+p.price,0),1)}m`)); wrap.appendChild(banner);
+  const pitch = el("div","pitch"); pitch.innerHTML = document.getElementById("pitch").querySelector("svg.lines").outerHTML;
+  POSITIONS.forEach(pos => { const line = el("div","line"); slots.forEach((sl,i)=>{ if (sl.area==="xi"&&sl.pos===pos) line.appendChild(slotEl(sl,i,captain,true)); }); pitch.appendChild(line); });
+  wrap.appendChild(pitch);
+  const bench = el("div","bench"); bench.appendChild(el("div","lbl","Substitutes · in order"));
+  const bl = el("div","line"); slots.forEach((sl,i)=>{ if (sl.area==="bench") bl.appendChild(slotEl(sl,i,null,true)); }); bench.appendChild(bl); wrap.appendChild(bench);
+  return wrap;
+}
 function renderPitch(){
   const pitch = document.getElementById("pitch"), bench = document.getElementById("bench");
   [...pitch.querySelectorAll(".line")].forEach(n=>n.remove()); bench.replaceChildren();
@@ -849,8 +906,9 @@ function renderPitch(){
   const lineup = players.length===15 ? bestEleven(xiPlayers(), state.formation) : null;
   const captain = lineup ? lineup.captain : null;
   POSITIONS.forEach(pos => { const line = el("div","line"); state.slots.forEach((s,i)=>{ if (s.area==="xi"&&s.pos===pos) line.appendChild(slotEl(s,i,captain)); }); pitch.appendChild(line); });
-  bench.appendChild(el("div","lbl","Bench"));
+  bench.appendChild(el("div","lbl","Substitutes · in order"));
   const bl = el("div","line"); state.slots.forEach((s,i)=>{ if (s.area==="bench") bl.appendChild(slotEl(s,i,null)); }); bench.appendChild(bl);
+  initSortable();
 
   const forms = document.getElementById("forms"); forms.replaceChildren();
   FORMATIONS.forEach(f => { const b=el("button",null,fname(f)); b.type="button"; b.setAttribute("aria-pressed", fname(f)===fname(state.formation)); b.onclick=()=>setFormation(f); forms.appendChild(b); });
@@ -859,8 +917,8 @@ function renderPitch(){
   const left = budget - squadValue();
   const lb = document.getElementById("left"); lb.textContent = `£${fmt(left,1)}m`; lb.className = "big " + (left < -1e-9 ? "over" : "ok");
   document.getElementById("tv").placeholder = fmt(Math.max(CAP, squadValue()),1);
-  document.getElementById("bnr-left").textContent = `SQUAD ${players.length} / 15 · £${fmt(squadValue(),1)}m`;
-  document.getElementById("bnr-right").textContent = `BUDGET £${fmt(budget,1)}m`;
+  document.getElementById("bnr-left").textContent = `Squad ${players.length} / 15 · £${fmt(squadValue(),1)}m`;
+  document.getElementById("bnr-right").textContent = `Budget £${fmt(budget,1)}m`;
 }
 
 // ---------- picker: FPL-style table ----------
@@ -873,7 +931,7 @@ function playerTable(opts){
   if (isFinite(maxPrice)) rows = rows.filter(p => p.price <= maxPrice + 1e-9);
   if (club) rows = rows.filter(p => p.team===club);
   const getter = STATS[sort.key].get;
-  rows.sort((a,b) => { const x=getter(a), y=getter(b); return (x>y?1:x<y?-1:0)*sort.dir || a.web_name.localeCompare(b.web_name); });
+  rows.sort((a,b) => starredFirst(a,b) || (() => { const x=getter(a), y=getter(b); return (x>y?1:x<y?-1:0)*sort.dir; })() || a.web_name.localeCompare(b.web_name));
 
   const t = el("table"), th = el("thead"), tr = el("tr");
   const cg = el("colgroup"); cg.appendChild(el("col","c-player")); for (let i=0;i<4;i++) cg.appendChild(el("col","c-stat")); t.appendChild(cg);
@@ -905,7 +963,7 @@ function playerTable(opts){
     if (why) who.appendChild(el("span","why",why)); else if (p.news) who.appendChild(el("span","why",p.news));
     cell.appendChild(who);
     if (p.availability<1) cell.appendChild(el("span","flag "+(p.availability===0?"out":"d"), p.availability===0?"OUT":(p.chance!=null?p.chance+"%":"DOUBT")));
-    if (opts.compare){ const tools = el("span","cmp"); tools.appendChild(compareBtn(p)); cell.appendChild(tools); }
+    if (opts.compare){ const tools = el("span","cmp"); tools.style.cssText="display:flex;gap:4px;align-items:center"; tools.appendChild(starBtn(p)); tools.appendChild(compareBtn(p)); cell.appendChild(tools); }
     c1.appendChild(cell); r.appendChild(c1);
     r.appendChild(el("td",null,STATS.ep.fmt(p.ep)));
     cols.forEach(k => r.appendChild(el("td",null,STATS[k].fmt(STATS[k].get(p)))));
@@ -997,15 +1055,34 @@ function sheetShell(opts){
 }
 
 // ---------- player photos + avatars ----------
-const PHOTO = code => `https://resources.premierleague.com/premierleague/photos/players/110x140/p${code}.png`;
+// Player photos: the copy in site/photos (fetched by the refresh, so they load from
+// the same place as the page), then FPL's own server, then initials.
+const PHOTO = code => `photos/p${code}.png`;
+const PHOTO_REMOTE = code => `https://resources.premierleague.com/premierleague/photos/players/110x140/p${code}.png`;
+function photoInto(img, code, onFail){ img.onerror = () => { if (!img.dataset.remote){ img.dataset.remote = "1"; img.src = PHOTO_REMOTE(code); } else { img.remove(); onFail(); } }; img.src = PHOTO(code); }
 const initials = p => (p.web_name||"?").replace(/[^A-Za-z.\- ]/g,"").split(/[.\- ]/).filter(Boolean).map(s=>s[0]).join("").slice(0,2).toUpperCase() || "?";
 function avatarEl(p, cls){
   const a = el("div","avatar "+p.position+(cls?" "+cls:""));
   const im = new Image(); im.alt = ""; im.loading = "lazy"; im.decoding = "async";
-  im.onerror = () => { im.remove(); a.textContent = initials(p); };
-  im.src = PHOTO(p.code); a.appendChild(im);
+  photoInto(im, p.code, () => { a.textContent = initials(p); }); a.appendChild(im);
   return a;
 }
+
+// ---------- watchlist: star a player to keep him at the top of every list ----------
+let starred = new Set();
+try { starred = new Set((JSON.parse(localStorage.getItem("fpl-starred")||"[]")||[]).filter(c => typeof c === "number")); } catch(e){}
+const isStarred = p => starred.has(p.code);
+function toggleStar(p){
+  if (starred.has(p.code)) starred.delete(p.code); else starred.add(p.code);
+  try { localStorage.setItem("fpl-starred", JSON.stringify([...starred])); } catch(e){}
+  document.querySelectorAll(".starbtn").forEach(b => { if (+b.dataset.code === p.code){ b.textContent = isStarred(p) ? "★" : "☆"; b.setAttribute("aria-pressed", isStarred(p)); } });
+}
+function starBtn(p){
+  const b = el("button","starbtn", isStarred(p) ? "★" : "☆"); b.type="button"; b.dataset.code = p.code; b.title = "Star: keep at the top of the lists"; b.setAttribute("aria-label", `Star ${p.web_name}`); b.setAttribute("aria-pressed", isStarred(p));
+  b.onclick = e => { e.stopPropagation(); toggleStar(p); };
+  return b;
+}
+const starredFirst = (a, b) => (isStarred(b) ? 1 : 0) - (isStarred(a) ? 1 : 0);
 
 // ---------- comparison: up to five players, kept across tabs ----------
 const COMPARE_MAX = 5;
@@ -1017,6 +1094,7 @@ function toggleCompare(p, open){
   else { if (compare.length >= COMPARE_MAX){ notice("warn", `You can compare up to ${COMPARE_MAX} players. Remove one from the tray first.`); return false; } compare.push(p.code); }
   try { localStorage.setItem("fpl-compare", JSON.stringify(compare)); } catch(e){}
   renderTray(); document.querySelectorAll(".cmpadd").forEach(b => { if (+b.dataset.code === p.code) b.setAttribute("aria-pressed", inCompare(p)); });
+  if (!document.getElementById("tab-cmp").hidden) renderCompareTab();
   if (open) openCompare();
   return true;
 }
@@ -1029,11 +1107,12 @@ function compareBtn(p){
 function renderTray(){
   const t = document.getElementById("tray"); t.replaceChildren();
   compare = compare.filter(c => BY[c]);
+  document.querySelectorAll(".cmpopen").forEach(b => { b.textContent = compare.length ? `Compare · ${compare.length}` : "Compare"; b.hidden = !compare.length; });
   if (!compare.length){ t.hidden = true; return; }
   const faces = el("div","faces");
-  compare.forEach(c => { const p = BY[c]; const f = el("button","face "+p.position); f.type="button"; f.title = `${p.web_name} — tap to open`; const im = new Image(); im.alt=""; im.onerror = () => { im.remove(); f.textContent = initials(p); }; im.src = PHOTO(c); f.appendChild(im); f.onclick = () => openProfile(p); faces.appendChild(f); });
+  compare.forEach(c => { const p = BY[c]; const f = el("button","face "+p.position); f.type="button"; f.title = `${p.web_name} — tap to open`; const im = new Image(); im.alt=""; photoInto(im, c, () => { f.textContent = initials(p); }); f.appendChild(im); f.onclick = () => openProfile(p); faces.appendChild(f); });
   t.appendChild(faces);
-  const open = el("button","btn small primary", `Compare ${compare.length}`); open.type="button"; open.onclick = openCompare; t.appendChild(open);
+  const open = el("button","btn small primary", `Compare ${compare.length} player${compare.length===1?"":"s"} ›`); open.type="button"; open.onclick = openCompare; t.appendChild(open);
   const clear = el("button","iconbtn","✕"); clear.type="button"; clear.setAttribute("aria-label","Clear comparison"); clear.style.width="28px"; clear.style.height="28px"; clear.onclick = () => { compare = []; try{ localStorage.removeItem("fpl-compare"); }catch(e){} renderTray(); document.querySelectorAll(".cmpadd").forEach(b => { b.setAttribute("aria-pressed","false"); b.textContent = "+"; }); };
   t.appendChild(clear); t.hidden = false;
 }
@@ -1107,6 +1186,7 @@ function openProfile(p, ctx={}){
   const cmpRow = el("div"); cmpRow.style.cssText="display:flex;gap:8px;flex-wrap:wrap;align-items:center";
   const cmp = el("button","btn", inCompare(p) ? "✓ In Comparison" : "+ Add to Comparison"); cmp.type="button";
   cmp.onclick = () => { if (toggleCompare(p)) cmp.textContent = inCompare(p) ? "✓ In Comparison" : "+ Add to Comparison"; };
+  const sb = starBtn(p); sb.classList.add("btn"); sb.style.width="auto"; sb.textContent = (isStarred(p) ? "★ Starred" : "☆ Star"); sb.onclick = e => { e.stopPropagation(); toggleStar(p); sb.textContent = isStarred(p) ? "★ Starred" : "☆ Star"; }; cmpRow.appendChild(sb);
   cmpRow.appendChild(cmp);
   const openc = el("button","btn link","Open Comparison"); openc.type="button"; openc.onclick = () => { if (!inCompare(p)) toggleCompare(p); openCompare(); }; cmpRow.appendChild(openc);
   box.appendChild(cmpRow);
@@ -1175,10 +1255,25 @@ const CMP_ROWS = () => {
   ];
 };
 function openCompare(){
+  document.querySelector('[data-tab="cmp"]').click();
+  if (!matchMedia("(min-width:760px)").matches) window.scrollTo({top:0});
+}
+function renderCompareTab(){
+  const box = document.getElementById("cmp"); box.replaceChildren();
+  const head = el("div","hzrow"); head.appendChild(el("h2",null,`Compare${compare.length ? " · "+compare.length+" of "+COMPARE_MAX : ""}`));
+  const clear = el("button","btn small","Clear All"); clear.type="button"; clear.hidden = !compare.length; clear.onclick = () => { compare = []; try{ localStorage.removeItem("fpl-compare"); }catch(e){} renderTray(); document.querySelectorAll(".cmpadd").forEach(x => { x.setAttribute("aria-pressed","false"); x.textContent="+"; }); renderCompareTab(); };
+  head.appendChild(clear); box.appendChild(head);
+  compareView(box, {refresh: renderCompareTab});
+}
+function compareView(b, ctx={}){
   compare = compare.filter(c => BY[c]);
-  const sh = sheetShell({title: `Compare ${compare.length ? compare.length+" player"+(compare.length===1?"":"s") : ""}`.trim(), wide: true});
-  const b = sh.body;
-  if (!compare.length){ const e = el("div","cmp-empty"); e.appendChild(el("b",null,"Nothing to compare yet")); e.appendChild(document.createTextNode("Tap + next to any player, or “Add to Comparison” on a profile. Up to five at a time.")); b.appendChild(e); return; }
+  const sh = {close: () => {}};
+  if (!compare.length){
+    const e = el("div","cmp-empty"); e.appendChild(el("b",null,"Nothing to compare yet"));
+    e.appendChild(document.createTextNode("Add up to five players with the + beside any name — in the Players tab, the picker, or a player's profile — and they line up here, side by side."));
+    const go = el("button","btn primary","Browse Players"); go.type="button"; go.style.marginTop="14px"; go.onclick = () => document.querySelector('[data-tab="all"]').click(); e.appendChild(el("div")).appendChild(go);
+    b.appendChild(e); return;
+  }
   const players = compare.map(c => BY[c]);
   b.appendChild(el("p","hint", `Green marks the best of the ${players.length} on each line (lower is better for conceded, ranks and set-piece order). Fixture cells are coloured by how tough the opponent is for that player's position.`));
   const wrap = el("div","cmp"); const t = el("table");
@@ -1190,7 +1285,7 @@ function openCompare(){
     const nm = el("div","nm",p.web_name); h.appendChild(nm);
     const m = el("div","meta"); m.appendChild(el("span","pos "+p.position,p.position)); m.appendChild(document.createTextNode(" "+short(p.team))); h.appendChild(m);
     if (p.availability<1) h.appendChild(el("span","flag "+(p.availability===0?"out":"d"), p.availability===0?"OUT":(p.chance!=null?p.chance+"%":"DOUBT")));
-    const rm = el("button","rm","Remove"); rm.type="button"; rm.onclick = () => { toggleCompare(p); openCompare(); }; h.appendChild(rm);
+    const rm = el("button","rm","Remove"); rm.type="button"; rm.onclick = () => { toggleCompare(p); if (ctx.refresh) ctx.refresh(); }; h.appendChild(rm);
     th.appendChild(h); hr.appendChild(th);
   });
   thead.appendChild(hr); t.appendChild(thead);
@@ -1230,10 +1325,6 @@ function openCompare(){
     tb.appendChild(tr);
   });
   t.appendChild(tb); wrap.appendChild(t); b.appendChild(wrap);
-  const foot = sh.foot; foot.hidden = false;
-  const clear = el("button","btn big","Clear All"); clear.type="button"; clear.onclick = () => { compare = []; try{ localStorage.removeItem("fpl-compare"); }catch(e){} renderTray(); document.querySelectorAll(".cmpadd").forEach(x => { x.setAttribute("aria-pressed","false"); x.textContent="+"; }); sh.close(); };
-  const done = el("button","btn big primary","Done"); done.type="button"; done.onclick = sh.close;
-  foot.appendChild(clear); foot.appendChild(done);
 }
 
 // ---------- rating + moves ----------
@@ -1498,38 +1589,54 @@ function planCandidates(players, budget, k){
   }
   return out;
 }
-function planWeek(players, bank, tv, free, k){
-  // The best single or double transfer for gameweek k, judged on the weeks from k on,
-  // net of hits -- or holding, which banks a free transfer for later.
+function planOptions(players, bank, tv, free, k, n){
+  // The n best single or double transfers for gameweek k, judged on the weeks from
+  // k on and net of hits. Holding is the caller's business.
   const budget = availableBudget(players, bank, tv);
   const base = futureValue(players, k);
   const cands = planCandidates(players, budget, k);
-  let best = {moves:[], gain:0, hit:0, net:0, squad:players};
+  const out = [];
   const consider = (outs, ins) => {
     const after = [...players.filter(p=>!outs.includes(p)), ...ins];
+    const cost = ins.reduce((s,p)=>s+p.price,0) - outs.reduce((s,p)=>s+p.price,0);
     if (after.reduce((s,p)=>s+p.price,0) > budget + 1e-9) return;
     const gain = futureValue(after, k) - base, hit = HIT()*Math.max(0, outs.length-free), net = gain - hit;
-    if (net > best.net + 1e-9) best = {moves: outs.map((o,i)=>({out:o, in:ins[i]})), gain, hit, net, squad: after};
+    if (net > 1e-9) out.push({moves: outs.map((o,i)=>({out:o, in:ins[i]})), gain, hit, net, squad: after, cost});
   };
   cands.forEach(([o,i]) => consider([o],[i]));
-  // doubles: the strongest handful of singles paired with anything that fits
-  const singles = cands.map(([o,i]) => ({o, i, w: futureValue([...players.filter(p=>p!==o), i], k) - base})).sort((a,b)=>b.w-a.w).slice(0, 5);
-  for (const a of singles) for (const [o2,i2] of cands){ if (o2===a.o || i2===a.i) continue; consider([a.o,o2],[a.i,i2]); }
-  return best;
+  const singles = [...out].sort((a,b)=>b.net-a.net).slice(0, 5);
+  for (const a of singles) for (const [o2,i2] of cands){ const m = a.moves[0]; if (o2===m.out || i2===m.in) continue; consider([m.out,o2],[m.in,i2]); }
+  out.sort((a,b)=>b.net-a.net);
+  const seen = new Set(), top = [];
+  for (const o of out){ const key = o.moves.map(m=>m.in.code).sort().join(","); if (seen.has(key)) continue; seen.add(key); top.push(o); if (top.length===n) break; }
+  return top;
 }
+const PLAN_BEAM = 4;
 function buildPlan(players, bank, tv, free){
-  // Greedy week by week with lookahead through futureValue: this week's move is the
-  // one worth making now; later weeks are the model's best guess and get replanned.
-  const weeks = []; let squad = players, ft = free, money = bank, hold = futureValue(players, 0);
+  // A beam search over the next PLAN_WEEKS gameweeks: each week the best few moves
+  // (and holding) are carried forward, and every path is scored the way the multi-week
+  // solver scores a plan -- each week's team points weighted by HW, hits deducted --
+  // so banking a transfer for a double next week can beat a small move now.
+  const w = HW(), N = w.length;
+  const objective = path => { let v = 0, sq = players; for (let k=0;k<N;k++){ if (path[k]) sq = path[k].squad; v += w[k]*weekValue(sq, k); } return v - path.reduce((s,x)=>s+(x.hit||0),0); };
+  let beam = [{path:[], squad:players, ft:free, money:bank}];
   for (let k=0;k<PLAN_WEEKS;k++){
-    const w = planWeek(squad, money, tv, ft, k);
-    if (w.moves.length && w.net >= PLAN_MIN_GAIN){
-      weeks.push({k, gw: DATA.meta.gameweek + k, moves: w.moves, gain: w.gain, hit: w.hit, net: w.net, ft, week: weekValue(w.squad, k)});
-      money -= w.moves.reduce((s,m)=>s + m.in.price - m.out.price, 0);
-      squad = w.squad; ft = Math.min(5, Math.max(0, ft - w.moves.length) + 1);
-    } else { weeks.push({k, gw: DATA.meta.gameweek + k, moves: [], ft, week: weekValue(squad, k)}); ft = Math.min(5, ft + 1); }
+    const gw = DATA.meta.gameweek + k, next = [];
+    for (const st of beam){
+      next.push({path:[...st.path, {k, gw, moves:[], ft:st.ft, week:weekValue(st.squad,k), squad:st.squad}], squad:st.squad, ft:Math.min(5, st.ft+1), money:st.money});
+      for (const o of planOptions(st.squad, st.money, tv, st.ft, k, PLAN_BEAM)){
+        if (o.net < PLAN_MIN_GAIN && o.hit > 0) continue;   // never a hit for a marginal gain
+        next.push({path:[...st.path, {k, gw, moves:o.moves, gain:o.gain, hit:o.hit, net:o.net, ft:st.ft, week:weekValue(o.squad,k), squad:o.squad}], squad:o.squad, ft:Math.min(5, Math.max(0, st.ft - o.moves.length) + 1), money:st.money - o.cost});
+      }
+    }
+    next.forEach(s => { s.score = objective(s.path); });
+    next.sort((a,b)=>b.score-a.score);
+    beam = next.slice(0, PLAN_BEAM);
   }
-  return {weeks, total: futureValue(squad, 0) - weeks.reduce((s,w)=>s+(w.hit||0),0), hold, squad};
+  const best = beam[0], hold = objective([]);
+  // a plan that does not beat standing still by the minimum is not a plan
+  const weeks = best.score - hold >= PLAN_MIN_GAIN ? best.path : best.path.map(x => ({...x, moves:[], gain:0, hit:0, net:0, squad:players, week:weekValue(players, x.k)}));
+  return {weeks, total: best.score - hold >= PLAN_MIN_GAIN ? best.score : hold, hold, squad: best.score - hold >= PLAN_MIN_GAIN ? best.squad : players};
 }
 // A greedy squad for one purpose: best for a single gameweek (Free Hit) or over the
 // run (Wildcard). Cheap enough to run in the browser; the server's exact answer is on
@@ -1712,9 +1819,15 @@ function renderBest(){
   box.appendChild(k);
   box.appendChild(el("p","hint","Solved as an integer programme: the fifteen that maximise projected points inside £"+budget+"m, the two-per-position quotas and three-per-club, then rated exactly as your squad is (per-gameweek elevens plus bench cover). This is the 100/100 reference when the budget is £100m."));
   const useIt = el("button","btn primary","Load This Squad Into My Team"); useIt.onclick=()=>{ state.slots=buildSlots(o.formation||state.formation,[...o.starters,...o.bench]); if (o.formation) state.formation=o.formation; update(); document.querySelector('[data-tab="rate"]').click(); }; box.appendChild(useIt);
-  const h = el("h2",null,"Recommended eleven"); h.style.marginTop="1rem"; box.appendChild(h);
-  o.starters.forEach(c => box.appendChild(playerCard(BY[c],{captain:c===o.captain})));
-  box.appendChild(el("h2",null,"Bench (in order)")); o.bench.forEach(c => box.appendChild(playerCard(BY[c])));
+  const codes = [...o.starters, ...o.bench].filter(c => BY[c]);
+  const xi = o.starters.map(c=>BY[c]).filter(Boolean);
+  const formation = o.formation || FORMATIONS.find(f => f.DEF===xi.filter(p=>p.position==="DEF").length && f.MID===xi.filter(p=>p.position==="MID").length && f.FWD===xi.filter(p=>p.position==="FWD").length) || state.formation;
+  const grid = el("div","builder"); grid.style.marginTop="14px";
+  const left = el("div","left"); left.appendChild(pitchFor(codes, formation, o.captain, `Best £${budget}m squad · ${HORIZONS[m].label}`)); grid.appendChild(left);
+  const right = el("div","right"); const c = el("div","card"); c.appendChild(el("h2",null,"Why these fifteen"));
+  c.appendChild(el("p","hint","Tap any player for his profile. Below, where each starter's points come from over the horizon."));
+  o.starters.forEach(code => { const p = BY[code]; if (!p) return; const row = el("div","pcard"); row.style.cssText="padding:10px 12px;margin-bottom:6px;box-shadow:none;background:var(--surface-2)"; const hd = el("div","hd"); hd.appendChild(el("span","nm",p.web_name)); hd.appendChild(el("span","pos "+p.position,p.position)); if (code===o.captain) hd.appendChild(el("span","cap","CAPTAIN")); hd.appendChild(el("span","hint",`£${fmt(p.price,1)}m · ${fmt(p[m]??p.ep,1)} pts`)); row.appendChild(hd); breakdownBar(p.breakdown).forEach(n=>row.appendChild(n)); row.onclick = e => { if (e.target.closest("button")) return; openProfile(p); }; c.appendChild(row); });
+  right.appendChild(c); grid.appendChild(right); box.appendChild(grid);
 }
 
 // ---------- all players: the wide table ----------
@@ -1753,7 +1866,7 @@ function wideTable(){
   if (isFinite(maxPrice)) rows = rows.filter(p => p.price <= maxPrice + 1e-9);
   if (club) rows = rows.filter(p => p.team===club);
   const cols = WIDE(); const sc = cols.find(c=>c.key===wideSort.key) || cols[0];
-  rows.sort((a,b) => { const x=sc.get(a), y=sc.get(b); return (x>y?1:x<y?-1:0)*wideSort.dir || a.web_name.localeCompare(b.web_name); });
+  rows.sort((a,b) => starredFirst(a,b) || (() => { const x=sc.get(a), y=sc.get(b); return (x>y?1:x<y?-1:0)*wideSort.dir; })() || a.web_name.localeCompare(b.web_name));
   const t = el("table"), th = el("thead"), tr = el("tr");
   const first = el("th","sticky","Player"); tr.appendChild(first);
   cols.forEach(c => { const h = el("th"); h.title = c.help + " · click to sort"; const b = el("button","sort"+(wideSort.key===c.key?" on":""), c.label+(wideSort.key===c.key?(wideSort.dir<0?" ▼":" ▲"):"")); b.type="button"; b.onclick=()=>{ if (wideSort.key===c.key) wideSort.dir*=-1; else { wideSort.key=c.key; wideSort.dir=-1; } renderAll(); }; h.appendChild(b); tr.appendChild(h); });
@@ -1763,7 +1876,7 @@ function wideTable(){
     const r = el("tr"); const c1 = el("td","sticky"); const cell = el("div","pcell");
     cell.appendChild(el("div","kit "+p.position,p.position)); const who = el("div","who"); who.appendChild(el("b",null,p.web_name)); who.appendChild(el("small",null,`${short(p.team)} · ${oppShort(p.opponent)}`)); cell.appendChild(who);
     if (p.availability<1) cell.appendChild(el("span","flag "+(p.availability===0?"out":"d"), p.availability===0?"OUT":(p.chance!=null?p.chance+"%":"DOUBT")));
-    const tools = el("span","cmp"); tools.style.cssText="display:flex;gap:4px;align-items:center;margin-left:auto"; tools.appendChild(compareBtn(p)); cell.appendChild(tools);
+    const tools = el("span","cmp"); tools.style.cssText="display:flex;gap:4px;align-items:center;margin-left:auto"; tools.appendChild(starBtn(p)); tools.appendChild(compareBtn(p)); cell.appendChild(tools);
     c1.style.cursor="pointer"; c1.onclick = e => { if (e.target.closest("button")) return; openProfile(p); };
     c1.appendChild(cell); r.appendChild(c1); r.title = p.name + (p.news ? " · " + p.news : "");
     cols.forEach(c => { const v = c.get(p); const td = el("td",null,c.fmt(v)); if (c.key.startsWith("gw")){ const k = parseInt(c.key.slice(2),10) - DATA.meta.gameweek; const f = (p.fixtures||[]).find(x => x.gw - DATA.meta.gameweek === k); if (f){ const band = bandFor(p.position, oppParts(f.opp)[0]?.name); if (band) td.className = "band "+BANDS[band]; td.appendChild(el("small","oppc", oppShort(f.opp))); td.title = `${c.fmt(v)} points projected ${oppLong(f.opp)} — ${band?BAND_WORD[band]:"unknown"} fixture for a ${p.position}`; } else { td.textContent = "–"; td.title = "No match that gameweek"; } } r.appendChild(td); });
@@ -1780,7 +1893,9 @@ function renderAll(){
   const pos = el("select"); [["","All positions"],...POSITIONS.map(p=>[p,p])].forEach(([v,l])=>{ const o=el("option",null,l); o.value=v; if (v===allFilters.position) o.selected=true; pos.appendChild(o); }); pos.onchange=()=>{ allFilters.position=pos.value; renderAll(); };
   const price = priceSelect(); price.value = allFilters.maxPrice===Infinity ? "" : String(allFilters.maxPrice); price.onchange=()=>{ allFilters.maxPrice = price.value?parseFloat(price.value):Infinity; renderAll(); };
   const clubs = clubSelect(); clubs.value = allFilters.club; clubs.onchange=()=>{ allFilters.club=clubs.value; renderAll(); };
-  [q,pos,price,clubs].forEach(n=>bar.appendChild(n)); box.appendChild(bar);
+  [q,pos,price,clubs].forEach(n=>bar.appendChild(n));
+  const cb = el("button","btn cmpopen", compare.length ? `Compare · ${compare.length}` : "Compare"); cb.type="button"; cb.title="Compare up to five players side by side — tap + beside a player to add him"; cb.onclick = openCompare; cb.hidden = !compare.length; bar.appendChild(cb);
+  box.appendChild(bar);
   const key = el("div","bandkey"); key.appendChild(document.createTextNode("GW columns = projected points that week, with the opponent; colour = how tough that opponent is for his position:"));
   [1,2,3,4,5].forEach(b => key.appendChild(bandChip(b, BAND_WORD[b])));
   key.appendChild(document.createTextNode("Hover any column heading for what it means. Click to sort."));
@@ -1800,6 +1915,26 @@ function viewToggle(){
   const tog = el("div","forms"); [["def","My defenders"],["att","My attackers"]].forEach(([k,l])=>{ const b=el("button",null,l); b.type="button"; b.setAttribute("aria-pressed", teamsView===k); b.onclick=()=>{ teamsView=k; renderTeams(); }; tog.appendChild(b); }); return tog;
 }
 const bandOf = t => teamsView==="def" ? t.hard_for_def : t.hard_for_att;
+let tickerRange = 5;
+function fixtureTicker(){
+  const first = DATA.meta.gameweek, gws = [...Array(tickerRange).keys()].map(k => first + k);
+  const rows = (DATA.teams||[]).map(tm => {
+    const sch = ((DATA.schedules||{})[tm.team] || {}).matches || [];
+    const cells = gws.map(gw => sch.filter(m => m.comp==="PL" && m.gw===gw).map(m => { const opp = teamRow(m.opp); const band = opp ? bandOf(opp) : 3; return {opp:m.opp, home:m.home, band}; }));
+    const score = cells.reduce((s,c) => s + (c.length ? c.reduce((x,y)=>x+y.band,0) : 3.5), 0);
+    return {team: tm.team, cells, score};
+  }).sort((a,b) => a.score - b.score || a.team.localeCompare(b.team));
+  const wrap = el("div","wide"); const t = el("table"); const thead = el("thead"), tr = el("tr");
+  tr.appendChild(el("th","sticky","Club")); gws.forEach(gw => tr.appendChild(el("th",null,"GW"+gw))); const ts = el("th",null,"Ease"); ts.title = "Sum of difficulty over the run: lower is easier"; tr.appendChild(ts);
+  thead.appendChild(tr); t.appendChild(thead);
+  const tb = el("tbody");
+  rows.forEach(r => {
+    const trr = el("tr"); const c1 = el("td","sticky"); c1.textContent = r.team; c1.style.fontWeight="600"; trr.appendChild(c1);
+    r.cells.forEach(c => { const td = el("td"); td.style.textAlign="center"; if (!c.length){ td.textContent = "–"; td.className = "band b3"; td.style.opacity=".55"; td.title = "Blank gameweek"; } else { const one = c[0]; td.className = "band "+BANDS[one.band]; td.textContent = c.map(x => x.home ? short(x.opp) : short(x.opp).toLowerCase()).join(" + "); td.title = c.map(x => `${x.home?"vs":"at"} ${x.opp} — ${BAND_WORD[x.band]}`).join(" · "); if (c.length > 1) td.style.fontWeight = "800"; } trr.appendChild(td); });
+    trr.appendChild(el("td",null,fmt(r.score,1))); tb.appendChild(trr);
+  });
+  t.appendChild(tb); wrap.appendChild(t); return wrap;
+}
 function renderTeams(){
   const box = document.getElementById("teams"); box.replaceChildren();
   const teams = [...(DATA.teams||[])]; const ins = DATA.insights || [];
@@ -1827,6 +1962,13 @@ function renderTeams(){
     box.appendChild(wrap);
   });
   box.appendChild(el("p","hint","Tap a match for the head-to-head record and both sides' form. The chip next to each club says how tough its opponent is for your players, on current form."));
+
+  // fixture ticker: every club's next run, easiest first (an idea borrowed from open-fpl)
+  const th2 = el("div","hzrow"); th2.style.marginTop="1.4rem"; th2.appendChild(el("h2",null,"Fixture ticker"));
+  const rng = el("div","forms"); [3,5,8].forEach(n => { const b = el("button",null,`Next ${n}`); b.type="button"; b.setAttribute("aria-pressed", tickerRange===n); b.onclick = () => { tickerRange = n; renderTeams(); }; rng.appendChild(b); }); th2.appendChild(rng);
+  th2.appendChild(el("span","hint", `Easiest run first for ${teamsView==="def" ? "defenders and keepers" : "attackers and midfielders"}. Capitals = home, lower case = away.`));
+  box.appendChild(th2);
+  box.appendChild(fixtureTicker());
 
   // club table
   const h2 = el("h2",null,"Club toughness on current form"); h2.style.marginTop="1.4rem"; box.appendChild(h2);
@@ -1860,10 +2002,15 @@ function renderTeams(){
 }
 
 // ---------- boot ----------
+let statusTimer = null;
 function renderStatus(){
+  clearInterval(statusTimer); statusTimer = setInterval(() => { if (DATA) renderStatusOnce(); }, 60000);
+  renderStatusOnce();
+}
+function renderStatusOnce(){
   const m = DATA.meta, s = document.getElementById("status"), g = document.getElementById("gwbar"); s.replaceChildren(); g.replaceChildren();
   const dl = m.deadline ? new Date(m.deadline) : null, now = new Date(), hrs = dl ? (dl-now)/36e5 : 0;
-  const left = !dl ? "–" : hrs <= 0 ? "passed" : hrs>48 ? Math.floor(hrs/24)+"d "+Math.round(hrs%24)+"h" : Math.floor(hrs)+"h "+Math.round((hrs%1)*60)+"m";
+  const left = !dl ? "–" : hrs <= 0 ? "passed" : hrs>48 ? Math.floor(hrs/24)+"d "+Math.floor(hrs%24)+"h" : Math.floor(hrs)+"h "+Math.floor((hrs%1)*60)+"m";
   const p1 = el("span","gwpill"); p1.appendChild(document.createTextNode("GW")); p1.appendChild(el("b",null,String(m.gameweek))); g.appendChild(p1);
   const p2 = el("span","gwpill"+(hrs>0&&hrs<24?" soon":"")); p2.appendChild(document.createTextNode("Deadline ")); p2.appendChild(el("b",null,left)); p2.title = dl ? dl.toUTCString() : ""; g.appendChild(p2);
   [["refreshed",new Date(m.captured_at).toUTCString().replace(":00 GMT"," UTC")],["flagged",m.flagged+" players"],["season",m.season]].forEach(([k,v])=>{ const x=el("span"); x.appendChild(document.createTextNode(k+" ")); x.appendChild(el("b",null,v)); s.appendChild(x); });
@@ -1930,9 +2077,20 @@ function renderBacktest(){
   renderReplay(box);
 }
 function renderReplay(box){
-  const rp = DATA.replay; if (!rp || !rp.model || !rp.crowd) return;
+  const all = DATA.replays && Object.keys(DATA.replays).length ? DATA.replays : (DATA.replay ? {"2024-25": DATA.replay} : {});
+  Object.keys(all).sort().reverse().forEach(season => renderOneReplay(box, all[season]));
+}
+function renderOneReplay(box, rp){
+  if (!rp || !rp.model || !rp.crowd) return;
   const m = rp.model, c = rp.crowd, n = m.gameweeks.length;
   const h = el("h2",null,`A whole season: ${m.season}, gameweeks ${m.gameweeks[0].gameweek}–${m.gameweeks[n-1].gameweek}`); h.style.marginTop="1.6rem"; box.appendChild(h);
+  if (rp.scorecard && rp.scorecard.length){
+    box.appendChild(el("p","hint",`How well the projections ordered every player, week by week, refitting before each gameweek on everything up to it (${rp.scorecard[0].n.toLocaleString()} player-gameweeks). Rank correlation: 1 is a perfect ordering. Precision@10: of the ten highest projected each week, the share that scored 5+. RMSE: typical error in points; "haulers" is the same for players who scored 8+.`));
+    const wrap = el("div","wide"); const t = el("table"); const th = el("tr"); ["Model","Rank corr","Precision@10","RMSE","Haulers RMSE"].forEach(x=>th.appendChild(el("th",null,x))); const thead = el("thead"); thead.appendChild(th); t.appendChild(thead);
+    const tb = el("tbody");
+    rp.scorecard.forEach(r => { const tr = el("tr"); const isUs = /component/.test(r.model); const lab = el("td","l", isUs ? "This model" : r.model + (/xP/.test(r.model) ? " (archived after the fact — see README)" : "")); if (isUs) lab.style.fontWeight="700"; tr.appendChild(lab); [r.spearman, r["precision@10"], r.rmse, r.haulers].forEach((v,i) => { const td = el("td",null, v==null ? "–" : (i<2 ? Number(v).toFixed(3) : Number(v).toFixed(2))); if (isUs) td.style.fontWeight="700"; tr.appendChild(td); }); tb.appendChild(tr); });
+    t.appendChild(tb); wrap.appendChild(t); box.appendChild(wrap);
+  }
   box.appendChild(el("p","hint",`The same rules over ${n} gameweeks of last season, using projections made before each deadline. The model manager picks by projection; the crowd manager picks by ownership at each deadline — the template team, which is what the average manager owns. Neither can see injury flags (they are not archived), so both are handicapped the same way.`));
   const k = el("dl","kpis");
   [["model manager",m.total+" pts"],["crowd manager",c.total+" pts"],["edge",(m.total-c.total>=0?"+":"")+(m.total-c.total)+" pts"],["per gameweek",`${m.per_gameweek} vs ${c.per_gameweek}`]].forEach(([t,v])=>{ const d=el("div","kpi"); d.appendChild(el("dt",null,t)); d.appendChild(el("dd",null,v)); k.appendChild(d); });
@@ -1945,7 +2103,8 @@ function renderReplay(box){
 }
 document.querySelectorAll("nav [role=tab]").forEach(b => b.addEventListener("click", () => {
   document.querySelectorAll("nav [role=tab]").forEach(x=>x.setAttribute("aria-selected", x===b));
-  ["rate","best","all","teams","test"].forEach(t => document.getElementById("tab-"+t).hidden = (t!==b.dataset.tab));
+  ["rate","best","all","teams","cmp","test"].forEach(t => document.getElementById("tab-"+t).hidden = (t!==b.dataset.tab));
+  if (b.dataset.tab === "cmp") renderCompareTab();
   if (!matchMedia("(min-width:760px)").matches) window.scrollTo({top:0});
 }));
 ["bank","tv","ft"].forEach(id => document.getElementById(id).addEventListener("input", debounce(() => { renderPitch(); renderRating(); renderBest(); save(); }, 150)));

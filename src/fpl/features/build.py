@@ -14,6 +14,7 @@ import pandas as pd
 
 from fpl.config import GOLD, TRAIN_SEASONS
 from fpl.data.archive import load_players
+from fpl.data.core_insights import CORE_COLUMNS, load_core_stats
 from fpl.data.odds import ODDS_FEATURES, attach_odds, load_odds
 from fpl.data.schedule import congestion_features, load_schedule
 from fpl.data.silver import load_silver
@@ -77,6 +78,13 @@ RATE_COLUMNS = [
     "defensive_contribution",
 ]
 
+# Per-match actions from FPL-Core-Insights (fpl.data.core_insights): what the player
+# *did*, not what he was awarded. Rolled over short and medium windows only; the
+# seasons the dataset does not cover are NaN, which the trees read as "unknown".
+CORE_FORM = [c for c in CORE_COLUMNS if c != "ci_matches"]
+CORE_WINDOWS = (3, 10)
+CORE_RATES = ["ci_shots", "ci_box_touches", "ci_chances", "ci_def_actions"]
+
 # Seasons scored under the defensive-contribution rule. The flag lets the trees keep
 # the pre-rule seasons' zeros apart from a real zero.
 DC_SEASONS = ("2025-26", "2026-27", "2027-28", "2028-29")
@@ -84,15 +92,33 @@ DC_SEASONS = ("2025-26", "2026-27", "2027-28", "2028-29")
 
 def _add_rate_features(frame: pd.DataFrame) -> pd.DataFrame:
     """Shrunk per-90 rates, and the raw totals they came from."""
-    totals = lagged_expanding_sum(frame, [*RATE_COLUMNS, "minutes"])
+    totals = lagged_expanding_sum(frame, [*RATE_COLUMNS, *CORE_RATES, "minutes"])
     frame = pd.concat([frame, totals], axis=1)
 
     minutes_todate = frame["minutes_todate"].fillna(0.0)
-    for column in RATE_COLUMNS:
+    for column in [*RATE_COLUMNS, *CORE_RATES]:
         prior = expanding_position_prior(frame, column)
         frame[f"{column}_p90"] = shrunk_per90(
             frame[f"{column}_todate"].fillna(0.0), minutes_todate, prior
         )
+    return frame
+
+
+def _attach_core(frame: pd.DataFrame, core: pd.DataFrame) -> pd.DataFrame:
+    """Join the per-match actions at player-gameweek grain.
+
+    In a season the dataset covers, a player-gameweek without a row is a player who
+    did not play: zero. In a season it does not cover, nothing is known: NaN.
+    """
+    if core is None or core.empty:
+        for c in CORE_COLUMNS:
+            frame[c] = np.nan
+        return frame
+    core = core.drop_duplicates(["season", "code", "GW"])
+    frame = frame.merge(core, on=["season", "code", "GW"], how="left")
+    covered = frame["season"].isin(set(core["season"].unique()))
+    for c in CORE_COLUMNS:
+        frame.loc[covered, c] = frame.loc[covered, c].fillna(0.0)
     return frame
 
 
@@ -239,6 +265,7 @@ def build_features(
     players: pd.DataFrame | None = None,
     schedule: pd.DataFrame | None = None,
     odds: pd.DataFrame | None = None,
+    core: pd.DataFrame | None = None,
 ) -> pd.DataFrame:
     """Produce the gold table: one row per player-gameweek, features plus target.
 
@@ -269,10 +296,12 @@ def build_features(
     frame = frame.sort_values(["code", "kickoff_time"]).reset_index(drop=True)
     frame["defensive_contribution"] = frame["defensive_contribution"].fillna(0.0)
     frame["dc_era"] = frame["season"].isin(DC_SEASONS).astype(int)
+    frame = _attach_core(frame, load_core_stats(seasons) if core is None else core)
 
     # --- player history ----------------------------------------------------
     form = lagged_rolling_mean(frame, FORM_COLUMNS, WINDOWS)
-    frame = pd.concat([frame, form], axis=1)
+    core_form = lagged_rolling_mean(frame, CORE_FORM, CORE_WINDOWS)
+    frame = pd.concat([frame, form, core_form], axis=1)
     frame = _add_rate_features(frame)
 
     frame["games_played"] = frame.groupby("code").cumcount()

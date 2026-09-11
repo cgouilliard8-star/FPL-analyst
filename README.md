@@ -420,6 +420,26 @@ FPL's and the blend side by side, and the live scorecard reports each one's rank
 correlation and squad points as gameweeks are played. If the model alone keeps
 beating the blend, the weight comes down; if FPL alone does, it goes up.
 
+## Match actions
+
+FPL's feed says what a player was *awarded*; it does not say how many shots he had,
+how often he touched the ball in the box, how many chances he created or how many
+tackles, interceptions, blocks and clearances he made. Those actions are what turn
+into goals, assists and defensive-contribution points, and they are far steadier
+than the points themselves. The open FPL-Core-Insights dataset publishes them per
+player per match from 2024-25 on, keyed by the official FPL ids, refreshed twice a
+day; `fpl core` pulls it with a sparse git clone and boils it down to one committed
+CSV per season (`data/external/core_insights_<season>.csv`), and the feature table
+carries each action as a per-gameweek count rolled over three and ten gameweeks and
+as a shrunk per-90 rate, plus whether he started. Seasons before the dataset are NaN
+-- "unknown" to the trees, not zero -- and the leakage suite corrupts this source
+exactly as it corrupts the archive. Measured on the 2025-26 coarse walk-forward
+against the same model without them: rank correlation 0.731 either way, RMSE 1.906
+against 1.907, precision@20 0.398 against 0.383, precision@10 0.442 against 0.448 --
+a wash on the season the folds could see, which is what one expects when only one
+prior season carries the columns. They stay in for the season now being played,
+where every gameweek adds to the history they need, and are re-measured as it goes.
+
 ## Newcomers
 
 A player with fewer than ninety league minutes on record has a price, an ownership
@@ -462,21 +482,40 @@ My team tab shows the top five options for the gameweek with each one's haul cha
 
 ## Plan and chips
 
-The page plans the next three gameweeks for your squad: one free transfer a week,
-banked up to five, a four-point hit beyond that, each week's move judged on the
-weeks from there on (nearer ones weighted more, exactly as the rating scores a
-squad) against holding and banking the transfer. Only this week's move is a decision;
-the later ones show where the squad is heading and are re-planned every refresh. A
-Chips table puts a number on each chip for this squad: Bench Boost (all fifteen score
-instead of eleven plus cover), Triple Captain (the captain counts three times), Free
-Hit (the best squad money can buy for that week alone against yours) and Wildcard
-(the best squad over the run, from the solved squads on the Best squad tab, against
-yours) -- the best week of the next five for each, with the extra points and why.
+**The multi-week solver.** Transfers are planned over the next five gameweeks as one
+mixed-integer program (`optimise/plan.py`), the formulation the open-source FPL
+solvers (sertalpbilal/FPL-Optimization-Tools and its descendants) made standard,
+written against this project's projections and rules: a squad, a lineup and a
+captain for every week; transfers linking one week's squad to the next; free
+transfers banking up to five, every transfer beyond them costing four points; the
+budget fixed at squad value plus bank; the objective the same team-points measure the
+rating uses (eleven, captain doubled, bench at 15%), weighted 100/85/70/55/40, less
+hits, less a hair per transfer so it does not churn. It runs on a pruned pool (the
+fifteen, the best eight per position over the run, the cheapest two who actually
+play) and CBC solves it in a couple of seconds. The season replay uses it for every
+week's transfer (`fpl simulate --planner greedy` gives the older one-week suggester).
+The page cannot run a solver, so its plan is a beam search that scores every path the
+same way -- each week the best few moves and holding are carried forward and the best
+three-week path wins -- which is how banking a transfer for a double next week can
+beat a small move now, and why the page's plan and the solver's usually agree.
+
+**On the page.** Under the moves, the plan for the next three gameweeks with each
+week's transfer, its gain, any hit and the free transfers left, against what standing
+still would return. Only this week's move is a decision; later weeks say where the
+squad is heading and get re-planned every refresh. Chips: for this squad, the week in
+the run where each chip would earn most and by how much -- Bench Boost (all fifteen
+score), Triple Captain (the captain counts three times), Free Hit (the best one-week
+squad money can buy, against yours), Wildcard (the solved best squad over the run,
+against yours) -- with the note that blank and double gameweeks are known only a few
+weeks ahead. Chips already played, when a team is imported, are marked used.
 
 ## Substitutions
 
 Drag a card onto another (or tap the ⇄ on a card, then the card to swap with) to
-make a substitution. Same position swaps straight across, pitch or bench; a different
+make a substitution. Dragging works with a finger as well as a mouse: the browser's
+own drag-and-drop never fires on iPhone Safari, so the pitch uses SortableJS (from a
+CDN, with the native events as a fallback) -- press, hold a moment, drag onto the
+player to swap with; the cards you can drop on light up, the rest fade. Same position swaps straight across, pitch or bench; a different
 position is allowed between pitch and bench when the eleven stays a legal formation,
 and the formation changes with it, as in the FPL app -- keepers only swap with
 keepers. The arrangement is kept between visits. When the eleven on the pitch are not
@@ -524,6 +563,21 @@ focus is visible; reduced motion and reduced transparency are honoured. The one
 splash of saturated colour is the pitch, because it is the content; fixture
 difficulty uses FPL's own five-step ramp, always with the opponent named beside it,
 so nothing is said by colour alone.
+
+## The pitch, the ticker, the stars
+
+Each player on the pitch is a card in the lineup-graphic style: his cut-out photo on
+a dark card with a soft glow in his position's colour, the projected points for the
+gameweek as the big number, position, name, price, and a full-width fixture bar in
+FPL's difficulty colour. Starters and substitutes are told apart by the card tone,
+the captain by a yellow C. The Best Squad tab shows the solved fifteen on the same
+pitch rather than as a list, with each starter's points breakdown beside it. The
+Matches tab has a fixture ticker -- every club's next three, five or eight league
+fixtures in a grid, capitals for home, lower case for away, coloured by how tough each
+is for the view chosen (defenders or attackers), easiest run first. A star beside any
+player keeps him at the top of every list and picker (an idea taken, with the ticker,
+from the open-source open-fpl). Comparison lives in its own tab, second from the
+left, and the deadline countdown in the header ticks.
 
 ## Import your team
 
@@ -602,6 +656,8 @@ every gameweek in the five-week horizon. The Why panel flags them on each fixtur
 | --- | --- | --- |
 | [Official FPL API](https://fantasy.premierleague.com/api/bootstrap-static/) | Points, prices, minutes, xG/xA, set-piece order, availability | Public JSON |
 | [vaastav archive](https://github.com/vaastav/Fantasy-Premier-League) | Historical seasons | GitHub |
+| [FPL-Core-Insights](https://github.com/olbauday/FPL-Core-Insights) | Per-match player actions (shots, box touches, chances, tackles, interceptions, blocks, clearances, goals prevented) from 2024-25, keyed by FPL ids | GitHub, refreshed twice daily |
+| [FPL image server](https://resources.premierleague.com) | Player headshots, copied once into `site/photos/` | Public PNG |
 | [Understat](https://understat.com) | Shot-level xG | Scrape, gently |
 | [football-data.co.uk](https://www.football-data.co.uk/englandm.php) | Historical closing odds | Static CSV |
 | [ClubElo](http://clubelo.com/API) | Dated team strength | CSV API |
