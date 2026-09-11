@@ -179,10 +179,11 @@
   .slot{position:relative;flex:0 1 110px;min-width:0;width:auto;display:flex;flex-direction:column;align-items:stretch;border:0;padding:0;cursor:pointer;color:#3B2E0A;font-family:var(--f);text-align:center;letter-spacing:-.01em;background:linear-gradient(172deg,#3A3B45 0%,#26272F 45%,#17181E 100%);clip-path:polygon(0 3%,8% 0,92% 0,100% 3%,100% 90%,50% 100%,0 90%);filter:drop-shadow(0 3px 5px rgba(0,0,0,.28));transition:transform .12s var(--ease)}
   .slot:hover{transform:translateY(-2px) scale(1.02)} .slot:active{transform:scale(.97)}
   .slot::after{content:"";position:absolute;inset:0;background:linear-gradient(120deg,rgba(255,255,255,.14) 0%,rgba(255,255,255,0) 45%,rgba(255,255,255,0) 65%,rgba(255,255,255,.06) 100%);pointer-events:none}
-  .slot .top{position:relative;height:76px;overflow:hidden}
+  .slot .top{position:relative;height:82px;overflow:hidden}
   .slot .top::before{content:"";position:absolute;left:54%;top:58%;width:86px;height:70px;transform:translate(-50%,-50%);border-radius:50%;background:radial-gradient(closest-side,var(--glow,rgba(255,255,255,.5)),transparent);opacity:.75;filter:blur(6px)}
   .slot.GK{--glow:rgba(125,122,255,.85)} .slot.DEF{--glow:rgba(64,200,224,.85)} .slot.MID{--glow:rgba(48,209,88,.85)} .slot.FWD{--glow:rgba(255,159,10,.85)}
-  .slot .top .pic{position:absolute;left:54%;bottom:-4px;transform:translateX(-50%);height:84px;width:auto;max-width:none;object-fit:contain;object-position:bottom;filter:drop-shadow(0 2px 3px rgba(0,0,0,.3))}
+  .slot .top .pic.silhouette{opacity:.55}
+  .slot .top .pic{position:absolute;left:54%;bottom:-4px;transform:translateX(-50%);height:72px;width:auto;max-width:none;object-fit:contain;object-position:bottom;filter:drop-shadow(0 2px 3px rgba(0,0,0,.3))}
   .slot .top .ini{position:absolute;left:54%;top:52%;transform:translate(-50%,-50%);font-weight:800;font-size:22px;color:rgba(255,255,255,.7)}
   .slot .top .plus{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);font-size:28px;line-height:1;color:#fff;font-weight:500}
   .slot.empty{background:rgba(255,255,255,.14);clip-path:none;border-radius:12px;border:1.5px dashed rgba(255,255,255,.85);filter:none;color:#fff}
@@ -209,7 +210,7 @@
   .sortable-ghost{opacity:.35}
   .sortable-chosen{cursor:grabbing}
   .bench .slot{background:linear-gradient(172deg,#5C5E6B 0%,#484A55 45%,#34353E 100%)}
-  @media(max-width:420px){.slot{flex-basis:76px} .slot .top{height:64px} .slot .top .pic{height:72px} .slot .rt b{font-size:15px} .slot .nm{font-size:11px} .slot .fx1{font-size:9.5px;padding:3px 2px 12px}}
+  @media(max-width:420px){.slot{flex-basis:76px} .slot .top{height:68px} .slot .top .pic{height:60px} .slot .rt b{font-size:15px} .slot .nm{font-size:11px} .slot .fx1{font-size:9.5px;padding:3px 2px 12px}}
   .bench{background:linear-gradient(180deg,#1E5C3A,#174A2F);padding:12px 8px 16px}
   .bench .lbl{text-align:center;margin-bottom:10px;color:rgba(255,255,255,.75)}
   .bench .line{margin:0}
@@ -1059,7 +1060,13 @@ function sheetShell(opts){
 // the same place as the page), then FPL's own server, then initials.
 const PHOTO = code => `photos/p${code}.png`;
 const PHOTO_REMOTE = code => `https://resources.premierleague.com/premierleague/photos/players/110x140/p${code}.png`;
-function photoInto(img, code, onFail){ img.onerror = () => { if (!img.dataset.remote){ img.dataset.remote = "1"; img.src = PHOTO_REMOTE(code); } else { img.remove(); onFail(); } }; img.src = PHOTO(code); }
+// A player FPL has no portrait of (young signings, mostly) gets FPL's own silhouette,
+// and only if that is missing too, his initials.
+function photoInto(img, code, onFail){
+  const steps = [PHOTO(code), PHOTO_REMOTE(code), "photos/missing.png"]; let i = 0;
+  img.onerror = () => { i += 1; if (i < steps.length){ if (i === 2) img.classList.add("silhouette"); img.src = steps[i]; } else { img.remove(); onFail(); } };
+  img.src = steps[0];
+}
 const initials = p => (p.web_name||"?").replace(/[^A-Za-z.\- ]/g,"").split(/[.\- ]/).filter(Boolean).map(s=>s[0]).join("").slice(0,2).toUpperCase() || "?";
 function avatarEl(p, cls){
   const a = el("div","avatar "+p.position+(cls?" "+cls:""));
