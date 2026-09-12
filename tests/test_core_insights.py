@@ -35,6 +35,14 @@ def _write_season(root, season_dir):
     pd.DataFrame({"player_id": [1, 2], "player_code": [1001, 1002]}).to_csv(
         root / "data" / season_dir / "players.csv", index=False
     )
+    pd.DataFrame(
+        {
+            "id": [1, 2, 2, 3],
+            "average_entry_score": [54, 51, 51, 0],
+            "highest_score": [140, 130, 130, 0],
+            "finished": [True, True, True, False],
+        }
+    ).to_csv(root / "data" / season_dir / "gameweek_summaries.csv", index=False)
 
 
 def test_league_matches_only_keyed_by_fpl_code(tmp_path, monkeypatch):
@@ -48,6 +56,9 @@ def test_league_matches_only_keyed_by_fpl_code(tmp_path, monkeypatch):
     assert starter["ci_started"] == 1
     sub = stats[stats["code"] == 1002].iloc[0]
     assert sub["ci_started"] == 0 and sub["ci_def_actions"] == 1 and sub["ci_matches"] == 1
+    averages = pd.read_csv(tmp_path / "out" / "averages.csv")
+    assert averages["GW"].tolist() == [1, 2]  # finished gameweeks, once each
+    assert averages["average"].tolist() == [54, 51]
 
 
 def test_missing_season_is_empty_not_an_error(tmp_path, monkeypatch):

@@ -56,6 +56,10 @@ CORE_COLUMNS = (
     "ci_matches",
 )
 ROW_COLUMNS = ["season", "code", "GW", "match_id", "minutes", *CORE_COLUMNS[:-1]]
+# FPL's own average and top score per gameweek (``average_entry_score`` from the
+# game's API, which the dataset snapshots for 2025-26 on): the benchmark the season
+# replay is scored against.
+AVERAGES_PATH = CORE_DIR / "averages.csv"
 
 
 def _season_dir(season: str) -> str:
@@ -155,6 +159,7 @@ def fetch_core_insights(
             )  # fmt: skip
         else:
             root = Path(source)
+        averages = []
         for season in seasons:
             folder = root / "data" / _season_dir(season)
             if not folder.exists():
@@ -165,10 +170,48 @@ def fetch_core_insights(
             rows.to_csv(path, index=False)
             written[season] = len(rows)
             log.info("core insights: %s -> %d player-match rows", season, len(rows))
+            averages.append(_season_averages(folder, season))
+        _write_averages(pd.concat(averages, ignore_index=True) if averages else None)
     finally:
         if tmp:
             shutil.rmtree(tmp, ignore_errors=True)
     return written
+
+
+def _season_averages(root: Path, season: str) -> pd.DataFrame:
+    """``season, GW, average, highest`` for the finished gameweeks of a season folder."""
+    path = root / "gameweek_summaries.csv"
+    if not path.exists():
+        return pd.DataFrame(columns=["season", "GW", "average", "highest"])
+    frame = pd.read_csv(path).drop_duplicates("id").sort_values("id")
+    if "finished" in frame.columns:
+        frame = frame[frame["finished"].astype(str).str.lower().eq("true")]
+    return pd.DataFrame(
+        {
+            "season": season,
+            "GW": frame["id"].astype(int),
+            "average": pd.to_numeric(frame["average_entry_score"], errors="coerce")
+            .fillna(0)
+            .astype(int),
+            "highest": pd.to_numeric(frame.get("highest_score"), errors="coerce")
+            .fillna(0)
+            .astype(int),
+        }
+    )
+
+
+def _write_averages(fresh: pd.DataFrame | None) -> None:
+    """Merge the gameweek averages just read into the committed file (a season the
+    dataset no longer carries keeps its rows)."""
+    if fresh is None or fresh.empty:
+        return
+    path = CORE_DIR / AVERAGES_PATH.name
+    if path.exists():
+        old = pd.read_csv(path)
+        old = old[~old["season"].isin(fresh["season"].unique())]
+        fresh = pd.concat([old, fresh], ignore_index=True)
+    fresh.sort_values(["season", "GW"]).to_csv(path, index=False)
+    log.info("core insights: %d gameweek averages", len(fresh))
 
 
 def load_core_rows(seasons: tuple[str, ...] = TRAIN_SEASONS) -> pd.DataFrame:

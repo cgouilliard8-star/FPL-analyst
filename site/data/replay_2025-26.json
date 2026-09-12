@@ -1,0 +1,1047 @@
+{
+ "model": {
+  "season": "2025-26",
+  "manager": "model",
+  "strategy": {
+   "planner": "milp",
+   "hits": true,
+   "hit_cost": 8.0,
+   "chips": true,
+   "wc_min_gain": 16.0,
+   "wc_late_gain": 4.0,
+   "wc_settle": 3,
+   "fh_min_gain": 20.0,
+   "bb_min": 14.0,
+   "tc_min": 10.0,
+   "bench_weight": 0.15,
+   "weights": [
+    1.0,
+    0.85,
+    0.7,
+    0.55,
+    0.4
+   ],
+   "min_gain": 1.0
+  },
+  "gameweeks": [
+   {
+    "gameweek": 6,
+    "points": 75,
+    "transfers": [],
+    "captain": "Erling Haaland",
+    "chip": null,
+    "hit": 0,
+    "bank": 0.1,
+    "projected": 59.8
+   },
+   {
+    "gameweek": 7,
+    "points": 84,
+    "transfers": [
+     "Trevoh Chalobah -> Marc Gu\u00e9hi"
+    ],
+    "captain": "Erling Haaland",
+    "chip": null,
+    "hit": 0,
+    "bank": 0.5,
+    "projected": 55.4
+   },
+   {
+    "gameweek": 8,
+    "points": 85,
+    "transfers": [
+     "Bruno Borges Fernandes -> Dominik Szoboszlai"
+    ],
+    "captain": "Erling Haaland",
+    "chip": null,
+    "hit": 0,
+    "bank": 3.0,
+    "projected": 58.7
+   },
+   {
+    "gameweek": 9,
+    "points": 50,
+    "transfers": [
+     "Joachim Andersen -> Marc Cucurella Saseta"
+    ],
+    "captain": "Erling Haaland",
+    "chip": null,
+    "hit": 0,
+    "bank": 1.4,
+    "projected": 59.1
+   },
+   {
+    "gameweek": 10,
+    "points": 74,
+    "transfers": [
+     "Marc Cucurella Saseta -> Daniel Mu\u00f1oz Mej\u00eda"
+    ],
+    "captain": "Erling Haaland",
+    "chip": null,
+    "hit": 0,
+    "bank": 1.8,
+    "projected": 61.6
+   },
+   {
+    "gameweek": 11,
+    "points": 32,
+    "transfers": [
+     "Mohammed Kudus -> Bryan Mbeumo"
+    ],
+    "captain": "Erling Haaland",
+    "chip": null,
+    "hit": 0,
+    "bank": -0.0,
+    "projected": 65.3
+   },
+   {
+    "gameweek": 12,
+    "points": 54,
+    "transfers": [
+     "David Raya Mart\u00edn -> Nick Pope"
+    ],
+    "captain": "Erling Haaland",
+    "chip": null,
+    "hit": 0,
+    "bank": 0.7,
+    "projected": 64.0
+   },
+   {
+    "gameweek": 13,
+    "points": 42,
+    "transfers": [
+     "wildcard: 8 changes"
+    ],
+    "captain": "Erling Haaland",
+    "chip": "wildcard",
+    "hit": 0,
+    "bank": -0.0,
+    "projected": 59.1
+   },
+   {
+    "gameweek": 14,
+    "points": 58,
+    "transfers": [
+     "Kevin Schade -> Declan Rice"
+    ],
+    "captain": "Bruno Borges Fernandes",
+    "chip": null,
+    "hit": 0,
+    "bank": -0.0,
+    "projected": 62.8
+   },
+   {
+    "gameweek": 15,
+    "points": 66,
+    "transfers": [
+     "Jurri\u00ebn Timber -> David Raya Mart\u00edn",
+     "Nick Pope -> Matheus Nunes"
+    ],
+    "captain": "Erling Haaland",
+    "chip": null,
+    "hit": 0,
+    "bank": 0.3,
+    "projected": 60.6
+   },
+   {
+    "gameweek": 16,
+    "points": 65,
+    "transfers": [
+     "Jean-Philippe Mateta -> Ra\u00fal Jim\u00e9nez Rodr\u00edguez"
+    ],
+    "captain": "Declan Rice",
+    "chip": null,
+    "hit": 0,
+    "bank": 1.9,
+    "projected": 56.5
+   },
+   {
+    "gameweek": 17,
+    "points": 95,
+    "transfers": [
+     "Daniel Mu\u00f1oz Mej\u00eda -> Nathan Collins"
+    ],
+    "captain": "Erling Haaland",
+    "chip": "bboost",
+    "hit": 0,
+    "bank": 2.9,
+    "projected": 59.5
+   },
+   {
+    "gameweek": 18,
+    "points": 38,
+    "transfers": [
+     "Bryan Mbeumo -> Phil Foden"
+    ],
+    "captain": "Erling Haaland",
+    "chip": null,
+    "hit": 0,
+    "bank": 2.0,
+    "projected": 59.2
+   },
+   {
+    "gameweek": 19,
+    "points": 57,
+    "transfers": [
+     "Bruno Borges Fernandes -> Bukayo Saka"
+    ],
+    "captain": "Erling Haaland",
+    "chip": null,
+    "hit": 0,
+    "bank": 0.8,
+    "projected": 58.8
+   },
+   {
+    "gameweek": 20,
+    "points": 47,
+    "transfers": [
+     "wildcard: 9 changes"
+    ],
+    "captain": "Erling Haaland",
+    "chip": "wildcard",
+    "hit": 0,
+    "bank": 0.0,
+    "projected": 59.0
+   },
+   {
+    "gameweek": 21,
+    "points": 61,
+    "transfers": [
+     "Bukayo Saka -> Marc Gu\u00e9hi",
+     "Ezri Konsa Ngoyo -> Enzo Fern\u00e1ndez"
+    ],
+    "captain": "Erling Haaland",
+    "chip": null,
+    "hit": 0,
+    "bank": 2.9,
+    "projected": 60.6
+   },
+   {
+    "gameweek": 22,
+    "points": 53,
+    "transfers": [
+     "Matheus Nunes -> Cristian Romero (club limit)"
+    ],
+    "captain": "Erling Haaland",
+    "chip": "bboost",
+    "hit": 0,
+    "bank": 3.4,
+    "projected": 54.2
+   },
+   {
+    "gameweek": 23,
+    "points": 49,
+    "transfers": [
+     "Marc Gu\u00e9hi -> Nathan Collins (club limit)"
+    ],
+    "captain": "Erling Haaland",
+    "chip": null,
+    "hit": 0,
+    "bank": 3.6,
+    "projected": 56.7
+   },
+   {
+    "gameweek": 24,
+    "points": 65,
+    "transfers": [
+     "Bruno Guimar\u00e3es Rodriguez Moura -> Bruno Borges Fernandes"
+    ],
+    "captain": "Bruno Borges Fernandes",
+    "chip": null,
+    "hit": 0,
+    "bank": 1.3,
+    "projected": 52.9
+   },
+   {
+    "gameweek": 25,
+    "points": 57,
+    "transfers": [
+     "Phil Foden -> Gabriel dos Santos Magalh\u00e3es",
+     "Fabian Sch\u00e4r -> Mart\u00edn Zubimendi Ib\u00e1\u00f1ez"
+    ],
+    "captain": "Bruno Borges Fernandes",
+    "chip": null,
+    "hit": 4,
+    "bank": 2.5,
+    "projected": 56.6
+   },
+   {
+    "gameweek": 26,
+    "points": 68,
+    "transfers": [
+     "Pedro Porro Sauceda -> Jurri\u00ebn Timber"
+    ],
+    "captain": "Gabriel dos Santos Magalh\u00e3es",
+    "chip": "3xc",
+    "hit": 0,
+    "bank": 1.3,
+    "projected": 78.8
+   },
+   {
+    "gameweek": 27,
+    "points": 50,
+    "transfers": [
+     "Cristian Romero -> Virgil van Dijk"
+    ],
+    "captain": "Enzo Fern\u00e1ndez",
+    "chip": null,
+    "hit": 0,
+    "bank": 0.4,
+    "projected": 56.6
+   },
+   {
+    "gameweek": 28,
+    "points": 61,
+    "transfers": [
+     "Jurri\u00ebn Timber -> Malick Thiaw"
+    ],
+    "captain": "Antoine Semenyo",
+    "chip": null,
+    "hit": 0,
+    "bank": 1.8,
+    "projected": 56.5
+   },
+   {
+    "gameweek": 29,
+    "points": 55,
+    "transfers": [
+     "Erling Haaland -> Igor Thiago Nascimento Rodrigues"
+    ],
+    "captain": "Antoine Semenyo",
+    "chip": null,
+    "hit": 0,
+    "bank": 9.3,
+    "projected": 53.8
+   },
+   {
+    "gameweek": 30,
+    "points": 42,
+    "transfers": [
+     "Mart\u00edn Zubimendi Ib\u00e1\u00f1ez -> Mohamed Salah"
+    ],
+    "captain": "Mohamed Salah",
+    "chip": null,
+    "hit": 0,
+    "bank": 0.5,
+    "projected": 59.4
+   },
+   {
+    "gameweek": 31,
+    "points": 58,
+    "transfers": [
+     "? -> Anton Stach"
+    ],
+    "captain": "Bruno Borges Fernandes",
+    "chip": null,
+    "hit": 0,
+    "bank": 4.1,
+    "projected": 54.4
+   },
+   {
+    "gameweek": 32,
+    "points": 61,
+    "transfers": [
+     "Mohamed Salah -> Antoine Semenyo"
+    ],
+    "captain": "Bruno Borges Fernandes",
+    "chip": null,
+    "hit": 0,
+    "bank": 9.9,
+    "projected": 57.4
+   },
+   {
+    "gameweek": 33,
+    "points": 91,
+    "transfers": [
+     "free hit"
+    ],
+    "captain": "Dominic Calvert-Lewin",
+    "chip": "freehit",
+    "hit": 0,
+    "bank": 9.9,
+    "projected": 97.7
+   },
+   {
+    "gameweek": 34,
+    "points": 56,
+    "transfers": [
+     "? -> Morgan Gibbs-White",
+     "? -> Mohamed Salah"
+    ],
+    "captain": "Bruno Borges Fernandes",
+    "chip": null,
+    "hit": 0,
+    "bank": 1.4,
+    "projected": 54.0
+   },
+   {
+    "gameweek": 35,
+    "points": 54,
+    "transfers": [
+     "Mohamed Salah -> Rayan Cherki"
+    ],
+    "captain": "Bruno Borges Fernandes",
+    "chip": null,
+    "hit": 0,
+    "bank": 8.9,
+    "projected": 56.0
+   },
+   {
+    "gameweek": 36,
+    "points": 66,
+    "transfers": [
+     "Ra\u00fal Jim\u00e9nez Rodr\u00edguez -> Erling Haaland"
+    ],
+    "captain": "Erling Haaland",
+    "chip": null,
+    "hit": 0,
+    "bank": 0.2,
+    "projected": 67.8
+   },
+   {
+    "gameweek": 37,
+    "points": 82,
+    "transfers": [
+     "Morgan Gibbs-White -> James Garner"
+    ],
+    "captain": "Bruno Borges Fernandes",
+    "chip": null,
+    "hit": 0,
+    "bank": 2.5,
+    "projected": 60.0
+   },
+   {
+    "gameweek": 38,
+    "points": 64,
+    "transfers": [
+     "Rayan Cherki -> Dominik Szoboszlai"
+    ],
+    "captain": "Bruno Borges Fernandes",
+    "chip": null,
+    "hit": 0,
+    "bank": 1.9,
+    "projected": 57.1
+   }
+  ],
+  "total": 2015,
+  "per_gameweek": 61.1,
+  "hits": 4,
+  "chips": [
+   [
+    13,
+    "wildcard"
+   ],
+   [
+    17,
+    "bboost"
+   ],
+   [
+    20,
+    "wildcard"
+   ],
+   [
+    22,
+    "bboost"
+   ],
+   [
+    26,
+    "3xc"
+   ],
+   [
+    33,
+    "freehit"
+   ]
+  ]
+ },
+ "crowd": {
+  "season": "2025-26",
+  "manager": "crowd",
+  "strategy": {
+   "planner": "greedy",
+   "hits": false,
+   "hit_cost": 8.0,
+   "chips": false,
+   "wc_min_gain": 16.0,
+   "wc_late_gain": 4.0,
+   "wc_settle": 3,
+   "fh_min_gain": 20.0,
+   "bb_min": 14.0,
+   "tc_min": 10.0,
+   "bench_weight": 0.15,
+   "weights": [
+    1.0,
+    0.85,
+    0.7,
+    0.55,
+    0.4
+   ],
+   "min_gain": 1.0
+  },
+  "gameweeks": [
+   {
+    "gameweek": 6,
+    "points": 58,
+    "transfers": [],
+    "captain": "Jo\u00e3o Pedro Junqueira de Jesus",
+    "chip": null,
+    "hit": 0,
+    "bank": 0.0,
+    "projected": 599.6
+   },
+   {
+    "gameweek": 7,
+    "points": 64,
+    "transfers": [],
+    "captain": "Jo\u00e3o Pedro Junqueira de Jesus",
+    "chip": null,
+    "hit": 0,
+    "bank": 0.0,
+    "projected": 605.6
+   },
+   {
+    "gameweek": 8,
+    "points": 65,
+    "transfers": [],
+    "captain": "Erling Haaland",
+    "chip": null,
+    "hit": 0,
+    "bank": 0.0,
+    "projected": 626.6
+   },
+   {
+    "gameweek": 9,
+    "points": 62,
+    "transfers": [
+     "Virgil van Dijk -> Marcos Senesi Bar\u00f3n"
+    ],
+    "captain": "Erling Haaland",
+    "chip": null,
+    "hit": 0,
+    "bank": 1.0,
+    "projected": 624.7
+   },
+   {
+    "gameweek": 10,
+    "points": 70,
+    "transfers": [
+     "Marc Guiu Paz -> Nick Woltemade",
+     "Mohamed Salah -> Bryan Mbeumo"
+    ],
+    "captain": "Erling Haaland",
+    "chip": null,
+    "hit": 0,
+    "bank": 3.6,
+    "projected": 614.8
+   },
+   {
+    "gameweek": 11,
+    "points": 34,
+    "transfers": [
+     "Nick Woltemade -> Jean-Philippe Mateta"
+    ],
+    "captain": "Erling Haaland",
+    "chip": null,
+    "hit": 0,
+    "bank": 3.1,
+    "projected": 630.0
+   },
+   {
+    "gameweek": 12,
+    "points": 25,
+    "transfers": [
+     "Maxime Est\u00e8ve -> Jurri\u00ebn Timber"
+    ],
+    "captain": "Erling Haaland",
+    "chip": null,
+    "hit": 0,
+    "bank": 0.8,
+    "projected": 630.9
+   },
+   {
+    "gameweek": 13,
+    "points": 24,
+    "transfers": [
+     "Gabriel dos Santos Magalh\u00e3es -> Virgil van Dijk"
+    ],
+    "captain": "Erling Haaland",
+    "chip": null,
+    "hit": 0,
+    "bank": 1.2,
+    "projected": 604.5
+   },
+   {
+    "gameweek": 14,
+    "points": 69,
+    "transfers": [
+     "Mohammed Kudus -> Declan Rice"
+    ],
+    "captain": "Erling Haaland",
+    "chip": null,
+    "hit": 0,
+    "bank": 0.7,
+    "projected": 615.9
+   },
+   {
+    "gameweek": 15,
+    "points": 41,
+    "transfers": [
+     "Marcos Senesi Bar\u00f3n -> Daniel Mu\u00f1oz Mej\u00eda",
+     "Declan Rice -> Malcom DaCosta"
+    ],
+    "captain": "Erling Haaland",
+    "chip": null,
+    "hit": 0,
+    "bank": 2.2,
+    "projected": 601.5
+   },
+   {
+    "gameweek": 16,
+    "points": 52,
+    "transfers": [
+     "Jean-Philippe Mateta -> Igor Thiago Nascimento Rodrigues"
+    ],
+    "captain": "Erling Haaland",
+    "chip": null,
+    "hit": 0,
+    "bank": 3.0,
+    "projected": 575.3
+   },
+   {
+    "gameweek": 17,
+    "points": 70,
+    "transfers": [
+     "Daniel Mu\u00f1oz Mej\u00eda -> Marc Cucurella Saseta"
+    ],
+    "captain": "Erling Haaland",
+    "chip": null,
+    "hit": 0,
+    "bank": 2.7,
+    "projected": 576.3
+   },
+   {
+    "gameweek": 18,
+    "points": 64,
+    "transfers": [
+     "Bryan Mbeumo -> Phil Foden"
+    ],
+    "captain": "Erling Haaland",
+    "chip": null,
+    "hit": 0,
+    "bank": 1.8,
+    "projected": 603.2
+   },
+   {
+    "gameweek": 19,
+    "points": 41,
+    "transfers": [
+     "Robert Lynch S\u00e1nchez -> David Raya Mart\u00edn"
+    ],
+    "captain": "Erling Haaland",
+    "chip": null,
+    "hit": 0,
+    "bank": 0.7,
+    "projected": 588.4
+   },
+   {
+    "gameweek": 20,
+    "points": 49,
+    "transfers": [
+     "Marc Cucurella Saseta -> Gabriel dos Santos Magalh\u00e3es"
+    ],
+    "captain": "Erling Haaland",
+    "chip": null,
+    "hit": 0,
+    "bank": 0.3,
+    "projected": 591.5
+   },
+   {
+    "gameweek": 21,
+    "points": 63,
+    "transfers": [],
+    "captain": "Erling Haaland",
+    "chip": null,
+    "hit": 0,
+    "bank": 0.3,
+    "projected": 596.4
+   },
+   {
+    "gameweek": 22,
+    "points": 40,
+    "transfers": [
+     "Tijjani Reijnders -> Granit Xhaka (club limit)"
+    ],
+    "captain": "Erling Haaland",
+    "chip": null,
+    "hit": 0,
+    "bank": 0.3,
+    "projected": 604.7
+   },
+   {
+    "gameweek": 23,
+    "points": 58,
+    "transfers": [
+     "Phil Foden -> Morgan Rogers (club limit)",
+     "Granit Xhaka -> Harry Wilson"
+    ],
+    "captain": "Erling Haaland",
+    "chip": null,
+    "hit": 0,
+    "bank": 0.4,
+    "projected": 613.2
+   },
+   {
+    "gameweek": 24,
+    "points": 59,
+    "transfers": [],
+    "captain": "Erling Haaland",
+    "chip": null,
+    "hit": 0,
+    "bank": 0.4,
+    "projected": 621.5
+   },
+   {
+    "gameweek": 25,
+    "points": 72,
+    "transfers": [
+     "Morgan Rogers -> Bruno Borges Fernandes",
+     "Virgil van Dijk -> Nathaniel Clyne"
+    ],
+    "captain": "Erling Haaland",
+    "chip": null,
+    "hit": 0,
+    "bank": 0.4,
+    "projected": 627.8
+   },
+   {
+    "gameweek": 26,
+    "points": 63,
+    "transfers": [],
+    "captain": "Erling Haaland",
+    "chip": null,
+    "hit": 0,
+    "bank": 0.4,
+    "projected": 629.4
+   },
+   {
+    "gameweek": 27,
+    "points": 38,
+    "transfers": [
+     "Harry Wilson -> Morgan Rogers",
+     "David Raya Mart\u00edn -> Elyh Harrison"
+    ],
+    "captain": "Erling Haaland",
+    "chip": null,
+    "hit": 0,
+    "bank": 0.6,
+    "projected": 647.2
+   },
+   {
+    "gameweek": 28,
+    "points": 62,
+    "transfers": [
+     "Jurri\u00ebn Timber -> Virgil van Dijk"
+    ],
+    "captain": "Antoine Semenyo",
+    "chip": null,
+    "hit": 0,
+    "bank": 1.0,
+    "projected": 648.7
+   },
+   {
+    "gameweek": 29,
+    "points": 55,
+    "transfers": [
+     "Morgan Rogers -> Declan Rice"
+    ],
+    "captain": "Erling Haaland",
+    "chip": null,
+    "hit": 0,
+    "bank": 1.1,
+    "projected": 645.4
+   },
+   {
+    "gameweek": 30,
+    "points": 49,
+    "transfers": [],
+    "captain": "Erling Haaland",
+    "chip": null,
+    "hit": 0,
+    "bank": 1.1,
+    "projected": 648.5
+   },
+   {
+    "gameweek": 31,
+    "points": 50,
+    "transfers": [
+     "Malcom DaCosta -> Harry Wilson",
+     "? -> Hugo Ekitik\u00e9"
+    ],
+    "captain": "Jo\u00e3o Pedro Junqueira de Jesus",
+    "chip": null,
+    "hit": 0,
+    "bank": 5.0,
+    "projected": 451.7
+   },
+   {
+    "gameweek": 32,
+    "points": 59,
+    "transfers": [
+     "Martin D\u00fabravka -> David Raya Mart\u00edn"
+    ],
+    "captain": "Antoine Semenyo",
+    "chip": null,
+    "hit": 0,
+    "bank": 3.0,
+    "projected": 607.4
+   },
+   {
+    "gameweek": 33,
+    "points": 47,
+    "transfers": [
+     "Micky van de Ven -> Marcos Senesi Bar\u00f3n"
+    ],
+    "captain": "Antoine Semenyo",
+    "chip": null,
+    "hit": 0,
+    "bank": 2.2,
+    "projected": 584.2
+   },
+   {
+    "gameweek": 34,
+    "points": 40,
+    "transfers": [
+     "? -> Ollie Watkins"
+    ],
+    "captain": "Bruno Borges Fernandes",
+    "chip": null,
+    "hit": 0,
+    "bank": 1.2,
+    "projected": 447.7
+   },
+   {
+    "gameweek": 35,
+    "points": 54,
+    "transfers": [],
+    "captain": "Antoine Semenyo",
+    "chip": null,
+    "hit": 0,
+    "bank": 1.2,
+    "projected": 535.0
+   },
+   {
+    "gameweek": 36,
+    "points": 89,
+    "transfers": [
+     "Hugo Ekitik\u00e9 -> Erling Haaland",
+     "Ollie Watkins -> Mateus Man\u00e9"
+    ],
+    "captain": "Erling Haaland",
+    "chip": null,
+    "hit": 0,
+    "bank": 0.1,
+    "projected": 607.3
+   },
+   {
+    "gameweek": 37,
+    "points": 68,
+    "transfers": [],
+    "captain": "Erling Haaland",
+    "chip": null,
+    "hit": 0,
+    "bank": 0.1,
+    "projected": 609.9
+   },
+   {
+    "gameweek": 38,
+    "points": 46,
+    "transfers": [
+     "Mateus Man\u00e9 -> Jo\u00e3o Pedro Junqueira de Jesus",
+     "Igor Thiago Nascimento Rodrigues -> Marc Guiu Paz"
+    ],
+    "captain": "Bruno Borges Fernandes",
+    "chip": null,
+    "hit": 0,
+    "bank": 0.1,
+    "projected": 605.8
+   }
+  ],
+  "total": 1800,
+  "per_gameweek": 54.5,
+  "hits": 0,
+  "chips": []
+ },
+ "average": {
+  "season": "2025-26",
+  "manager": "average",
+  "gameweeks": [
+   {
+    "gameweek": 6,
+    "points": 46
+   },
+   {
+    "gameweek": 7,
+    "points": 60
+   },
+   {
+    "gameweek": 8,
+    "points": 56
+   },
+   {
+    "gameweek": 9,
+    "points": 46
+   },
+   {
+    "gameweek": 10,
+    "points": 65
+   },
+   {
+    "gameweek": 11,
+    "points": 38
+   },
+   {
+    "gameweek": 12,
+    "points": 39
+   },
+   {
+    "gameweek": 13,
+    "points": 35
+   },
+   {
+    "gameweek": 14,
+    "points": 58
+   },
+   {
+    "gameweek": 15,
+    "points": 49
+   },
+   {
+    "gameweek": 16,
+    "points": 60
+   },
+   {
+    "gameweek": 17,
+    "points": 66
+   },
+   {
+    "gameweek": 18,
+    "points": 44
+   },
+   {
+    "gameweek": 19,
+    "points": 40
+   },
+   {
+    "gameweek": 20,
+    "points": 42
+   },
+   {
+    "gameweek": 21,
+    "points": 48
+   },
+   {
+    "gameweek": 22,
+    "points": 40
+   },
+   {
+    "gameweek": 23,
+    "points": 44
+   },
+   {
+    "gameweek": 24,
+    "points": 55
+   },
+   {
+    "gameweek": 25,
+    "points": 58
+   },
+   {
+    "gameweek": 26,
+    "points": 58
+   },
+   {
+    "gameweek": 27,
+    "points": 45
+   },
+   {
+    "gameweek": 28,
+    "points": 53
+   },
+   {
+    "gameweek": 29,
+    "points": 54
+   },
+   {
+    "gameweek": 30,
+    "points": 43
+   },
+   {
+    "gameweek": 31,
+    "points": 38
+   },
+   {
+    "gameweek": 32,
+    "points": 46
+   },
+   {
+    "gameweek": 33,
+    "points": 66
+   },
+   {
+    "gameweek": 34,
+    "points": 36
+   },
+   {
+    "gameweek": 35,
+    "points": 50
+   },
+   {
+    "gameweek": 36,
+    "points": 65
+   },
+   {
+    "gameweek": 37,
+    "points": 53
+   },
+   {
+    "gameweek": 38,
+    "points": 41
+   }
+  ],
+  "total": 1637,
+  "per_gameweek": 49.6
+ },
+ "scorecard": [
+  {
+   "model": "FPL own xP",
+   "n": 25750,
+   "spearman": 0.7870626339,
+   "precision@10": 0.1878787879,
+   "rmse": 2.4905476452,
+   "haulers": 7.7218012862
+  },
+  {
+   "model": "rolling 3-GW mean",
+   "n": 25750,
+   "spearman": 0.7342917669,
+   "precision@10": 0.303030303,
+   "rmse": 2.1768414318,
+   "haulers": 5.7231025566
+  },
+  {
+   "model": "component model",
+   "n": 25750,
+   "spearman": 0.7310041447,
+   "precision@10": 0.4181818182,
+   "rmse": 1.9060350497,
+   "haulers": 5.4933936899
+  },
+  {
+   "model": "constant (train mean)",
+   "n": 25750,
+   "spearman": null,
+   "precision@10": 0.0757575758,
+   "rmse": 2.3761589773,
+   "haulers": 7.1919463796
+  }
+ ]
+}

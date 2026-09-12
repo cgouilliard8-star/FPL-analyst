@@ -2,531 +2,907 @@
  "model": {
   "season": "2024-25",
   "manager": "model",
+  "strategy": {
+   "planner": "milp",
+   "hits": true,
+   "hit_cost": 8.0,
+   "chips": true,
+   "wc_min_gain": 16.0,
+   "wc_late_gain": 4.0,
+   "wc_settle": 3,
+   "fh_min_gain": 20.0,
+   "bb_min": 14.0,
+   "tc_min": 10.0,
+   "bench_weight": 0.15,
+   "weights": [
+    1.0,
+    0.85,
+    0.7,
+    0.55,
+    0.4
+   ],
+   "min_gain": 1.0
+  },
   "gameweeks": [
    {
     "gameweek": 6,
-    "points": 61,
+    "points": 57,
     "transfers": [],
-    "captain": "Erling Haaland"
+    "captain": "Erling Haaland",
+    "chip": null,
+    "hit": 0,
+    "bank": 0.0,
+    "projected": 69.1
    },
    {
     "gameweek": 7,
-    "points": 60,
-    "transfers": [
-     "Chris Wood -> Francisco Evanilson de Lima Barbosa"
-    ],
-    "captain": "Erling Haaland"
+    "points": 53,
+    "transfers": [],
+    "captain": "Erling Haaland",
+    "chip": null,
+    "hit": 0,
+    "bank": 0.0,
+    "projected": 65.9
    },
    {
     "gameweek": 8,
-    "points": 29,
+    "points": 39,
     "transfers": [
-     "Francisco Evanilson de Lima Barbosa -> Ra\u00fal Jim\u00e9nez"
+     "Ollie Watkins -> Bernardo Veiga de Carvalho e Silva",
+     "Amad Diallo -> Ra\u00fal Jim\u00e9nez"
     ],
-    "captain": "Erling Haaland"
+    "captain": "Erling Haaland",
+    "chip": null,
+    "hit": 0,
+    "bank": 2.0,
+    "projected": 64.7
    },
    {
     "gameweek": 9,
-    "points": 54,
+    "points": 72,
     "transfers": [
-     "Bukayo Saka -> Ilkay G\u00fcndogan"
+     "wildcard: 7 changes"
     ],
-    "captain": "Cole Palmer"
+    "captain": "Cole Palmer",
+    "chip": "wildcard",
+    "hit": 0,
+    "bank": -0.0,
+    "projected": 69.9
    },
    {
     "gameweek": 10,
-    "points": 30,
-    "transfers": [
-     "Mark O\u2019Mahony -> Chris Wood"
-    ],
-    "captain": "Erling Haaland"
+    "points": 32,
+    "transfers": [],
+    "captain": "Erling Haaland",
+    "chip": null,
+    "hit": 0,
+    "bank": -0.0,
+    "projected": 62.5
    },
    {
     "gameweek": 11,
-    "points": 42,
+    "points": 59,
     "transfers": [
-     "Ra\u00fal Jim\u00e9nez -> Matheus Santos Carneiro Da Cunha"
+     "James Maddison -> Mark Flekken",
+     "Eberechi Eze -> Bruno Borges Fernandes",
+     "Bernd Leno -> Alejandro Garnacho"
     ],
-    "captain": "Erling Haaland"
+    "captain": "Erling Haaland",
+    "chip": null,
+    "hit": 0,
+    "bank": -0.0,
+    "projected": 60.7
    },
    {
     "gameweek": 12,
-    "points": 56,
+    "points": 49,
     "transfers": [
-     "Ilkay G\u00fcndogan -> Anthony Gordon"
+     "Trent Alexander-Arnold -> Lucas Digne"
     ],
-    "captain": "Cole Palmer"
+    "captain": "Erling Haaland",
+    "chip": null,
+    "hit": 0,
+    "bank": 2.2,
+    "projected": 59.4
    },
    {
     "gameweek": 13,
-    "points": 65,
+    "points": 72,
     "transfers": [
-     "Trent Alexander-Arnold -> Gabriel dos Santos Magalh\u00e3es"
+     "Bruno Borges Fernandes -> Bukayo Saka"
     ],
-    "captain": "Cole Palmer"
+    "captain": "Cole Palmer",
+    "chip": null,
+    "hit": 0,
+    "bank": 0.5,
+    "projected": 53.7
    },
    {
     "gameweek": 14,
-    "points": 44,
+    "points": 35,
     "transfers": [
-     "Anthony Gordon -> Jarrod Bowen"
+     "Alejandro Garnacho -> Justin Kluivert"
     ],
-    "captain": "Erling Haaland"
+    "captain": "Erling Haaland",
+    "chip": null,
+    "hit": 0,
+    "bank": 1.5,
+    "projected": 57.3
    },
    {
     "gameweek": 15,
-    "points": 58,
+    "points": 61,
     "transfers": [
-     "Cole Palmer -> Bukayo Saka"
+     "Ra\u00fal Jim\u00e9nez -> Francisco Evanilson de Lima Barbosa"
     ],
-    "captain": "Bukayo Saka"
+    "captain": "Bukayo Saka",
+    "chip": null,
+    "hit": 0,
+    "bank": 0.9,
+    "projected": 58.3
    },
    {
     "gameweek": 16,
-    "points": 52,
+    "points": 43,
     "transfers": [
-     "Gabriel dos Santos Magalh\u00e3es -> William Saliba"
+     "Cristian Romero -> Jurri\u00ebn Timber"
     ],
-    "captain": "Bukayo Saka"
+    "captain": "Bukayo Saka",
+    "chip": null,
+    "hit": 0,
+    "bank": 0.2,
+    "projected": 68.8
    },
    {
     "gameweek": 17,
-    "points": 34,
+    "points": 35,
     "transfers": [
-     "Kevin Mbabu -> Lewis Hall"
+     "Emerson Palmieri dos Santos -> Lewis Hall"
     ],
-    "captain": "Bukayo Saka"
+    "captain": "Cole Palmer",
+    "chip": null,
+    "hit": 0,
+    "bank": 0.0,
+    "projected": 58.5
    },
    {
     "gameweek": 18,
-    "points": 51,
+    "points": 59,
     "transfers": [
-     "Pedro Porro -> Andrew Robertson"
+     "Erling Haaland -> Mohamed Salah",
+     "Bukayo Saka -> Alexander Isak"
     ],
-    "captain": "Jarrod Bowen"
+    "captain": "Mohamed Salah",
+    "chip": null,
+    "hit": 4,
+    "bank": 2.7,
+    "projected": 64.7
    },
    {
     "gameweek": 19,
-    "points": 59,
+    "points": 94,
     "transfers": [
-     "Bukayo Saka -> Son Heung-min"
+     "Facundo Buonanotte -> Anthony Gordon"
     ],
-    "captain": "Erling Haaland"
+    "captain": "Mohamed Salah",
+    "chip": null,
+    "hit": 0,
+    "bank": 0.3,
+    "projected": 64.4
    },
    {
     "gameweek": 20,
-    "points": 80,
+    "points": 84,
     "transfers": [
-     "Son Heung-min -> Anthony Gordon"
+     "Justin Kluivert -> Morgan Rogers"
     ],
-    "captain": "Bryan Mbeumo"
+    "captain": "Mohamed Salah",
+    "chip": null,
+    "hit": 0,
+    "bank": 0.3,
+    "projected": 65.8
    },
    {
     "gameweek": 21,
-    "points": 77,
+    "points": 65,
     "transfers": [
-     "Matheus Santos Carneiro Da Cunha -> Alexander Isak"
+     "wildcard: 12 changes"
     ],
-    "captain": "Alexander Isak"
+    "captain": "Mohamed Salah",
+    "chip": "wildcard",
+    "hit": 0,
+    "bank": -0.0,
+    "projected": 69.3
    },
    {
     "gameweek": 22,
-    "points": 58,
+    "points": 60,
     "transfers": [
-     "Jarrod Bowen -> Eberechi Eze"
+     "Bruno Borges Fernandes -> Pedro Porro",
+     "Timothy Castagne -> Dejan Kulusevski"
     ],
-    "captain": "Chris Wood"
+    "captain": "Mohamed Salah",
+    "chip": null,
+    "hit": 0,
+    "bank": 0.8,
+    "projected": 68.2
    },
    {
     "gameweek": 23,
-    "points": 75,
-    "transfers": [
-     "William Saliba -> Trent Alexander-Arnold"
-    ],
-    "captain": "Alexander Isak"
+    "points": 60,
+    "transfers": [],
+    "captain": "Alexander Isak",
+    "chip": null,
+    "hit": 0,
+    "bank": 0.8,
+    "projected": 67.8
    },
    {
     "gameweek": 24,
-    "points": 64,
+    "points": 97,
     "transfers": [
-     "Mark Flekken -> Jordan Pickford"
+     "Jean-Philippe Mateta -> Justin Kluivert",
+     "Eberechi Eze -> Ollie Watkins"
     ],
-    "captain": "Trent Alexander-Arnold"
+    "captain": "Mohamed Salah",
+    "chip": null,
+    "hit": 0,
+    "bank": 0.2,
+    "projected": 75.2
    },
    {
     "gameweek": 25,
-    "points": 66,
-    "transfers": [
-     "Anthony Gordon -> Luis D\u00edaz"
-    ],
-    "captain": "Luis D\u00edaz"
+    "points": 109,
+    "transfers": [],
+    "captain": "Mohamed Salah",
+    "chip": "3xc",
+    "hit": 0,
+    "bank": 0.2,
+    "projected": 88.2
    },
    {
     "gameweek": 26,
-    "points": 78,
+    "points": 65,
     "transfers": [
-     "Noni Madueke -> Justin Kluivert"
+     "Trent Alexander-Arnold -> Gabriel dos Santos Magalh\u00e3es",
+     "Tyler Dibling -> Antoine Semenyo"
     ],
-    "captain": "Bryan Mbeumo"
+    "captain": "Mohamed Salah",
+    "chip": null,
+    "hit": 0,
+    "bank": 0.1,
+    "projected": 60.7
    },
    {
     "gameweek": 27,
-    "points": 63,
+    "points": 55,
     "transfers": [
-     "Bryan Mbeumo -> Bruno Borges Fernandes"
+     "Ollie Watkins -> Matheus Santos Carneiro Da Cunha"
     ],
-    "captain": "Bruno Borges Fernandes"
+    "captain": "Mohamed Salah",
+    "chip": null,
+    "hit": 0,
+    "bank": 2.1,
+    "projected": 63.7
    },
    {
     "gameweek": 28,
-    "points": 36,
+    "points": 62,
     "transfers": [
-     "Bruno Borges Fernandes -> Bryan Mbeumo"
+     "Martin D\u00fabravka -> David Raya Martin"
     ],
-    "captain": "Bryan Mbeumo"
+    "captain": "Mohamed Salah",
+    "chip": null,
+    "hit": 0,
+    "bank": 0.9,
+    "projected": 63.7
    },
    {
     "gameweek": 29,
-    "points": 34,
+    "points": 42,
     "transfers": [
-     "Luis D\u00edaz -> Morgan Gibbs-White"
+     "? -> Bruno Borges Fernandes",
+     "? -> Erling Haaland",
+     "Matheus Santos Carneiro Da Cunha -> Chris Wood"
     ],
-    "captain": "Erling Haaland"
+    "captain": "Erling Haaland",
+    "chip": null,
+    "hit": 8,
+    "bank": 0.5,
+    "projected": 59.7
    },
    {
     "gameweek": 30,
-    "points": 34,
+    "points": 22,
     "transfers": [
-     "Ezri Konsa Ngoyo -> Milos Kerkez"
+     "Cole Palmer -> Mohamed Salah",
+     "Bruno Borges Fernandes -> Isma\u00efla Sarr"
     ],
-    "captain": "Justin Kluivert"
+    "captain": "Mohamed Salah",
+    "chip": null,
+    "hit": 4,
+    "bank": 0.5,
+    "projected": 64.0
    },
    {
     "gameweek": 31,
-    "points": 30,
+    "points": 24,
     "transfers": [
-     "Marcus Tavernier -> Antoine Semenyo"
+     "Dejan Kulusevski -> Cole Palmer",
+     "Erling Haaland -> Alexander Isak"
     ],
-    "captain": "Alexander Isak"
+    "captain": "Mohamed Salah",
+    "chip": null,
+    "hit": 4,
+    "bank": 1.3,
+    "projected": 56.1
    },
    {
     "gameweek": 32,
-    "points": 86,
+    "points": 70,
     "transfers": [
-     "Justin Kluivert -> Harvey Barnes"
+     "Chris Wood -> Jean-Philippe Mateta"
     ],
-    "captain": "Alexander Isak"
+    "captain": "Alexander Isak",
+    "chip": null,
+    "hit": 0,
+    "bank": 0.5,
+    "projected": 66.4
    },
    {
     "gameweek": 33,
-    "points": 81,
+    "points": 106,
     "transfers": [
-     "Morgan Gibbs-White -> Gabriel Martinelli Silva"
+     "free hit"
     ],
-    "captain": "Gabriel Martinelli Silva"
+    "captain": "David Raya Martin",
+    "chip": "freehit",
+    "hit": 0,
+    "bank": 0.5,
+    "projected": 96.4
    },
    {
     "gameweek": 34,
-    "points": 42,
+    "points": 44,
     "transfers": [
-     "Lewis Hall -> Antonee Robinson"
+     "? -> Bernd Leno",
+     "? -> Chris Wood"
     ],
-    "captain": "Alexander Isak"
+    "captain": "Mohamed Salah",
+    "chip": null,
+    "hit": 0,
+    "bank": 1.9,
+    "projected": 50.1
    },
    {
     "gameweek": 35,
     "points": 44,
     "transfers": [
-     "Milos Kerkez -> Daniel Mu\u00f1oz"
+     "Gabriel dos Santos Magalh\u00e3es -> Nathan Collins"
     ],
-    "captain": "Bryan Mbeumo"
+    "captain": "Mohamed Salah",
+    "chip": null,
+    "hit": 0,
+    "bank": 3.6,
+    "projected": 50.7
    },
    {
     "gameweek": 36,
-    "points": 72,
+    "points": 63,
     "transfers": [
-     "Trent Alexander-Arnold -> Jo\u0161ko Gvardiol"
+     "Justin Kluivert -> Bryan Mbeumo"
     ],
-    "captain": "Bryan Mbeumo"
+    "captain": "Bryan Mbeumo",
+    "chip": null,
+    "hit": 0,
+    "bank": 1.4,
+    "projected": 57.1
    },
    {
     "gameweek": 37,
-    "points": 41,
+    "points": 37,
     "transfers": [
-     "Alexander Isak -> Ollie Watkins"
+     "Pedro Porro -> Aaron Wan-Bissaka"
     ],
-    "captain": "Eberechi Eze"
+    "captain": "Cole Palmer",
+    "chip": null,
+    "hit": 0,
+    "bank": 2.2,
+    "projected": 57.7
    },
    {
     "gameweek": 38,
-    "points": 84,
+    "points": 67,
     "transfers": [
-     "Eberechi Eze -> Jarrod Bowen"
+     "Jo\u00e3o Pedro Junqueira de Jesus -> Francisco Evanilson de Lima Barbosa"
     ],
-    "captain": "Jarrod Bowen"
+    "captain": "Mohamed Salah",
+    "chip": null,
+    "hit": 0,
+    "bank": 1.8,
+    "projected": 54.7
    }
   ],
-  "total": 1840,
-  "per_gameweek": 55.8
+  "total": 1936,
+  "per_gameweek": 58.7,
+  "hits": 20,
+  "chips": [
+   [
+    9,
+    "wildcard"
+   ],
+   [
+    21,
+    "wildcard"
+   ],
+   [
+    25,
+    "3xc"
+   ],
+   [
+    33,
+    "freehit"
+   ]
+  ]
  },
  "crowd": {
   "season": "2024-25",
   "manager": "crowd",
+  "strategy": {
+   "planner": "greedy",
+   "hits": false,
+   "hit_cost": 8.0,
+   "chips": false,
+   "wc_min_gain": 16.0,
+   "wc_late_gain": 4.0,
+   "wc_settle": 3,
+   "fh_min_gain": 20.0,
+   "bb_min": 14.0,
+   "tc_min": 10.0,
+   "bench_weight": 0.15,
+   "weights": [
+    1.0,
+    0.85,
+    0.7,
+    0.55,
+    0.4
+   ],
+   "min_gain": 1.0
+  },
   "gameweeks": [
    {
     "gameweek": 6,
-    "points": 34,
+    "points": 53,
     "transfers": [],
-    "captain": "Erling Haaland"
+    "captain": "Erling Haaland",
+    "chip": null,
+    "hit": 0,
+    "bank": 0.0,
+    "projected": 461.5
    },
    {
     "gameweek": 7,
-    "points": 27,
+    "points": 31,
     "transfers": [],
-    "captain": "Erling Haaland"
+    "captain": "Erling Haaland",
+    "chip": null,
+    "hit": 0,
+    "bank": 0.0,
+    "projected": 477.5
    },
    {
     "gameweek": 8,
-    "points": 20,
-    "transfers": [
-     "Hamza Choudhury -> Cole Palmer",
-     "Mohamed Salah -> Harry Winks"
-    ],
-    "captain": "Erling Haaland"
+    "points": 27,
+    "transfers": [],
+    "captain": "Erling Haaland",
+    "chip": null,
+    "hit": 0,
+    "bank": 0.0,
+    "projected": 480.4
    },
    {
     "gameweek": 9,
-    "points": 49,
-    "transfers": [
-     "Tom Cannon -> Danny Welbeck"
-    ],
-    "captain": "Erling Haaland"
-   },
-   {
-    "gameweek": 10,
-    "points": 36,
+    "points": 64,
     "transfers": [
      "Luis D\u00edaz -> Bryan Mbeumo"
     ],
-    "captain": "Erling Haaland"
+    "captain": "Erling Haaland",
+    "chip": null,
+    "hit": 0,
+    "bank": 0.3,
+    "projected": 483.2
+   },
+   {
+    "gameweek": 10,
+    "points": 33,
+    "transfers": [
+     "Morgan Rogers -> Luis D\u00edaz",
+     "Gabriel dos Santos Magalh\u00e3es -> Aaron Cresswell"
+    ],
+    "captain": "Erling Haaland",
+    "chip": null,
+    "hit": 0,
+    "bank": 0.1,
+    "projected": 485.1
    },
    {
     "gameweek": 11,
-    "points": 41,
+    "points": 43,
     "transfers": [
-     "Gabriel dos Santos Magalh\u00e3es -> Jo\u0161ko Gvardiol"
+     "Nathan Fraser -> Chris Wood",
+     "William Saliba -> Pedro Cardoso de Lima"
     ],
-    "captain": "Erling Haaland"
+    "captain": "Erling Haaland",
+    "chip": null,
+    "hit": 0,
+    "bank": 0.0,
+    "projected": 473.2
    },
    {
     "gameweek": 12,
-    "points": 47,
+    "points": 40,
     "transfers": [
      "Trent Alexander-Arnold -> Gabriel dos Santos Magalh\u00e3es"
     ],
-    "captain": "Erling Haaland"
+    "captain": "Erling Haaland",
+    "chip": null,
+    "hit": 0,
+    "bank": 0.8,
+    "projected": 458.6
    },
    {
     "gameweek": 13,
-    "points": 54,
+    "points": 64,
     "transfers": [],
-    "captain": "Cole Palmer"
+    "captain": "Cole Palmer",
+    "chip": null,
+    "hit": 0,
+    "bank": 0.8,
+    "projected": 439.6
    },
    {
     "gameweek": 14,
-    "points": 80,
+    "points": 62,
     "transfers": [
-     "Morgan Rogers -> Mohamed Salah",
+     "Luis D\u00edaz -> Mohamed Salah",
      "Erling Haaland -> Nicolas Jackson"
     ],
-    "captain": "Mohamed Salah"
+    "captain": "Mohamed Salah",
+    "chip": null,
+    "hit": 0,
+    "bank": 2.0,
+    "projected": 454.5
    },
    {
     "gameweek": 15,
-    "points": 74,
-    "transfers": [],
-    "captain": "Cole Palmer"
+    "points": 70,
+    "transfers": [
+     "? -> Bukayo Saka"
+    ],
+    "captain": "Cole Palmer",
+    "chip": null,
+    "hit": 0,
+    "bank": 4.7,
+    "projected": 422.4
    },
    {
     "gameweek": 16,
-    "points": 69,
+    "points": 59,
     "transfers": [
-     "Danny Welbeck -> Chris Wood",
-     "Emile Smith Rowe -> Yunus Emre Konak"
+     "Aaron Cresswell -> Virgil van Dijk"
     ],
-    "captain": "Mohamed Salah"
+    "captain": "Cole Palmer",
+    "chip": null,
+    "hit": 0,
+    "bank": 2.2,
+    "projected": 437.3
    },
    {
     "gameweek": 17,
-    "points": 43,
-    "transfers": [],
-    "captain": "Cole Palmer"
+    "points": 29,
+    "transfers": [
+     "Danny Welbeck -> Matheus Santos Carneiro Da Cunha"
+    ],
+    "captain": "Cole Palmer",
+    "chip": null,
+    "hit": 0,
+    "bank": 0.8,
+    "projected": 452.7
    },
    {
     "gameweek": 18,
-    "points": 64,
+    "points": 59,
     "transfers": [
-     "Nicolas Jackson -> Alexander Isak",
-     "Jo\u0161ko Gvardiol -> Antonee Robinson"
+     "Gabriel dos Santos Magalh\u00e3es -> William Saliba"
     ],
-    "captain": "Mohamed Salah"
+    "captain": "Cole Palmer",
+    "chip": null,
+    "hit": 0,
+    "bank": 0.8,
+    "projected": 432.2
    },
    {
     "gameweek": 19,
-    "points": 58,
+    "points": 54,
     "transfers": [
-     "Chris Wood -> Matheus Santos Carneiro Da Cunha"
+     "Bukayo Saka -> Luis D\u00edaz"
     ],
-    "captain": "Cole Palmer"
+    "captain": "Cole Palmer",
+    "chip": null,
+    "hit": 0,
+    "bank": 3.6,
+    "projected": 438.3
    },
    {
     "gameweek": 20,
-    "points": 79,
+    "points": 69,
     "transfers": [
-     "Matheus Santos Carneiro Da Cunha -> Chris Wood"
+     "Matheus Santos Carneiro Da Cunha -> Alexander Isak"
     ],
-    "captain": "Mohamed Salah"
+    "captain": "Cole Palmer",
+    "chip": null,
+    "hit": 0,
+    "bank": 1.4,
+    "projected": 476.4
    },
    {
     "gameweek": 21,
-    "points": 55,
-    "transfers": [],
-    "captain": "Mohamed Salah"
+    "points": 60,
+    "transfers": [
+     "Jo\u0161ko Gvardiol -> Gabriel dos Santos Magalh\u00e3es"
+    ],
+    "captain": "Cole Palmer",
+    "chip": null,
+    "hit": 0,
+    "bank": 1.0,
+    "projected": 483.0
    },
    {
     "gameweek": 22,
-    "points": 41,
+    "points": 44,
     "transfers": [
-     "Cameron Burgess -> Ola Aina",
-     "Jo\u00e3o Pedro Junqueira de Jesus -> Remy Rees-Dottin"
+     "Luis D\u00edaz -> Anthony Gordon"
     ],
-    "captain": "Mohamed Salah"
+    "captain": "Cole Palmer",
+    "chip": null,
+    "hit": 0,
+    "bank": 0.8,
+    "projected": 494.4
    },
    {
     "gameweek": 23,
-    "points": 70,
+    "points": 65,
     "transfers": [
-     "Pedro Porro -> Lewis Hall"
+     "Emile Smith Rowe -> Morgan Rogers"
     ],
-    "captain": "Mohamed Salah"
+    "captain": "Cole Palmer",
+    "chip": null,
+    "hit": 0,
+    "bank": 0.4,
+    "projected": 496.2
    },
    {
     "gameweek": 24,
-    "points": 107,
+    "points": 49,
     "transfers": [
-     "William Saliba -> Virgil van Dijk"
+     "Pedro Porro -> Lewis Hall"
     ],
-    "captain": "Mohamed Salah"
+    "captain": "Cole Palmer",
+    "chip": null,
+    "hit": 0,
+    "bank": 0.7,
+    "projected": 491.9
    },
    {
     "gameweek": 25,
-    "points": 74,
+    "points": 45,
     "transfers": [],
-    "captain": "Mohamed Salah"
+    "captain": "Cole Palmer",
+    "chip": null,
+    "hit": 0,
+    "bank": 0.7,
+    "projected": 488.8
    },
    {
     "gameweek": 26,
-    "points": 78,
+    "points": 85,
     "transfers": [
-     "Harry Winks -> Justin Kluivert",
-     "Virgil van Dijk -> James Tarkowski"
+     "Cole Palmer -> Mohamed Salah",
+     "Nicolas Jackson -> Deivid Washington de Souza Eug\u00eanio"
     ],
-    "captain": "Mohamed Salah"
+    "captain": "Mohamed Salah",
+    "chip": null,
+    "hit": 0,
+    "bank": 0.9,
+    "projected": 509.5
    },
    {
     "gameweek": 27,
-    "points": 54,
+    "points": 58,
     "transfers": [],
-    "captain": "Mohamed Salah"
+    "captain": "Mohamed Salah",
+    "chip": null,
+    "hit": 0,
+    "bank": 0.9,
+    "projected": 501.6
    },
    {
     "gameweek": 28,
-    "points": 53,
+    "points": 59,
     "transfers": [
-     "James Tarkowski -> Trent Alexander-Arnold",
-     "Gabriel dos Santos Magalh\u00e3es -> Cameron Burgess"
+     "Pedro Cardoso de Lima -> Ola Aina",
+     "Anthony Gordon -> Justin Kluivert"
     ],
-    "captain": "Mohamed Salah"
+    "captain": "Mohamed Salah",
+    "chip": null,
+    "hit": 0,
+    "bank": 0.8,
+    "projected": 531.2
    },
    {
     "gameweek": 29,
-    "points": 37,
+    "points": 41,
     "transfers": [
-     "Trent Alexander-Arnold -> William Saliba"
+     "? -> Antonee Robinson"
     ],
-    "captain": "Chris Wood"
+    "captain": "Chris Wood",
+    "chip": null,
+    "hit": 0,
+    "bank": 2.2,
+    "projected": 370.5
    },
    {
     "gameweek": 30,
-    "points": 42,
+    "points": 45,
     "transfers": [
      "Lewis Hall -> Jo\u0161ko Gvardiol"
     ],
-    "captain": "Mohamed Salah"
+    "captain": "Mohamed Salah",
+    "chip": null,
+    "hit": 0,
+    "bank": 1.0,
+    "projected": 539.4
    },
    {
     "gameweek": 31,
-    "points": 25,
-    "transfers": [],
-    "captain": "Mohamed Salah"
+    "points": 33,
+    "transfers": [
+     "Gabriel dos Santos Magalh\u00e3es -> Virgil van Dijk"
+    ],
+    "captain": "Mohamed Salah",
+    "chip": null,
+    "hit": 0,
+    "bank": 0.8,
+    "projected": 512.6
    },
    {
     "gameweek": 32,
-    "points": 42,
+    "points": 47,
     "transfers": [
-     "Antonee Robinson -> Daniel Mu\u00f1oz",
-     "Justin Kluivert -> Morgan Rogers"
+     "Ola Aina -> Daniel Mu\u00f1oz"
     ],
-    "captain": "Mohamed Salah"
+    "captain": "Mohamed Salah",
+    "chip": null,
+    "hit": 0,
+    "bank": 0.8,
+    "projected": 511.9
    },
    {
     "gameweek": 33,
-    "points": 75,
+    "points": 72,
     "transfers": [
-     "Ola Aina -> Pedro Porro"
+     "Chris Wood -> Omar Marmoush"
     ],
-    "captain": "Mohamed Salah"
+    "captain": "Mohamed Salah",
+    "chip": null,
+    "hit": 0,
+    "bank": 0.0,
+    "projected": 531.7
    },
    {
     "gameweek": 34,
-    "points": 42,
+    "points": 39,
     "transfers": [
-     "William Saliba -> Rayan A\u00eft-Nouri"
+     "? -> Rayan A\u00eft-Nouri"
     ],
-    "captain": "Mohamed Salah"
+    "captain": "Mohamed Salah",
+    "chip": null,
+    "hit": 0,
+    "bank": 1.6,
+    "projected": 396.7
    },
    {
     "gameweek": 35,
-    "points": 48,
+    "points": 42,
     "transfers": [
      "Rayan A\u00eft-Nouri -> William Saliba"
     ],
-    "captain": "Mohamed Salah"
+    "captain": "Mohamed Salah",
+    "chip": null,
+    "hit": 0,
+    "bank": 0.0,
+    "projected": 530.4
    },
    {
     "gameweek": 36,
-    "points": 49,
+    "points": 48,
     "transfers": [
-     "Pedro Porro -> Nikola Milenkovi\u0107"
+     "Omar Marmoush -> Chris Wood"
     ],
-    "captain": "Mohamed Salah"
+    "captain": "Mohamed Salah",
+    "chip": null,
+    "hit": 0,
+    "bank": 0.5,
+    "projected": 528.0
    },
    {
     "gameweek": 37,
-    "points": 38,
-    "transfers": [],
-    "captain": "Mohamed Salah"
+    "points": 37,
+    "transfers": [
+     "Antonee Robinson -> Nikola Milenkovi\u0107"
+    ],
+    "captain": "Mohamed Salah",
+    "chip": null,
+    "hit": 0,
+    "bank": 0.0,
+    "projected": 527.0
    },
    {
     "gameweek": 38,
-    "points": 54,
-    "transfers": [
-     "Nikola Milenkovi\u0107 -> Milos Kerkez"
-    ],
-    "captain": "Mohamed Salah"
+    "points": 51,
+    "transfers": [],
+    "captain": "Mohamed Salah",
+    "chip": null,
+    "hit": 0,
+    "bank": 0.0,
+    "projected": 510.0
    }
   ],
-  "total": 1759,
-  "per_gameweek": 53.3
- }
+  "total": 1677,
+  "per_gameweek": 50.8,
+  "hits": 0,
+  "chips": []
+ },
+ "scorecard": [
+  {
+   "model": "FPL own xP",
+   "n": 23708,
+   "spearman": 0.7559315551,
+   "precision@10": 0.6424242424,
+   "rmse": 1.8438678299,
+   "haulers": 4.9752690684
+  },
+  {
+   "model": "component model",
+   "n": 23708,
+   "spearman": 0.7171098177,
+   "precision@10": 0.5090909091,
+   "rmse": 1.911673748,
+   "haulers": 5.4732629026
+  },
+  {
+   "model": "LightGBM (monolithic)",
+   "n": 23708,
+   "spearman": 0.7087757592,
+   "precision@10": 0.4787878788,
+   "rmse": 1.9335979221,
+   "haulers": 5.5242811963
+  },
+  {
+   "model": "rolling 3-GW mean",
+   "n": 23708,
+   "spearman": 0.7032117336,
+   "precision@10": 0.3727272727,
+   "rmse": 2.1820735094,
+   "haulers": 5.7902764556
+  },
+  {
+   "model": "constant (train mean)",
+   "n": 23708,
+   "spearman": null,
+   "precision@10": 0.0727272727,
+   "rmse": 2.3535712904,
+   "haulers": 7.1722102992
+  }
+ ]
 }

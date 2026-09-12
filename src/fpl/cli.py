@@ -154,10 +154,10 @@ def _schedule(args: argparse.Namespace) -> int:
 def _replay(args: argparse.Namespace) -> int:
     import json
 
-    from fpl.evaluate.replay import replay_season
+    from fpl.evaluate.season import replay
     from fpl.report.live import replay_path
 
-    out = {m: replay_season(args.season, manager=m) for m in ("model", "crowd")}
+    out = replay(args.season)
     try:  # the walk-forward scorecard for the same season, for the page's accuracy table
         from fpl.evaluate.compare import build_scorecard
 
@@ -174,8 +174,12 @@ def _replay(args: argparse.Namespace) -> int:
     path.parent.mkdir(parents=True, exist_ok=True)
     path.write_text(json.dumps(out, indent=1))
     for m, r in out.items():
+        if m == "scorecard":
+            continue
+        extra = f", {r['hits']} points of hits, chips {r['chips']}" if "hits" in r else ""
         print(
-            f"{m}: {r['total']} points over {len(r['gameweeks'])} gameweeks ({r['per_gameweek']} a week)"
+            f"{m}: {r['total']} points over {len(r['gameweeks'])} gameweeks"
+            f" ({r['per_gameweek']} a week{extra})"
         )
     return 0
 
@@ -357,7 +361,7 @@ def main(argv: list[str] | None = None) -> int:
     rp = sub.add_parser(
         "replay",
         parents=[common],
-        help="replay an archived season with transfer rules: model vs crowd",
+        help="replay an archived season with the full rules (transfers, hits, chips): model vs average vs crowd",
     )
     rp.add_argument("--season", default="2024-25")
     rp.set_defaults(func=_replay)

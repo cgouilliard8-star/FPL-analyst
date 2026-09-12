@@ -87,10 +87,13 @@ for the player out and the player in, with the opponent's attack or defence rank
 alongside each fixture, both clubs' own strength, which scoring components the points
 come from, availability news, the money, and the hit arithmetic.
 
-**Backtest.** The Backtest tab replays the season from the GW1 deadline: a £100m squad
-built with only what was knowable then, one free transfer a week from GW2 (bankable,
-never a hit), lineup and captain by projection, scored on real points with automatic
-substitutions, against the average manager and the week's top score.
+**Backtest.** The Backtest tab replays this season from the GW1 deadline: a £100m squad
+built with only what was knowable then, the solver's transfers each week, lineup and
+captain by projection, scored on real points with automatic substitutions, against
+the average manager and the week's top score. Below it, the last two seasons played
+in full -- transfers, hits and all four chips -- against FPL's real average score
+every gameweek and against the template team, with the accuracy scorecard of every
+model on the same folds (Results).
 
 **News and injuries.** Every projection is scaled by FPL's availability flag:
 `chance_of_playing_next_round` where a percentage is given, zero for injured,
@@ -139,6 +142,13 @@ rules — £100m, positional quotas, three per club, legal formation, captain do
 and reports what that eleven actually scored. Haulers RMSE follows
 [OpenFPL](https://arxiv.org/abs/2508.09992)'s segmentation so the figure is comparable
 (OpenFPL reports 5.142; FPL Review, a paid service, 5.172).
+The same harness over 2025-26 (gameweeks 6–38, 25,750 predictions, refitting before
+every gameweek on 2022-23 to that point) gives the component model Spearman 0.731,
+precision@10 0.418, RMSE 1.906 and haulers RMSE 5.493, against 0.734 / 0.303 / 2.177 /
+5.723 for the rolling mean; precision is lower for everyone that season because the
+defensive-contribution rule spread points more evenly. The archived `xP` for 2025-26
+is not usable at all (precision@10 0.188 -- see the caveat). Both scorecards are on
+the Backtest tab.
 
 **The honest reading.** The component model beats every baseline it was designed to
 beat, by a clear margin in the metric that matters most for squad selection
@@ -184,15 +194,59 @@ each candidate for the reader, and the weight is re-measured when more seasons o
 walk-forward predictions exist. Perfect hindsight within the same fifteen would
 average about 16 a week, which says how much of captaincy is luck.
 
-**A whole season, with transfer rules.** `fpl replay` plays 2024-25 from gameweek 6
-to 38 under FPL's rules — a £100m squad, one free transfer a week bankable to five,
-never a hit, lineup and captain re-picked weekly, automatic substitutions — using the
-cached walk-forward projections, each made before its gameweek. Two managers play the
-same season on the same code: the *model* manager ranks by projection, the *crowd*
-manager ranks by ownership at each deadline (the template team, which is what the
-average manager owns). Neither can see injury flags. Result: model **1,840** points,
-crowd **1,759** — an 81-point edge, 55.8 against 53.3 a week, over 33 gameweeks
-(round one of the model scored 1,823). The Backtest tab shows the two week by week.
+**A whole season, with the whole game.** Rank correlations say how well the model
+orders players; they do not say how many points a manager makes with it, which is the
+only number that matters. `fpl replay` (`evaluate/season.py`) plays an archived season
+from gameweek 6 to 38 under the full rules, using only projections made before each
+deadline: a £100m squad built at the start; every week one free transfer, banked to
+five, and a four-point hit beyond; the multi-week solver choosing transfers over a
+five-week horizon of fixture-aware projections; lineup, captain and bench order
+re-picked weekly; FPL's automatic substitutions; and the four chips played by rules --
+Wildcard when a rebuilt squad beats the current one by sixteen weighted points over
+the run (or by four with the window closing), Free Hit when the best one-week squad
+beats ours by twenty in a week nothing in the horizon beats, Bench Boost and Triple
+Captain likewise for the bench and the captain. Three managers play the same weeks:
+the **model**; the **crowd**, who holds the template team (the most-owned players at
+each deadline) with one free transfer a week and no chips; and, for 2025-26, the
+**average** -- FPL's own average score every gameweek, every manager in the game,
+archived by FPL-Core-Insights. Nobody in the replay sees injury flags (they are not
+archived); the real average manager did.
+
+One replay of one season is one noisy draw -- two runs that diverge at a coin-flip
+transfer finish forty points apart -- so strategies are compared as means over four
+runs with every projection jittered by three per cent (`scripts/strategy_ensemble.py`).
+Per gameweek, over the 33 gameweeks each season:
+
+| Manager / strategy | 2024-25 | 2025-26 |
+| --- | ---: | ---: |
+| FPL average (real, every manager) | not archived | **49.6** |
+| Crowd: template team, one free transfer, no chips | 50.8 | 54.5 |
+| Model, one free transfer a week, no hits, no chips | 56.2 | 56.4 |
+| Model, multi-week solver, no hits, no chips | 58.4 | 58.2 |
+| Model, solver + chips, no hits | 58.5 | 58.8 |
+| **Model, solver + chips + hits (what ships)** | **59.6** | **59.8** |
+
+On the one season where the real average exists the shipped strategy is **+10.2
+points a gameweek over every manager in the game** -- 1,972 against the average's
+1,637 over 33 gameweeks, four jittered runs between 1,882 and 2,053, so even the
+worst of them is +7.4 a week; the single un-jittered replay on the page scored 2,015.
+The plainest strategy, one free transfer a week and nothing else, is +6.8. On 2024-25
+the same ordering holds against the template team, +8.8 a week. Three findings from
+the grid, all found on 2024-25 first and confirmed on 2025-26: the solver planning
+over the horizon is worth about two points a week over one-week greed; the chips are
+worth about half a point to one; hits are worth about one more, and no more when the
+solver prices them at four (a dozen or more a season) than at eight (two to six), so
+the cautious price ships and the page's planner uses it too. The chip thresholds were
+set from the traces (a wildcard one week after the squad was built, on a ten-point
+gain, was noise; the twenty-two-point gain at gameweek 20 was real) and the tightened
+rules score the same as loose ones within the noise, so they ship for being sensible
+rather than for being measured better. The crowd manager's 54.5 against the real
+49.6 says something too: the template team, held with one free transfer a week and
+no hits, beats the average manager by five a week -- most of the field loses points
+to hits, benches and chasing last week's score.
+
+The Backtest tab shows each season week by week -- model,
+average, crowd -- with the transfers, captain, chip and hit behind every cell.
 
 The GW1–3 season replay is a three-gameweek sample and behaves like one: the same
 model with the earlier defaults scored 181 points (43 / 88 / 50) and with the tuned
@@ -509,6 +563,42 @@ squad money can buy, against yours), Wildcard (the solved best squad over the ru
 against yours) -- with the note that blank and double gameweeks are known only a few
 weeks ahead. Chips already played, when a team is imported, are marked used.
 
+**Hits, priced cautiously.** Both the solver in the season replay and the page's beam
+search plan a hit as if it cost eight points, twice what FPL charges. The reason is
+selection: the gain a planner sees for its best move is the largest of hundreds of
+noisy estimates, so it is biased upward, and a hit that looks worth two points is
+often worth nothing. In the replays (Results) hits were worth about a point a week
+either way -- priced at four the solver took twelve to seventeen a season, priced at
+eight two or three, and the two finished within the noise of each other -- so the
+cautious price ships: the same points from a fifth of the hits, and a plan that does
+not ask you to take a hit every other week. The four shown beside a move is the real
+charge; the eight is only how hard the move had to argue for itself.
+
+## The armband
+
+The model picks the captain and vice-captain (Captaincy, above), but the armband is
+yours: a player's profile sheet has *Make Captain* and *Make Vice-Captain*, and the
+Captain card on My Team has a C and a V beside every candidate. Your choice shows on
+the pitch (C in gold, V in white), the projection and rating follow it, the card says
+what the model would have done and by how much, and *Use the Model's Pick* hands it
+back. Importing a team from FPL brings its captain and vice with it; Auto-Pick resets
+to the model's. The choice is kept on the device with the squad.
+
+## Live points
+
+Once the gameweek's deadline has passed, the page reads FPL's live feed for the
+gameweek (`event/<gw>/live/` and `fixtures/?event=<gw>`, public, through the same
+relay the import uses) and every card on the pitch -- My Team and Best Squad --
+shows the player's points so far in place of his projection, tagged LIVE while his
+match is on and FT when it is over; the profile sheet adds minutes, goals, assists,
+bonus and clean sheet. The strip above the pitch totals the team the way FPL will:
+captain doubled, the vice-captain if the captain's match ended without him,
+automatic substitutions in bench order once a starter's match has finished without
+him, and the bench's points shown separately. It refreshes every two minutes while a
+match is being played and the page is open, every ten between matches, and stops
+when the last match is over; a *Refresh* button forces it. Before the deadline the
+strip shows the last gameweek's final points instead.
+
 ## Substitutions
 
 Drag a card onto another (or tap the ⇄ on a card, then the card to swap with) to
@@ -656,7 +746,7 @@ every gameweek in the five-week horizon. The Why panel flags them on each fixtur
 | --- | --- | --- |
 | [Official FPL API](https://fantasy.premierleague.com/api/bootstrap-static/) | Points, prices, minutes, xG/xA, set-piece order, availability | Public JSON |
 | [vaastav archive](https://github.com/vaastav/Fantasy-Premier-League) | Historical seasons | GitHub |
-| [FPL-Core-Insights](https://github.com/olbauday/FPL-Core-Insights) | Per-match player actions (shots, box touches, chances, tackles, interceptions, blocks, clearances, goals prevented) from 2024-25, keyed by FPL ids | GitHub, refreshed twice daily |
+| [FPL-Core-Insights](https://github.com/olbauday/FPL-Core-Insights) | Per-match player actions (shots, box touches, chances, tackles, interceptions, blocks, clearances, goals prevented) from 2024-25, keyed by FPL ids; FPL's average and top score per gameweek from 2025-26 (`data/external/averages.csv`, the season replay's benchmark) | GitHub, refreshed twice daily |
 | [FPL image server](https://resources.premierleague.com) | Player headshots, copied once into `site/photos/` | Public PNG |
 | [Understat](https://understat.com) | Shot-level xG | Scrape, gently |
 | [football-data.co.uk](https://www.football-data.co.uk/englandm.php) | Historical closing odds | Static CSV |
@@ -676,7 +766,7 @@ src/fpl/
   entity/     cross-season identity, name matching, curated club aliases
   features/   gameweek aggregation, lagged windows, shrunk per-90 rates
   models/     baselines, component sub-models, rule-based combiner
-  evaluate/   walk-forward harness, segmented metrics, cached comparisons
+  evaluate/   walk-forward harness, segmented metrics, cached comparisons, season replay
   optimise/   squad selection (MILP), team rating and transfer suggestions
   explain/    grounded prompt, guardrail, template fallback
   report/     live and backtest dashboard JSON

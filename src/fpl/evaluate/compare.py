@@ -49,6 +49,11 @@ def prediction_path(model: str, season: str) -> Path:
     return PREDICTIONS_DIR / f"{model}_{season}.parquet"
 
 
+def horizon_path(model: str, season: str) -> Path:
+    """Projections for the gameweeks *after* each fold's, made at that fold."""
+    return PREDICTIONS_DIR / f"{model}_{season}_horizon.parquet"
+
+
 def run_model(
     model: str,
     *,
@@ -57,6 +62,7 @@ def run_model(
     first_gameweek: int = 6,
     last_gameweek: int | None = None,
     frame: pd.DataFrame | None = None,
+    horizon: int = 5,
 ) -> pd.DataFrame:
     """Walk-forward one model and cache its predictions.
 
@@ -80,15 +86,24 @@ def run_model(
         first_gameweek=first_gameweek,
         last_gameweek=last_gameweek,
         name=LABELS[model],
+        horizon=horizon if model == "component" else 1,
     )
 
     PREDICTIONS_DIR.mkdir(parents=True, exist_ok=True)
+    ahead = predictions.attrs.get("horizon")
+    if ahead is not None:
+        hpath = horizon_path(model, test_season)
+        if hpath.exists():
+            old = pd.read_parquet(hpath)
+            ahead = pd.concat([old[~old["gameweek"].isin(ahead["gameweek"].unique())], ahead])
+        ahead.sort_values(["gameweek", "k", "code"]).to_parquet(hpath, index=False)
     path = prediction_path(model, test_season)
     if path.exists():
         existing = pd.read_parquet(path)
         kept = existing[~existing["gameweek"].isin(predictions["gameweek"].unique())]
         predictions = pd.concat([kept, predictions], ignore_index=True)
         predictions = predictions.sort_values(["gameweek", "code"]).reset_index(drop=True)
+    predictions.attrs = {}  # the horizon frame is saved on its own, above
     predictions.to_parquet(path, index=False)
     log.info(
         "cached %s (%d gameweeks, %d rows)",

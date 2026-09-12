@@ -211,6 +211,17 @@
   .sortable-chosen{cursor:grabbing}
   .bench .slot{background:linear-gradient(172deg,#5C5E6B 0%,#484A55 45%,#34353E 100%)}
   @media(max-width:420px){.slot{flex-basis:76px} .slot .top{height:68px} .slot .top .pic{height:60px} .slot .rt b{font-size:15px} .slot .nm{font-size:11px} .slot .fx1{font-size:9.5px;padding:3px 2px 12px}}
+  .slot .c.v{background:#E5E5EA;color:#1C1C1E}
+  .slot.live .rt b.lp{color:#fff}
+  .slot .posl.on{background:#30DB5B;color:#0B2E13;animation:pulse 1.6s ease-in-out infinite} .slot .posl.ft{background:rgba(255,255,255,.35);color:#fff}
+  @keyframes pulse{0%,100%{opacity:1}50%{opacity:.55}}
+  .livebar{display:flex;justify-content:space-between;align-items:center;gap:8px 12px;flex-wrap:wrap;padding:8px 14px;background:var(--surface-2);border-top:.5px solid var(--line);font-size:var(--t-foot)}
+  .livebar .lt{display:flex;align-items:center;gap:8px;flex-wrap:wrap;min-width:0}
+  .livebar .lt b{font-size:var(--t-title3);font-weight:800;letter-spacing:-.02em}
+  .livebar .d{color:var(--ink-2)}
+  .livebar .rt2{display:flex;align-items:center;gap:8px;margin-left:auto}
+  .livebar .tag{font-size:var(--t-cap2);font-weight:800;letter-spacing:.05em;padding:2px 7px;border-radius:5px;background:var(--fill);color:var(--ink-2)}
+  .livebar .tag.on{background:var(--good-soft);color:var(--good);animation:pulse 1.6s ease-in-out infinite} .livebar .tag.ft{background:var(--accent-soft);color:var(--accent-ink)}
   .bench{background:linear-gradient(180deg,#1E5C3A,#174A2F);padding:12px 8px 16px}
   .bench .lbl{text-align:center;margin-bottom:10px;color:rgba(255,255,255,.75)}
   .bench .line{margin:0}
@@ -503,6 +514,7 @@
         <div class="left">
           <div class="pitchwrap">
             <div class="banner"><span id="bnr-left">Squad 0 / 15</span><span id="bnr-right">Budget £100.0m</span></div>
+            <div class="livebar" id="livebar" hidden></div>
             <div class="pitch" id="pitch">
               <svg class="lines" viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true">
                 <g fill="none" stroke="var(--grass-line)" stroke-width=".35" vector-effect="non-scaling-stroke">
@@ -520,7 +532,7 @@
             <button class="btn" id="template">Use Template Team</button>
             <button class="btn primary" id="autopick" title="Fill empty slots with the best players you can afford, then set the best formation, eleven and captain">Auto-Pick</button>
             <button class="btn link" id="clear">Clear</button>
-            <span class="hint">Tap a player for his profile, an empty slot to add one. Drag a card onto another (or tap ⇄, then the other card) to make a substitution.</span>
+            <span class="hint">Tap a player for his profile and to make him captain or vice-captain; tap an empty slot to add one. Drag a card onto another (or tap ⇄, then the other card) to make a substitution. Once the deadline passes, the cards show live points as the games are played.</span>
           </div>
         </div>
         <div class="right">
@@ -600,7 +612,7 @@ const STATS = {
 };
 
 let DATA = null, BY = {};
-let state = {formation:{GK:1, DEF:4, MID:4, FWD:2}, slots:[]};
+let state = {formation:{GK:1, DEF:4, MID:4, FWD:2}, slots:[], captain:null, vice:null};
 let cols = ["price","owned","last_gw"];   // the three switchable columns; projected is always first
 let sort = {key:"ep", dir:-1};
 let tableGen = 0;  // bumps on every table render so stale idle chunks stop
@@ -700,6 +712,26 @@ function scoreSquad(players, fixed=null){
 // Next-gameweek lineup, with the horizon score attached as .total (older callers use .points for GW1 points).
 function bestEleven(players, fixed=null){ const s = scoreSquad(players, fixed); const e = s.lineups[0]; e.total = s.points; e.lineups = s.lineups; return e; }
 const squadPoints = (players, fixed) => scoreSquad(players, fixed).points;
+// ---------- the armband: yours if you set it, the model's otherwise ----------
+// A captain or vice you chose (profile sheet, or the Captain card) overrides the
+// model's pick as long as he is in the starting eleven; the projection moves with him.
+function armband(lineup){
+  if (!lineup) return lineup;
+  const st = new Set(lineup.starters);
+  lineup.model_captain = lineup.captain; lineup.model_vice = lineup.vice;
+  if (state.captain && st.has(state.captain) && state.captain !== lineup.captain){
+    const delta = epk(BY[state.captain],0) - epk(BY[lineup.captain],0);
+    lineup.points += delta; if (lineup.total != null) lineup.total += HW()[0]*delta;
+    if (lineup.vice === state.captain) lineup.vice = lineup.captain;
+    lineup.captain = state.captain;
+  }
+  if (state.vice && st.has(state.vice) && state.vice !== lineup.captain) lineup.vice = state.vice;
+  lineup.manual = lineup.captain !== lineup.model_captain || lineup.vice !== lineup.model_vice;
+  return lineup;
+}
+function setCaptain(code){ state.captain = code; if (state.vice === code) state.vice = null; update(); }
+function setVice(code){ state.vice = code; if (state.captain === code) state.captain = null; update(); }
+function clearArmband(){ state.captain = null; state.vice = null; update(); }
 const totalEp = p => (p.eps||[p.ep]).reduce((s,e,k)=>s+e*HW()[k],0);
 function availableBudget(players, bank, teamValue){
   if (teamValue) return teamValue + bank;
@@ -818,19 +850,23 @@ const xiPlayers = () => state.slots.filter(s=>s.area==="xi" && s.code).map(s=>BY
 const squadValue = () => squadPlayers().reduce((s,p)=>s+p.price,0);
 const clubCount = team => squadPlayers().filter(p=>p.team===team).length;
 function setFormation(f){ state.formation = f; state.slots = buildSlots(f, state.slots.map(s=>s.code).filter(Boolean)); update(); }
-function save(){ try{ localStorage.setItem("fpl-squad-v3", JSON.stringify({formation:state.formation, codes:state.slots.map(s=>s.code), bank:document.getElementById("bank").value, tv:document.getElementById("tv").value, ft:document.getElementById("ft").value, metric, cols})); }catch(e){} }
-function load(){ try{ const s=JSON.parse(localStorage.getItem("fpl-squad-v3")||"null"); if(!s) return false; state.formation=s.formation; state.slots=buildSlots(s.formation, s.codes.filter(Boolean), true); document.getElementById("bank").value=s.bank??"0.0"; document.getElementById("tv").value=s.tv??""; document.getElementById("ft").value=s.ft??"1"; if (HORIZONS[s.metric]) metric=s.metric; if (Array.isArray(s.cols)&&s.cols.length===3) cols=s.cols; return true; }catch(e){ return false; } }
+function save(){ try{ localStorage.setItem("fpl-squad-v3", JSON.stringify({formation:state.formation, codes:state.slots.map(s=>s.code), captain:state.captain, vice:state.vice, bank:document.getElementById("bank").value, tv:document.getElementById("tv").value, ft:document.getElementById("ft").value, metric, cols})); }catch(e){} }
+function load(){ try{ const s=JSON.parse(localStorage.getItem("fpl-squad-v3")||"null"); if(!s) return false; state.formation=s.formation; state.slots=buildSlots(s.formation, s.codes.filter(Boolean), true); state.captain=s.captain||null; state.vice=s.vice||null; document.getElementById("bank").value=s.bank??"0.0"; document.getElementById("tv").value=s.tv??""; document.getElementById("ft").value=s.ft??"1"; if (HORIZONS[s.metric]) metric=s.metric; if (Array.isArray(s.cols)&&s.cols.length===3) cols=s.cols; return true; }catch(e){ return false; } }
 
 // ---------- pitch ----------
-function slotEl(slot, index, captain, readonly=false){
+function slotEl(slot, index, captain, readonly=false, vice=null){
   const p = slot.code ? BY[slot.code] : null;
   const b = el("button", "slot"+(p?" "+p.position:" empty")); b.type="button";
   if (!p){ const top = el("div","top"); top.appendChild(el("span","plus","+")); b.appendChild(top); const lb = el("div","lb"); lb.appendChild(el("div","nm","Add")); lb.appendChild(el("div","pr",({GK:"goalkeeper",DEF:"defender",MID:"midfielder",FWD:"forward"})[slot.pos])); b.appendChild(lb); b.title=`Add a ${slot.pos}`; }
   else {
     const top = el("div","top");
     const im = new Image(); im.alt=""; im.loading="lazy"; im.decoding="async"; im.className="pic"; photoInto(im, p.code, () => top.appendChild(el("span","ini",initials(p)))); top.appendChild(im);
-    const rt = el("div","rt"); rt.appendChild(el("b",null,fmt(epk(p,0),1))); rt.appendChild(el("span","posl "+p.position, p.position)); top.appendChild(rt);
+    const rt = el("div","rt"); const lv = liveFor(p);
+    if (lv && (lv.started || lv.finished)){ b.classList.add("live"); rt.appendChild(el("b","lp",String(lv.pts))); rt.appendChild(el("span","posl "+(lv.finished?"ft":"on"), lv.finished ? "FT" : "LIVE")); rt.title = liveLine(p, lv); }
+    else { rt.appendChild(el("b",null,fmt(epk(p,0),1))); rt.appendChild(el("span","posl "+p.position, p.position)); }
+    top.appendChild(rt);
     if (captain===p.code) top.appendChild(el("span","c","C"));
+    else if (vice===p.code) top.appendChild(el("span","c v","V"));
     if (p.availability<1) top.appendChild(el("span","fl "+(p.availability===0?"out":"d"), p.availability===0?"OUT":(p.chance!=null?p.chance+"%":"?")));
     // substitutions: drag a card onto another, or tap the arrows then tap the target
     if (!readonly){
@@ -889,12 +925,14 @@ function initSortable(){
     });
   });
 }
-function pitchFor(codes, formation, captain, title){
+function pitchFor(codes, formation, captain, title, vice=null){
   const slots = buildSlots(formation, codes, true);
   const wrap = el("div","pitchwrap");
   const banner = el("div","banner"); banner.appendChild(el("span",null,title||"")); banner.appendChild(el("span",null,`${fname(formation)} · £${fmt(codes.map(c=>BY[c]).filter(Boolean).reduce((s,p)=>s+p.price,0),1)}m`)); wrap.appendChild(banner);
+  const lb = el("div","livebar"); lb.hidden = true; wrap.appendChild(lb);
+  renderLiveBar(lb, {starters: slots.filter(s=>s.area==="xi"&&s.code).map(s=>s.code), captain, vice, bench: slots.filter(s=>s.area==="bench"&&s.code).map(s=>s.code)});
   const pitch = el("div","pitch"); pitch.innerHTML = document.getElementById("pitch").querySelector("svg.lines").outerHTML;
-  POSITIONS.forEach(pos => { const line = el("div","line"); slots.forEach((sl,i)=>{ if (sl.area==="xi"&&sl.pos===pos) line.appendChild(slotEl(sl,i,captain,true)); }); pitch.appendChild(line); });
+  POSITIONS.forEach(pos => { const line = el("div","line"); slots.forEach((sl,i)=>{ if (sl.area==="xi"&&sl.pos===pos) line.appendChild(slotEl(sl,i,captain,true,vice)); }); pitch.appendChild(line); });
   wrap.appendChild(pitch);
   const bench = el("div","bench"); bench.appendChild(el("div","lbl","Substitutes · in order"));
   const bl = el("div","line"); slots.forEach((sl,i)=>{ if (sl.area==="bench") bl.appendChild(slotEl(sl,i,null,true)); }); bench.appendChild(bl); wrap.appendChild(bench);
@@ -904,9 +942,10 @@ function renderPitch(){
   const pitch = document.getElementById("pitch"), bench = document.getElementById("bench");
   [...pitch.querySelectorAll(".line")].forEach(n=>n.remove()); bench.replaceChildren();
   const players = squadPlayers();
-  const lineup = players.length===15 ? bestEleven(xiPlayers(), state.formation) : null;
-  const captain = lineup ? lineup.captain : null;
-  POSITIONS.forEach(pos => { const line = el("div","line"); state.slots.forEach((s,i)=>{ if (s.area==="xi"&&s.pos===pos) line.appendChild(slotEl(s,i,captain)); }); pitch.appendChild(line); });
+  const lineup = players.length===15 ? armband(bestEleven(xiPlayers(), state.formation)) : null;
+  const captain = lineup ? lineup.captain : null, vice = lineup ? lineup.vice : null;
+  POSITIONS.forEach(pos => { const line = el("div","line"); state.slots.forEach((s,i)=>{ if (s.area==="xi"&&s.pos===pos) line.appendChild(slotEl(s,i,captain,false,vice)); }); pitch.appendChild(line); });
+  renderLiveBar(document.getElementById("livebar"), lineup ? {starters: lineup.starters, captain, vice, bench: state.slots.filter(s=>s.area==="bench"&&s.code).map(s=>s.code)} : null);
   bench.appendChild(el("div","lbl","Substitutes · in order"));
   const bl = el("div","line"); state.slots.forEach((s,i)=>{ if (s.area==="bench") bl.appendChild(slotEl(s,i,null)); }); bench.appendChild(bl);
   initSortable();
@@ -1189,6 +1228,20 @@ function openProfile(p, ctx={}){
   const bw = el("div"); breakdownBar(p.breakdown||{}).forEach(n=>bw.appendChild(n)); box.appendChild(bw);
   if (haul) { const hp = el("p","hint"); hp.style.margin="-6px 0 0"; hp.textContent = `${Math.round(haul*100)}% chance of a ${DATA.meta.haul_points||8}+ haul this gameweek.`; box.appendChild(hp); }
   if (p.rationale) box.appendChild(el("p","rat",p.rationale));
+  // this gameweek, live
+  const lv = liveFor(p);
+  if (lv && (lv.started || lv.finished)){ const lb = el("div","okbox"); lb.style.marginTop="0"; lb.textContent = liveLine(p, lv); box.appendChild(lb); }
+  // the armband, for a player in your starting eleven
+  if (owned && state.slots[idx].area==="xi"){
+    const ab = el("div"); ab.style.cssText="display:flex;gap:8px;flex-wrap:wrap;align-items:center";
+    const cur = armband(bestEleven(xiPlayers(), state.formation));
+    const isC = cur.captain===p.code, isV = cur.vice===p.code;
+    const bc = el("button","btn"+(isC?" primary":""), isC ? "✓ Captain" : "Make Captain"); bc.type="button"; bc.onclick = () => { if (!isC) setCaptain(p.code); sh.close(); };
+    const bv = el("button","btn"+(isV?" primary":""), isV ? "✓ Vice-Captain" : "Make Vice-Captain"); bv.type="button"; bv.onclick = () => { if (!isV) setVice(p.code); sh.close(); };
+    ab.appendChild(bc); ab.appendChild(bv);
+    if (cur.manual){ const mb = el("button","btn link","Model's pick"); mb.type="button"; mb.onclick = () => { clearArmband(); sh.close(); }; ab.appendChild(mb); }
+    box.appendChild(ab);
+  }
   // compare shortcut
   const cmpRow = el("div"); cmpRow.style.cssText="display:flex;gap:8px;flex-wrap:wrap;align-items:center";
   const cmp = el("button","btn", inCompare(p) ? "✓ In Comparison" : "+ Add to Comparison"); cmp.type="button";
@@ -1436,16 +1489,26 @@ function captaincyCard(players, lineup){
   c.appendChild(el("p","hint", CAPW() > 0
     ? `Chosen for this gameweek alone: expected points, plus the chance of a ${hp}+ haul weighted at ${CAPW()} (set from the backtest). A steady 6 loses the armband to a 5.8 with a fatter tail.`
     : `Chosen for this gameweek alone, on expected points. The chance of a ${hp}+ haul is shown for context. A keeper or defender only takes the armband when he is ${CAPM()} point${CAPM()===1?"":"s"} clear of the best attacker: his ceiling is a clean sheet, theirs is a hat-trick.`));
-  const t = el("table","chips"); const th = el("tr"); ["","Player","Fixture","Exp. pts","Haul"].forEach(x=>th.appendChild(el("th",null,x))); t.appendChild(th);
+  const t = el("table","chips"); const th = el("tr"); ["","Player","Fixture","Exp. pts","Haul",""].forEach(x=>th.appendChild(el("th",null,x))); t.appendChild(th);
+  if (lineup.manual){
+    const t = el("p","tip"); const mc = BY[lineup.model_captain], cc = BY[lineup.captain];
+    t.textContent = lineup.captain !== lineup.model_captain ? `Your armband: ${cc.web_name} (${fmt(epk(cc,0),1)}). The model prefers ${mc.web_name} (${fmt(epk(mc,0),1)}${epk(mc,0)-epk(cc,0)>0.05?`, +${fmt(epk(mc,0)-epk(cc,0),1)}`:""}). ` : `Your vice-captain: ${BY[lineup.vice].web_name}. `;
+    const back = el("button","btn small","Use the Model's Pick"); back.onclick = clearArmband; t.appendChild(back); c.appendChild(t);
+  }
   xi.forEach((x,i) => {
-    const r = el("tr"); r.appendChild(el("td",null, i===0 ? "C" : i===1 ? "V" : ""));
+    const r = el("tr"); r.appendChild(el("td",null, x.p.code===lineup.captain ? "C" : x.p.code===lineup.vice ? "V" : ""));
     const who = el("td"); const nb = el("button","btn link small",x.p.web_name); nb.type="button"; nb.style.padding="0 4px 0 0"; nb.style.fontWeight="600"; nb.onclick = () => openProfile(x.p); who.appendChild(nb); who.appendChild(el("span","pos "+x.p.position, x.p.position)); r.appendChild(who);
     const fx = el("td"); const opp = oppParts(x.p.opponent)[0]; fx.textContent = oppLong(x.p.opponent); const band = opp ? bandFor(x.p.position, opp.name) : null; if (band) fx.appendChild(bandChip(band, BAND_WORD[band])); if (x.p.fx5 && x.p.fx5[0] > 1) fx.appendChild(el("span","dif mid","DOUBLE")); r.appendChild(fx);
     r.appendChild(el("td","n", fmt(x.ep,1)));
     const hc = el("td","n"); hc.appendChild(el("b", x.haul >= 0.25 ? "good" : "", Math.round(100*x.haul)+"%")); r.appendChild(hc);
+    const act = el("td","n"); act.style.whiteSpace="nowrap";
+    if (x.p.code!==lineup.captain){ const bc = el("button","btn small","C"); bc.type="button"; bc.title="Make captain"; bc.onclick = () => setCaptain(x.p.code); act.appendChild(bc); }
+    if (x.p.code!==lineup.vice && x.p.code!==lineup.captain){ const bv = el("button","btn small","V"); bv.type="button"; bv.title="Make vice-captain"; bv.style.marginLeft="4px"; bv.onclick = () => setVice(x.p.code); act.appendChild(bv); }
+    r.appendChild(act);
     t.appendChild(r);
   });
   c.appendChild(t);
+  c.appendChild(el("p","hint","Tap C or V to hand the armband to someone else; the projection and rating follow your choice. Tap a player on the pitch for the same buttons."));
   return c;
 }
 
@@ -1456,7 +1519,7 @@ function renderRating(){
   const c = el("div","card"); c.appendChild(el("h2",null,"Rating"));
   if (players.length < 15){ c.appendChild(el("p","hint",`${15-players.length} more to add. Tap the empty slots.`)); box.appendChild(c); return; }
   const bank = bankVal(), tv = teamValueVal(), opt = OPT(), free = ftVal(), h = HORIZONS[metric];
-  const lineup = bestEleven(players, state.formation), freeShape = bestEleven(players);
+  const lineup = armband(bestEleven(players, state.formation)), freeShape = bestEleven(players);
   const rating = 100*lineup.total/opt;
   const k = el("dl","kpis four");
   [["rating","/100",fmt(rating,1)],[h.long,"pts",fmt(lineup.total,1)],["best £100m squad","pts",fmt(opt,1)],[`GW${DATA.meta.gameweek} · captain`,"",`${fmt(lineup.points,1)} · ${BY[lineup.captain].web_name}${haulk(BY[lineup.captain],0)?` (${Math.round(100*haulk(BY[lineup.captain],0))}% haul)`:""}`]].forEach(([t,u,v])=>{ const d=el("div","kpi"); d.appendChild(el("dt",null,t+(u?" "+u:""))); d.appendChild(el("dd",null,v)); k.appendChild(d); });
@@ -1568,6 +1631,7 @@ function autoPick(){
   const best = bestEleven(players);
   state.formation = best.formation;
   state.slots = buildSlots(best.formation, codes);
+  state.captain = null; state.vice = null;
   update();
   const added = 15 - have.length;
   notice("ok", `${added ? `Filled ${added} empty slot${added===1?"":"s"} with the best players your budget allows. ` : ""}Best lineup set: ${fname(best.formation)}, captain ${BY[best.captain].web_name}, vice ${BY[best.vice].web_name}.`);
@@ -1619,20 +1683,25 @@ function planOptions(players, bank, tv, free, k, n){
   return top;
 }
 const PLAN_BEAM = 4;
+// A hit is planned as if it cost twice the real four points: the gain the search sees
+// is the largest of many noisy estimates, and on two replayed seasons pricing hits at
+// eight (taking one only when the projected gain clears that) scored more than pricing
+// them at four. The four shown to you is what FPL actually charges.
+const HIT_CAUTION = 2;
 function buildPlan(players, bank, tv, free){
   // A beam search over the next PLAN_WEEKS gameweeks: each week the best few moves
   // (and holding) are carried forward, and every path is scored the way the multi-week
   // solver scores a plan -- each week's team points weighted by HW, hits deducted --
   // so banking a transfer for a double next week can beat a small move now.
   const w = HW(), N = w.length;
-  const objective = path => { let v = 0, sq = players; for (let k=0;k<N;k++){ if (path[k]) sq = path[k].squad; v += w[k]*weekValue(sq, k); } return v - path.reduce((s,x)=>s+(x.hit||0),0); };
+  const objective = path => { let v = 0, sq = players; for (let k=0;k<N;k++){ if (path[k]) sq = path[k].squad; v += w[k]*weekValue(sq, k); } return v - HIT_CAUTION * path.reduce((s,x)=>s+(x.hit||0),0); };
   let beam = [{path:[], squad:players, ft:free, money:bank}];
   for (let k=0;k<PLAN_WEEKS;k++){
     const gw = DATA.meta.gameweek + k, next = [];
     for (const st of beam){
       next.push({path:[...st.path, {k, gw, moves:[], ft:st.ft, week:weekValue(st.squad,k), squad:st.squad}], squad:st.squad, ft:Math.min(5, st.ft+1), money:st.money});
       for (const o of planOptions(st.squad, st.money, tv, st.ft, k, PLAN_BEAM)){
-        if (o.net < PLAN_MIN_GAIN && o.hit > 0) continue;   // never a hit for a marginal gain
+        if (o.hit > 0 && o.gain - HIT_CAUTION * o.hit < PLAN_MIN_GAIN) continue;   // a hit only for a gain that clears twice its cost
         next.push({path:[...st.path, {k, gw, moves:o.moves, gain:o.gain, hit:o.hit, net:o.net, ft:st.ft, week:weekValue(o.squad,k), squad:o.squad}], squad:o.squad, ft:Math.min(5, Math.max(0, st.ft - o.moves.length) + 1), money:st.money - o.cost});
       }
     }
@@ -1730,15 +1799,15 @@ function renderPlan(box, players, bank, tv, free, budget){
 // public relay; three are tried in turn. Nothing private is involved: a team's picks
 // are public on FPL for anyone with the ID.
 const RELAYS = [u => "https://corsproxy.io/?" + encodeURIComponent(u), u => "https://api.allorigins.win/raw?url=" + encodeURIComponent(u), u => "https://api.codetabs.com/v1/proxy?quest=" + u];
-async function fplGet(path){
+async function fplGet(path, timeout=9000){
   const url = "https://fantasy.premierleague.com/api/" + path;
   let last = "";
   for (const relay of RELAYS){
     try {
-      const ctl = new AbortController(); const timer = setTimeout(() => ctl.abort(), 9000);
+      const ctl = new AbortController(); const timer = setTimeout(() => ctl.abort(), timeout);
       const r = await fetch(relay(url), {signal: ctl.signal}); clearTimeout(timer);
       if (!r.ok) throw new Error("HTTP " + r.status);
-      const j = await r.json(); if (j && (j.picks || j.id || j.current || j.chips)) return j;
+      const j = await r.json(); if (j && (j.picks || j.id || j.current || j.chips || j.elements || Array.isArray(j))) return j;
       throw new Error("unexpected reply");
     } catch (e) { last = e.message || String(e); }
   }
@@ -1752,6 +1821,97 @@ function freeTransfersFrom(history){
   (history.current||[]).forEach((g, i) => { if (i===0) return; ft = used.has(g.event) ? 1 : Math.min(5, Math.max(0, ft - (g.event_transfers||0)) + 1); });
   return Math.min(5, ft);
 }
+// ---------- live points, as the games happen ----------
+// Once the deadline has passed, FPL's live feed for the gameweek (public, via the
+// same relay) is read every couple of minutes while the page is open and a match
+// is on: every card on the pitch shows the player's points so far instead of his
+// projection, and the strip above the pitch totals the team the way FPL will --
+// captain doubled, the vice if the captain did not play, automatic substitutions
+// once a starter's match has finished without him.
+let LIVE = null, liveTimer = null, liveBusy = false;
+function liveGameweek(){
+  if (!DATA || !DATA.meta) return null;
+  const dl = DATA.meta.deadline ? new Date(DATA.meta.deadline) : null;
+  if (dl && Date.now() >= dl.getTime()) return DATA.meta.gameweek;
+  return DATA.meta.last_gameweek || null;
+}
+function liveFor(p){ return LIVE && p && p.id != null ? LIVE.byId[p.id] || null : null; }
+function liveLine(p, lv){
+  const bits = [];
+  if (lv.goals) bits.push(`${lv.goals} goal${lv.goals===1?"":"s"}`); if (lv.assists) bits.push(`${lv.assists} assist${lv.assists===1?"":"s"}`);
+  if (lv.cs) bits.push("clean sheet"); if (lv.bonus) bits.push(`${lv.bonus} bonus`); if (lv.dc) bits.push("defensive contribution");
+  return `GW${LIVE.gw} ${lv.finished?"final":"live"}: ${lv.pts} pts · ${lv.mins} min${bits.length?" · "+bits.join(", "):""}`;
+}
+async function fetchLive(){
+  const gw = liveGameweek(); if (!gw) return null;
+  const [live, fixtures] = await Promise.all([fplGet(`event/${gw}/live/`, 25000), fplGet(`fixtures/?event=${gw}`, 15000)]);
+  const fx = {}; (Array.isArray(fixtures) ? fixtures : []).forEach(f => fx[f.id] = f);
+  const byId = {};
+  (live.elements||[]).forEach(e => {
+    const s = e.stats||{}; const fs = (e.explain||[]).map(x=>fx[x.fixture]).filter(Boolean);
+    byId[e.id] = {pts: s.total_points||0, mins: s.minutes||0, goals: s.goals_scored||0, assists: s.assists||0, bonus: s.bonus||0, cs: s.clean_sheets||0, dc: s.defensive_contribution||0,
+      started: fs.some(f=>f.started), finished: fs.length>0 && fs.every(f=>f.finished || f.finished_provisional), n: fs.length};
+  });
+  const list = Object.values(fx);
+  return {gw, byId, at: Date.now(), anyStarted: list.some(f=>f.started), allDone: list.length>0 && list.every(f=>f.finished), inPlay: list.some(f=>f.started && !f.finished)};
+}
+function liveTeamPoints(team){
+  // team: {starters, captain, vice, bench}. FPL's rules: a starter whose match is over
+  // with no minutes is replaced by the first bench player (in order) who keeps the
+  // formation legal; the captain's points count twice, the vice's if the captain's
+  // match is over and he did not play.
+  if (!LIVE || !team || !team.starters) return null;
+  const st = [...team.starters].filter(c=>BY[c]); const bench = (team.bench||[]).filter(c=>BY[c]);
+  const played = c => { const l = liveFor(BY[c]); return l && l.mins > 0; };
+  const out = c => { const l = liveFor(BY[c]); return l && l.finished && l.mins === 0; };
+  const counts = xs => { const n = {GK:0,DEF:0,MID:0,FWD:0}; xs.forEach(c => n[BY[c].position]++); return n; };
+  const legal = n => n.GK===1 && n.DEF>=3 && n.MID>=2 && n.FWD>=1 && n.GK+n.DEF+n.MID+n.FWD===11;
+  const subs = [];
+  const gkBench = bench.filter(c=>BY[c].position==="GK"), outBench = bench.filter(c=>BY[c].position!=="GK");
+  for (const missing of st.filter(out)){
+    const pool = BY[missing].position==="GK" ? gkBench : outBench;
+    for (const sub of [...pool]){
+      if (out(sub) || !liveFor(BY[sub])) continue;
+      const trial = st.map(c => c===missing ? sub : c);
+      if (legal(counts(trial))){ st[st.indexOf(missing)] = sub; pool.splice(pool.indexOf(sub),1); subs.push({out:missing, in:sub}); break; }
+    }
+  }
+  let captain = team.captain;
+  if (captain && out(captain) && team.vice && st.includes(team.vice)) captain = team.vice;
+  const pts = c => (liveFor(BY[c])||{}).pts || 0;
+  let total = st.reduce((s,c)=>s+pts(c),0); if (captain && st.includes(captain)) total += pts(captain);
+  const done = st.filter(c => { const l = liveFor(BY[c]); return l && l.finished; }).length;
+  const playing = st.filter(c => { const l = liveFor(BY[c]); return l && l.started && !l.finished; }).length;
+  const benchPts = bench.reduce((s,c)=>s+pts(c),0);
+  return {total, done, playing, subs, captain, benchPts, starters: st};
+}
+function renderLiveBar(bar, team){
+  if (!bar) return;
+  if (!LIVE || !team || !team.starters || !team.starters.length){ bar.hidden = true; bar.replaceChildren(); return; }
+  const r = liveTeamPoints(team); if (!r) { bar.hidden = true; return; }
+  bar.hidden = false; bar.replaceChildren();
+  const left = el("div","lt");
+  const tag = el("span", "tag "+(LIVE.inPlay ? "on" : LIVE.allDone ? "ft" : "wait"), LIVE.inPlay ? "LIVE" : LIVE.allDone ? "FINAL" : "GW"+LIVE.gw);
+  left.appendChild(tag); left.appendChild(el("b",null, r.total+" pts"));
+  left.appendChild(el("span","d", `GW${LIVE.gw} · ${r.done} of 11 finished${r.playing?`, ${r.playing} playing`:""}${r.captain && BY[r.captain] ? " · C "+BY[r.captain].web_name+(r.captain!==team.captain?" (vice)":"") : ""}${r.subs.length?" · auto-sub "+r.subs.map(x=>BY[x.in].web_name+" for "+BY[x.out].web_name).join(", "):""}${r.benchPts?" · bench "+r.benchPts:""}`));
+  bar.appendChild(left);
+  const right = el("div","rt2"); right.appendChild(el("span","d", "updated "+new Date(LIVE.at).toLocaleTimeString([], {hour:"2-digit", minute:"2-digit"})));
+  const rb = el("button","btn small","Refresh"); rb.type="button"; rb.onclick = () => refreshLive(true); right.appendChild(rb); bar.appendChild(right);
+}
+async function refreshLive(manual=false){
+  if (liveBusy || !liveGameweek()) return; liveBusy = true;
+  try { const got = await fetchLive(); if (got){ LIVE = got; renderPitch(); if (!document.getElementById("tab-best").hidden) renderBest(); } }
+  catch (e) { if (manual) notice("warn", "Could not reach FPL's live feed: " + e.message + ". Try again in a minute."); }
+  finally { liveBusy = false; scheduleLive(); }
+}
+function scheduleLive(){
+  clearTimeout(liveTimer);
+  if (!LIVE) { liveTimer = setTimeout(() => refreshLive(), 5*60*1000); return; }
+  if (LIVE.allDone) return;                                   // nothing more will change until the next refresh
+  const wait = LIVE.inPlay ? 120*1000 : 10*60*1000;           // matches on: every two minutes; between matches: ten
+  liveTimer = setTimeout(() => { if (document.visibilityState === "visible") refreshLive(); else scheduleLive(); }, wait);
+}
+document.addEventListener("visibilitychange", () => { if (document.visibilityState === "visible" && LIVE && !LIVE.allDone && Date.now() - LIVE.at > 90*1000) refreshLive(); });
 async function importTeam(id){
   const b = document.getElementById("import"); b.disabled = true; b.textContent = "Importing…";
   document.getElementById("notices").replaceChildren();
@@ -1759,7 +1919,8 @@ async function importTeam(id){
     const gw = DATA.meta.last_gameweek || 1;
     const [entry, picks, history] = await Promise.all([fplGet(`entry/${id}/`), fplGet(`entry/${id}/event/${gw}/picks/`), fplGet(`entry/${id}/history/`)]);
     const byId = {}; DATA.players.forEach(p => byId[p.id] = p);
-    const chosen = (picks.picks||[]).map(x => ({p: byId[x.element], pos: x.position, cap: x.is_captain})).filter(x => x.p);
+    const chosen = (picks.picks||[]).map(x => ({p: byId[x.element], pos: x.position, cap: x.is_captain, vice: x.is_vice_captain})).filter(x => x.p);
+    state.captain = (chosen.find(x=>x.cap)||{p:{}}).p.code || null; state.vice = (chosen.find(x=>x.vice)||{p:{}}).p.code || null;
     if (chosen.length < 15) throw new Error(`only ${chosen.length} of the 15 players were recognised`);
     const xi = chosen.filter(x => x.pos <= 11).map(x=>x.p);
     const f = {GK:1, DEF: xi.filter(p=>p.position==="DEF").length, MID: xi.filter(p=>p.position==="MID").length, FWD: xi.filter(p=>p.position==="FWD").length};
@@ -2089,7 +2250,7 @@ function renderReplay(box){
 }
 function renderOneReplay(box, rp){
   if (!rp || !rp.model || !rp.crowd) return;
-  const m = rp.model, c = rp.crowd, n = m.gameweeks.length;
+  const m = rp.model, c = rp.crowd, a = rp.average || null, n = m.gameweeks.length;
   const h = el("h2",null,`A whole season: ${m.season}, gameweeks ${m.gameweeks[0].gameweek}–${m.gameweeks[n-1].gameweek}`); h.style.marginTop="1.6rem"; box.appendChild(h);
   if (rp.scorecard && rp.scorecard.length){
     box.appendChild(el("p","hint",`How well the projections ordered every player, week by week, refitting before each gameweek on everything up to it (${rp.scorecard[0].n.toLocaleString()} player-gameweeks). Rank correlation: 1 is a perfect ordering. Precision@10: of the ten highest projected each week, the share that scored 5+. RMSE: typical error in points; "haulers" is the same for players who scored 8+.`));
@@ -2098,15 +2259,28 @@ function renderOneReplay(box, rp){
     rp.scorecard.forEach(r => { const tr = el("tr"); const isUs = /component/.test(r.model); const lab = el("td","l", isUs ? "This model" : r.model + (/xP/.test(r.model) ? " (archived after the fact — see README)" : "")); if (isUs) lab.style.fontWeight="700"; tr.appendChild(lab); [r.spearman, r["precision@10"], r.rmse, r.haulers].forEach((v,i) => { const td = el("td",null, v==null ? "–" : (i<2 ? Number(v).toFixed(3) : Number(v).toFixed(2))); if (isUs) td.style.fontWeight="700"; tr.appendChild(td); }); tb.appendChild(tr); });
     t.appendChild(tb); wrap.appendChild(t); box.appendChild(wrap);
   }
-  box.appendChild(el("p","hint",`The same rules over ${n} gameweeks of last season, using projections made before each deadline. The model manager picks by projection; the crowd manager picks by ownership at each deadline — the template team, which is what the average manager owns. Neither can see injury flags (they are not archived), so both are handicapped the same way.`));
+  const chips = (m.chips||[]).map(([gw,ch]) => `${({wildcard:"Wildcard",freehit:"Free Hit",bboost:"Bench Boost","3xc":"Triple Captain"})[ch]||ch} GW${gw}`);
+  box.appendChild(el("p","hint",`The full game over ${n} gameweeks of that season, using projections made before each deadline: the model manager builds a squad, then each week lets the multi-week solver make transfers (free ones banked up to five, a 4-point hit when it pays), sets the lineup and captain, and plays the chips by rule${chips.length ? " (" + chips.join(", ") + ")" : ""}. Hits cost it ${m.hits||0} points. ${a ? "The average is FPL's own average score every gameweek — every manager in the game." : ""} The crowd manager holds the template team — the most-owned players at each deadline — with one free transfer a week and no chips. Nobody can see injury flags (they are not archived).`));
   const k = el("dl","kpis");
-  [["model manager",m.total+" pts"],["crowd manager",c.total+" pts"],["edge",(m.total-c.total>=0?"+":"")+(m.total-c.total)+" pts"],["per gameweek",`${m.per_gameweek} vs ${c.per_gameweek}`]].forEach(([t,v])=>{ const d=el("div","kpi"); d.appendChild(el("dt",null,t)); d.appendChild(el("dd",null,v)); k.appendChild(d); });
+  const kp = [["model manager",m.total+" pts"]];
+  if (a) kp.push(["FPL average",a.total+" pts"], ["edge on the average",(m.total-a.total>=0?"+":"")+(m.total-a.total)+" pts ("+((m.total-a.total)/n>=0?"+":"")+((m.total-a.total)/n).toFixed(1)+"/week)"]);
+  kp.push(["crowd manager",c.total+" pts"], ["per gameweek",`${m.per_gameweek}${a ? " vs "+a.per_gameweek+" avg" : ""} vs ${c.per_gameweek} crowd`]);
+  kp.forEach(([t,v])=>{ const d=el("div","kpi"); d.appendChild(el("dt",null,t)); d.appendChild(el("dd",null,v)); k.appendChild(d); });
   box.appendChild(k);
-  const wrap = el("div","wide"); const t = el("table"); const th = el("tr"); ["GW", ...m.gameweeks.map(w=>w.gameweek)].forEach(x=>th.appendChild(el("th",null,String(x)))); const thead = el("thead"); thead.appendChild(th); t.appendChild(thead);
+  const wrap = el("div","wide"); const t = el("table"); const th = el("tr"); th.appendChild(el("th",null,"GW"));
+  const abbr = {wildcard:"WC", freehit:"FH", bboost:"BB", "3xc":"TC"};
+  m.gameweeks.forEach(w => { const h = el("th",null,String(w.gameweek)); if (w.chip){ const b = el("small",null,abbr[w.chip]||w.chip); b.style.cssText="display:block;font-size:.62rem;font-weight:800;color:var(--accent-ink,#0a84ff);letter-spacing:.02em"; b.title = w.chip; h.appendChild(b); } th.appendChild(h); });
+  const thead = el("thead"); thead.appendChild(th); t.appendChild(thead);
   const tb = el("tbody");
-  [["Model",m],["Crowd",c]].forEach(([label,r]) => { const tr = el("tr"); tr.appendChild(el("td","l",label)); r.gameweeks.forEach((w,i) => { const other = (label==="Model"?c:m).gameweeks[i].points; const td = el("td", w.points>other?"band b1":w.points<other?"band b5":"", String(w.points)); td.title = w.transfers.length ? "Transfer: "+w.transfers.join(", ")+" · captain "+w.captain : "Rolled · captain "+w.captain; tr.appendChild(td); }); tb.appendChild(tr); });
+  const rows = [["Model",m]]; if (a) rows.push(["Average",a]); rows.push(["Crowd",c]);
+  const ref = a || c;
+  rows.forEach(([label,r]) => { const tr = el("tr"); tr.appendChild(el("td","l",label)); r.gameweeks.forEach((w,i) => {
+    let cls = ""; if (label==="Model"){ const o = ref.gameweeks[i].points; cls = w.points>o ? "band b1" : w.points<o ? "band b5" : ""; }
+    const td = el("td", cls, String(w.points));
+    if (label!=="Average") td.title = (w.transfers&&w.transfers.length ? "Transfers: "+w.transfers.join(", ") : "Rolled") + " · captain "+w.captain + (w.chip ? " · "+w.chip : "") + (w.hit ? " · hit −"+w.hit : "");
+    tr.appendChild(td); }); tb.appendChild(tr); });
   t.appendChild(tb); wrap.appendChild(t); box.appendChild(wrap);
-  box.appendChild(el("p","hint","Green: that manager scored more that week. Hover a cell for the transfer and captain."));
+  box.appendChild(el("p","hint",`Green: the model beat the ${a ? "average" : "crowd"} that week; red: it fell short. Hover a cell for the transfers, captain, chip and hit.`));
 }
 document.querySelectorAll("nav [role=tab]").forEach(b => b.addEventListener("click", () => {
   document.querySelectorAll("nav [role=tab]").forEach(x=>x.setAttribute("aria-selected", x===b));
@@ -2149,6 +2323,7 @@ function applyData(data, got){
   document.getElementById("notices").replaceChildren();
   renderStatus(); renderHorizon();
   update(); renderBest(); renderAll(); renderTeams(); renderBacktest(); renderTray();
+  refreshLive();
   const ageH = (Date.now() - new Date(DATA.meta.captured_at)) / 36e5;
   if (got && got.cached) notice("warn", `Showing the last copy saved on this device (${new Date(DATA.meta.captured_at).toUTCString().replace(":00 GMT"," UTC")}) because the live file could not be fetched: ${got.why}.`);
   else if (ageH > STALE_HOURS) notice("warn", `These projections are ${Math.round(ageH/24)} day${Math.round(ageH/24)===1?"":"s"} old — the daily refresh has not run since ${new Date(DATA.meta.captured_at).toUTCString().replace(":00 GMT"," UTC")}. Injury news since then is not reflected.`);

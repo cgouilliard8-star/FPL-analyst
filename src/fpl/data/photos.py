@@ -23,20 +23,22 @@ log = logging.getLogger(__name__)
 
 PHOTOS_DIR = PROJECT_ROOT / "site" / "photos"
 # The image server keeps one folder per season since 2025-26 (``premierleague25``,
-# ``premierleague26``...) with the current kits, and the old un-numbered folder,
-# which stops being updated. Newest first; the first folder that answers for a
-# known player is the season's source, and when it changes every photo is refetched.
+# then ``premierleague26``...) with the current kits -- the address FPL's own page
+# uses, read from its bundle -- and the old un-numbered folder, which is no longer
+# updated. Newest first; the first folder that answers for a well-known player is
+# the season's source, and when it changes every portrait is refetched.
 PHOTO_SOURCES = (
-    "https://resources.premierleague.com/premierleague27/photos/players/250x250/{code}.png",
-    "https://resources.premierleague.com/premierleague26/photos/players/250x250/{code}.png",
-    "https://resources.premierleague.com/premierleague25/photos/players/250x250/{code}.png",
-    "https://resources.premierleague.com/premierleague/photos/players/250x250/p{code}.png",
+    "https://resources.premierleague.com/premierleague27/photos/players/110x140/{code}.png",
+    "https://resources.premierleague.com/premierleague26/photos/players/110x140/{code}.png",
+    "https://resources.premierleague.com/premierleague25/photos/players/110x140/{code}.png",
     "https://resources.premierleague.com/premierleague/photos/players/110x140/p{code}.png",
 )
 PHOTO_URL = PHOTO_SOURCES[-1]
-# FPL's own silhouette for a player it has no portrait of (young signings, mostly)
-MISSING_URL = (
-    "https://resources.premierleague.com/premierleague/photos/players/110x140/Photo-Missing.png"
+# FPL's own silhouette for a player it has no portrait of (young signings, mostly):
+# the season folder's placeholder, else the old one.
+MISSING_URLS = (
+    "{folder}/placeholder.png",
+    "https://resources.premierleague.com/premierleague/photos/players/110x140/Photo-Missing.png",
 )
 SOURCE_MARKER = ".source"
 TIMEOUT = 20
@@ -57,11 +59,13 @@ def fetch_photos(
     fetched = present = failed = 0
     template = _pick_source(snapshot, getter)
     marker = directory / SOURCE_MARKER
-    if marker.exists() and marker.read_text().strip() != template:
-        log.info("photos: new season folder on the image server; refetching every portrait")
-        for old in directory.glob("p*.png"):
+    if not marker.exists() or marker.read_text().strip() != template:
+        # a different season folder, or portraits of unknown provenance: start over
+        log.info("photos: refetching every portrait from %s", template)
+        for old in directory.glob("*.png"):
             old.unlink()
     marker.write_text(template)
+    folder = template.rsplit("/", 1)[0]
     wanted = [(e["code"], directory / f"p{e['code']}.png") for e in snapshot["elements"]]
     wanted.append(("missing", directory / "missing.png"))
     for code, path in wanted:
@@ -69,10 +73,18 @@ def fetch_photos(
             present += 1
             continue
         try:
-            url = MISSING_URL if code == "missing" else template.format(code=code)
-            response = getter(url, timeout=TIMEOUT, headers=HEADERS)
-            if response.status_code != 200 or not response.content:
-                raise RuntimeError(f"HTTP {response.status_code}")
+            urls = (
+                [u.format(folder=folder) for u in MISSING_URLS]
+                if code == "missing"
+                else [template.format(code=code)]
+            )
+            response = None
+            for url in urls:
+                response = getter(url, timeout=TIMEOUT, headers=HEADERS)
+                if response.status_code == 200 and response.content:
+                    break
+            if response is None or response.status_code != 200 or not response.content:
+                raise RuntimeError(f"HTTP {getattr(response, 'status_code', '?')}")
             path.write_bytes(response.content)
             fetched += 1
             time.sleep(pause)

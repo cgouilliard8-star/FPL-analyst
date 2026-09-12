@@ -13,7 +13,7 @@ class _Resp:
 
 def _getter(available_prefix):
     def get(url, timeout=0, headers=None):
-        return _Resp(available_prefix in url or "Photo-Missing" in url)
+        return _Resp(available_prefix in url or "Photo-Missing" in url)  # placeholder too
 
     return get
 
@@ -43,6 +43,6 @@ def test_newest_available_folder_wins_and_a_change_refetches(tmp_path):
     counts = photos.fetch_photos(
         snapshot, directory=tmp_path, getter=_getter("premierleague26"), pause=0
     )
-    assert counts["fetched"] == 2 and (tmp_path / ".source").read_text().startswith(
+    assert counts["fetched"] == 3 and (tmp_path / ".source").read_text().startswith(
         "https://resources.premierleague.com/premierleague26"
     )
